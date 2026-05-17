@@ -1,4 +1,4 @@
-// main.js - Harmonized Stable Version
+// main.js - Full Harmonized + Weekend Highlight
 const firebaseConfig = {
   apiKey: "AIzaSyAIxHsCJYkJ05MflQnGTibGlCNru-dEPPs",
   authDomain: "reza-ot.firebaseapp.com",
@@ -17,7 +17,7 @@ let trips = [];
 let currentMonthKey = "";
 let dailyRecords = {};
 
-// LOCAL STORAGE
+// ==================== LOCAL STORAGE ====================
 function loadFromLocalStorage() {
   const savedTrips = localStorage.getItem("trips");
   trips = savedTrips ? JSON.parse(savedTrips) : [...defaultTrips];
@@ -32,10 +32,12 @@ function saveToLocalStorage() {
   saveToFirebase();
 }
 
-// FIREBASE
+// ==================== FIREBASE ====================
 function saveToFirebase() {
   db.ref(`users/default/${currentMonthKey}`).update({
-    dailyRecords, trips, lastUpdated: new Date().toISOString()
+    dailyRecords: dailyRecords,
+    trips: trips,
+    lastUpdated: new Date().toISOString()
   }).catch(err => console.error(err));
 }
 
@@ -56,7 +58,7 @@ function loadDataFromFirebase() {
   });
 }
 
-// INIT
+// ==================== INITIALIZE ====================
 document.addEventListener("DOMContentLoaded", () => {
   const now = new Date();
   currentMonthKey = `${monthNames[now.getMonth()]} ${now.getFullYear()}`;
@@ -83,6 +85,7 @@ function setupEventListeners() {
   document.getElementById("printButton").addEventListener("click", () => window.print());
 }
 
+// ==================== TOGGLE MANAGE ====================
 function toggleManageSection() {
   const section = document.getElementById("manageDestinations");
   const btn = document.getElementById("toggleManageBtn");
@@ -95,7 +98,7 @@ function toggleManageSection() {
   }
 }
 
-// Handlers
+// ==================== HANDLERS ====================
 function handleMonthChange() {
   const [year, month] = this.value.split("-");
   currentMonthKey = `${getMonthName(month)} ${year}`;
@@ -113,7 +116,7 @@ function handleDestinationChange() {
 function handleAddTrip() {
   const name = document.getElementById("newTrip").value.trim();
   if (!name) return alert("Sila isi nama destinasi");
-  if (trips.includes(name)) return alert("Sudah wujud!");
+  if (trips.includes(name)) return alert("Destinasi sudah wujud!");
 
   trips.push(name);
   saveToLocalStorage();
@@ -143,13 +146,13 @@ function handleTripFormSubmit(e) {
   const awb = document.getElementById("airwayBill").value.trim();
   const date = document.getElementById("date").value;
 
-  if (!dest) return alert("Pilih destinasi!");
+  if (!dest) return alert("Sila pilih destinasi!");
 
   if (!dailyRecords[date]) dailyRecords[date] = { trips: [], clock_in: "", clock_out: "" };
 
   let entry = dest;
   if (dest === "KLIA Cargo") {
-    if (!awb) return alert("Isi Airway Bill!");
+    if (!awb) return alert("Sila isi Airway Bill untuk KLIA Cargo!");
     entry = `${dest} (${awb})`;
   }
 
@@ -163,13 +166,14 @@ function handleTripFormSubmit(e) {
 }
 
 function deleteRecord(date) {
-  if (confirm(`Padam rekod ${date}?`)) {
+  if (confirm(`Padam rekod untuk ${date}?`)) {
     delete dailyRecords[date];
     saveToLocalStorage();
     updateReport();
   }
 }
 
+// ==================== UPDATE REPORT + HIGHLIGHT ====================
 function updateReport() {
   let totalOT = 0;
   const tbody = document.querySelector("#reportTable tbody");
@@ -183,30 +187,40 @@ function updateReport() {
     const ot = calculateOT(rec.clock_in, rec.clock_out, date, rec.trips);
     totalOT += ot;
 
+    const dateObj = new Date(date);
+    const day = dateObj.getDay();   // 0 = Ahad, 6 = Sabtu
+
     const tr = document.createElement("tr");
+    
+    // HIGHLIGHT SABTU & AHAD
+    if (day === 0) tr.classList.add("sunday");
+    else if (day === 6) tr.classList.add("saturday");
+
     tr.innerHTML = `
       <td>${formatDateForPDF(date)}</td>
       <td>${rec.trips.join(", ") || "—"}</td>
       <td>${formatTime(rec.clock_in)}</td>
       <td>${formatTime(rec.clock_out)}</td>
-      <td>${ot.toFixed(2)}</td>
+      <td><strong>${ot.toFixed(2)}</strong></td>
       <td class="print-only"></td>
       <td class="print-only"></td>
     `;
 
-    const td = document.createElement("td");
-    const btn = document.createElement("button");
-    btn.textContent = "Padam";
-    btn.className = "delete-btn";
-    btn.onclick = () => deleteRecord(date);
-    td.appendChild(btn);
-    tr.appendChild(td);
+    const tdDel = document.createElement("td");
+    const btnDel = document.createElement("button");
+    btnDel.textContent = "Padam";
+    btnDel.className = "delete-btn";
+    btnDel.onclick = () => deleteRecord(date);
+    tdDel.appendChild(btnDel);
+    tr.appendChild(tdDel);
+
     tbody.appendChild(tr);
   });
 
   document.getElementById("totalOT").textContent = totalOT.toFixed(2);
 }
 
+// Export & Import
 function exportData() {
   const data = { dailyRecords, trips, month: currentMonthKey };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
@@ -228,8 +242,8 @@ function importData(e) {
       saveToLocalStorage();
       updateReport();
       loadTrips();
-      alert("Import berjaya!");
-    } catch(err) { alert("Fail import rosak"); }
+      alert("✅ Import berjaya!");
+    } catch(err) { alert("❌ Fail import rosak"); }
   };
   reader.readAsText(file);
 }
