@@ -1,4 +1,4 @@
-// main.js - Versi Stabil Berjaya
+// main.js - Improved & Stable Version
 const firebaseConfig = {
   apiKey: "AIzaSyAIxHsCJYkJ05MflQnGTibGlCNru-dEPPs",
   authDomain: "reza-ot.firebaseapp.com",
@@ -38,7 +38,7 @@ function saveToFirebase() {
     dailyRecords: dailyRecords,
     trips: trips,
     lastUpdated: new Date().toISOString()
-  }).catch(err => console.error("Firebase save error:", err));
+  }).catch(err => console.error(err));
 }
 
 function loadDataFromFirebase() {
@@ -52,7 +52,7 @@ function loadDataFromFirebase() {
     updateReport();
     loadTrips();
   }).catch(err => {
-    console.error("Firebase load error:", err);
+    console.error(err);
     updateReport();
     loadTrips();
   });
@@ -85,7 +85,7 @@ function setupEventListeners() {
   document.getElementById("printButton").addEventListener("click", () => window.print());
 }
 
-// ==================== TOGGLE MANAGE ====================
+// Toggle Manage
 function toggleManageSection() {
   const section = document.getElementById("manageDestinations");
   const btn = document.getElementById("toggleManageBtn");
@@ -98,7 +98,7 @@ function toggleManageSection() {
   }
 }
 
-// ==================== HANDLERS ====================
+// Handlers (simplified + stable)
 function handleMonthChange() {
   const [year, month] = this.value.split("-");
   currentMonthKey = `${getMonthName(month)} ${year}`;
@@ -116,13 +116,12 @@ function handleDestinationChange() {
 function handleAddTrip() {
   const name = document.getElementById("newTrip").value.trim();
   if (!name) return alert("Sila isi nama destinasi");
-  if (trips.includes(name)) return alert("Destinasi sudah wujud!");
+  if (trips.includes(name)) return alert("Sudah wujud!");
 
   trips.push(name);
   saveToLocalStorage();
   loadTrips();
   document.getElementById("newTrip").value = "";
-  alert("Destinasi berjaya ditambah!");
 }
 
 function handleClockFormSubmit(e) {
@@ -131,7 +130,7 @@ function handleClockFormSubmit(e) {
   const cin = document.getElementById("clockIn").value;
   const cout = document.getElementById("clockOut").value;
 
-  if (cin && cout && cout <= cin) return alert("Clock Out mesti lewat dari Clock In!");
+  if (cin && cout && cout <= cin) return alert("Clock Out mesti lewat!");
 
   if (!dailyRecords[date]) dailyRecords[date] = { trips: [], clock_in: "", clock_out: "" };
   dailyRecords[date].clock_in = cin;
@@ -147,13 +146,13 @@ function handleTripFormSubmit(e) {
   const awb = document.getElementById("airwayBill").value.trim();
   const date = document.getElementById("date").value;
 
-  if (!dest) return alert("Sila pilih destinasi!");
+  if (!dest) return alert("Pilih destinasi!");
 
   if (!dailyRecords[date]) dailyRecords[date] = { trips: [], clock_in: "", clock_out: "" };
 
   let entry = dest;
   if (dest === "KLIA Cargo") {
-    if (!awb) return alert("Sila isi Airway Bill untuk KLIA Cargo!");
+    if (!awb) return alert("Isi Airway Bill!");
     entry = `${dest} (${awb})`;
   }
 
@@ -167,7 +166,7 @@ function handleTripFormSubmit(e) {
 }
 
 function deleteRecord(date) {
-  if (confirm(`Padam rekod untuk ${date}?`)) {
+  if (confirm(`Padam rekod ${date}?`)) {
     delete dailyRecords[date];
     saveToLocalStorage();
     updateReport();
@@ -198,26 +197,26 @@ function updateReport() {
       <td class="print-only"></td>
     `;
 
-    const tdDel = document.createElement("td");
-    const btnDel = document.createElement("button");
-    btnDel.textContent = "Padam";
-    btnDel.className = "delete-btn";
-    btnDel.onclick = () => deleteRecord(date);
-    tdDel.appendChild(btnDel);
-    tr.appendChild(tdDel);
-
+    const td = document.createElement("td");
+    const btn = document.createElement("button");
+    btn.textContent = "Padam";
+    btn.className = "delete-btn";
+    btn.onclick = () => deleteRecord(date);
+    td.appendChild(btn);
+    tr.appendChild(td);
     tbody.appendChild(tr);
   });
 
   document.getElementById("totalOT").textContent = totalOT.toFixed(2);
 }
 
+// Export & Import (sama)
 function exportData() {
-  const data = { dailyRecords, trips, month: currentMonthKey, exportedAt: new Date().toISOString() };
+  const data = { dailyRecords, trips, month: currentMonthKey };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = `RezaOT_Backup_${currentMonthKey}.json`;
+  a.download = `RezaOT_${currentMonthKey}.json`;
   a.click();
 }
 
@@ -227,16 +226,14 @@ function importData(e) {
   const reader = new FileReader();
   reader.onload = ev => {
     try {
-      const imported = JSON.parse(ev.target.result);
-      if (imported.dailyRecords) dailyRecords = imported.dailyRecords;
-      if (imported.trips) trips = imported.trips;
+      const imp = JSON.parse(ev.target.result);
+      if (imp.dailyRecords) dailyRecords = imp.dailyRecords;
+      if (imp.trips) trips = imp.trips;
       saveToLocalStorage();
       updateReport();
       loadTrips();
-      alert("✅ Import berjaya!");
-    } catch (err) {
-      alert("❌ Fail import rosak");
-    }
+      alert("Import berjaya!");
+    } catch(err) { alert("Fail import rosak"); }
   };
   reader.readAsText(file);
 }
