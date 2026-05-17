@@ -1,0 +1,27 @@
+# Dependencies / Build
+node_modules/
+dist/
+build/
+
+# Environment & Secrets (PENTING!)
+*.env
+firebase-config.js
+config.js
+
+# Firebase / Local
+.firebase/
+*.log
+firebase-debug.log
+
+# OS & Editor
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# LocalStorage backup (jangan commit data user)
+*.json.bak
+backup/
+
+# Optional: kalau ada html2pdf bundle besar
+html2pdf.bundle.min.js

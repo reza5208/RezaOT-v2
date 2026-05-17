@@ -1,0 +1,253 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #f0f4f8, #e6f0fa);
+    color: #333;
+    line-height: 1.6;
+    padding: 10px 0;
+}
+
+.container {
+    max-width: 1100px;
+    margin: 15px auto;
+    padding: 20px;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 8px 25px rgba(0, 123, 255, 0.15);
+    overflow: hidden;
+}
+
+/* Header */
+h1 {
+    text-align: center;
+    color: #007bff;
+    font-size: 1.8rem;
+    margin-bottom: 20px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.header-info {
+    background: #f8f9fa;
+    padding: 12px 15px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    font-size: 0.95rem;
+}
+
+/* Forms */
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    margin-bottom: 25px;
+}
+
+.form-grid label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 600;
+    color: #444;
+}
+
+.form-grid input,
+.form-grid select {
+    width: 100%;
+    padding: 12px 14px;
+    border: 2px solid #ddd;
+    border-radius: 10px;
+    font-size: 16px;
+    transition: all 0.3s;
+}
+
+.form-grid input:focus,
+.form-grid select:focus {
+    border-color: #007bff;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0,123,255,0.2);
+}
+
+button {
+    padding: 12px 20px;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    transition: all 0.3s;
+    box-shadow: 0 4px 10px rgba(0,123,255,0.3);
+}
+
+button:hover {
+    background: #0056b3;
+    transform: translateY(-2px);
+}
+
+.secondary-btn {
+    background: #6c757d;
+    box-shadow: 0 4px 10px rgba(108,117,125,0.3);
+}
+
+.secondary-btn:hover {
+    background: #5a6268;
+}
+
+/* Manage Destinasi */
+.manage-trips {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 12px;
+    margin: 20px 0;
+    border: 1px solid #e0e0e0;
+}
+
+.add-trip {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.add-trip input {
+    flex: 1;
+    padding: 12px;
+    border-radius: 10px;
+}
+
+/* Table */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+}
+
+th, td {
+    padding: 12px 8px;
+    text-align: center;
+    border-bottom: 1px solid #eee;
+    vertical-align: middle;
+}
+
+th {
+    background: #007bff;
+    color: white;
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+td {
+    font-size: 15px;
+}
+
+/* Weekend Highlight */
+.saturday { background: #fff3cd !important; }
+.sunday   { background: #f8d7da !important; }
+
+/* Action Buttons */
+.edit-btn {
+    background: #28a745;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    margin-right: 6px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.delete-btn {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.edit-btn:hover { background: #218838; }
+.delete-btn:hover { background: #c82333; }
+
+/* Total OT */
+.total-ot {
+    text-align: center;
+    margin: 25px 0;
+    padding: 18px;
+    background: linear-gradient(135deg, #e7f3ff, #d4e9ff);
+    border-radius: 12px;
+    font-size: 1.4rem;
+    font-weight: bold;
+    color: #007bff;
+    box-shadow: 0 4px 15px rgba(0,123,255,0.2);
+}
+
+/* Sembunyikan lajur tandatangan di skrin biasa */
+.print-only {
+    display: none !important;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .container {
+        margin: 10px;
+        padding: 15px;
+    }
+    
+    table {
+        font-size: 14px;
+    }
+    
+    th, td {
+        padding: 10px 6px;
+    }
+    
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* PRINT STYLES */
+@media print {
+    .no-print { 
+        display: none !important; 
+    }
+    
+    .print-only {
+        display: table-cell !important;
+        width: 120px;
+        border: 1px solid #ccc;
+        min-height: 60px;
+    }
+    
+    body { 
+        background: white; 
+    }
+    
+    .container { 
+        box-shadow: none; 
+        margin: 0; 
+        padding: 10px; 
+        border-radius: 0; 
+        max-width: 100%;
+    }
+    
+    table { 
+        font-size: 13px; 
+        page-break-inside: auto;
+    }
+    
+    th, td {
+        padding: 8px 6px;
+    }
+}
