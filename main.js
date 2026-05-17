@@ -1,4 +1,4 @@
-// main.js
+// main.js - Versi Stabil Berjaya
 const firebaseConfig = {
   apiKey: "AIzaSyAIxHsCJYkJ05MflQnGTibGlCNru-dEPPs",
   authDomain: "reza-ot.firebaseapp.com",
@@ -58,12 +58,11 @@ function loadDataFromFirebase() {
   });
 }
 
-// ==================== INITIALIZE ====================
+// ==================== INIT ====================
 document.addEventListener("DOMContentLoaded", () => {
   const now = new Date();
   currentMonthKey = `${monthNames[now.getMonth()]} ${now.getFullYear()}`;
 
-  // Set UI values
   document.getElementById("monthYear").value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   document.getElementById("currentMonth").textContent = currentMonthKey;
   document.getElementById("date").value = now.toISOString().split("T")[0];
@@ -86,7 +85,7 @@ function setupEventListeners() {
   document.getElementById("printButton").addEventListener("click", () => window.print());
 }
 
-// ==================== TOGGLE MANAGE DESTINASI ====================
+// ==================== TOGGLE MANAGE ====================
 function toggleManageSection() {
   const section = document.getElementById("manageDestinations");
   const btn = document.getElementById("toggleManageBtn");
@@ -162,7 +161,6 @@ function handleTripFormSubmit(e) {
   saveToLocalStorage();
   updateReport();
 
-  // Clear form
   document.getElementById("destination").value = "";
   document.getElementById("airwayBill").value = "";
   document.getElementById("airwayBillField").style.display = "none";
@@ -176,7 +174,6 @@ function deleteRecord(date) {
   }
 }
 
-// ==================== UPDATE REPORT ====================
 function updateReport() {
   let totalOT = 0;
   const tbody = document.querySelector("#reportTable tbody");
@@ -215,7 +212,6 @@ function updateReport() {
   document.getElementById("totalOT").textContent = totalOT.toFixed(2);
 }
 
-// ==================== EXPORT & IMPORT ====================
 function exportData() {
   const data = { dailyRecords, trips, month: currentMonthKey, exportedAt: new Date().toISOString() };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
