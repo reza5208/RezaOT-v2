@@ -1,7 +1,7 @@
 {
   "name": "RezaOT - Rekod OT & Kehadiran",
   "short_name": "RezaOT",
-  "description": "Aplikasi Rekod Clock In/Out, Trip dan Overtime untuk Pemandu Transport",
+  "description": "Aplikasi Rekod Clock In/Out, Trip dan Overtime",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#ffffff",
@@ -9,17 +9,17 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "icon-192.png",
+      "src": "assets/icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "icon-512.png",
+      "src": "assets/icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png"
     },
     {
-      "src": "apple-icon-180.png",
+      "src": "assets/icons/apple-icon-180.png",
       "sizes": "180x180",
       "type": "image/png"
     }
