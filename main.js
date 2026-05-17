@@ -1,4 +1,4 @@
-// main.js - Improved & Stable Version
+// main.js - Harmonized Stable Version
 const firebaseConfig = {
   apiKey: "AIzaSyAIxHsCJYkJ05MflQnGTibGlCNru-dEPPs",
   authDomain: "reza-ot.firebaseapp.com",
@@ -17,7 +17,7 @@ let trips = [];
 let currentMonthKey = "";
 let dailyRecords = {};
 
-// ==================== LOCAL STORAGE ====================
+// LOCAL STORAGE
 function loadFromLocalStorage() {
   const savedTrips = localStorage.getItem("trips");
   trips = savedTrips ? JSON.parse(savedTrips) : [...defaultTrips];
@@ -32,12 +32,10 @@ function saveToLocalStorage() {
   saveToFirebase();
 }
 
-// ==================== FIREBASE ====================
+// FIREBASE
 function saveToFirebase() {
   db.ref(`users/default/${currentMonthKey}`).update({
-    dailyRecords: dailyRecords,
-    trips: trips,
-    lastUpdated: new Date().toISOString()
+    dailyRecords, trips, lastUpdated: new Date().toISOString()
   }).catch(err => console.error(err));
 }
 
@@ -45,8 +43,8 @@ function loadDataFromFirebase() {
   db.ref(`users/default/${currentMonthKey}`).once('value', (snapshot) => {
     const data = snapshot.val();
     if (data) {
-      if (data.dailyRecords) dailyRecords = data.dailyRecords;
-      if (data.trips) trips = data.trips;
+      dailyRecords = data.dailyRecords || dailyRecords;
+      trips = data.trips || trips;
     }
     saveToLocalStorage();
     updateReport();
@@ -58,7 +56,7 @@ function loadDataFromFirebase() {
   });
 }
 
-// ==================== INIT ====================
+// INIT
 document.addEventListener("DOMContentLoaded", () => {
   const now = new Date();
   currentMonthKey = `${monthNames[now.getMonth()]} ${now.getFullYear()}`;
@@ -85,7 +83,6 @@ function setupEventListeners() {
   document.getElementById("printButton").addEventListener("click", () => window.print());
 }
 
-// Toggle Manage
 function toggleManageSection() {
   const section = document.getElementById("manageDestinations");
   const btn = document.getElementById("toggleManageBtn");
@@ -98,7 +95,7 @@ function toggleManageSection() {
   }
 }
 
-// Handlers (simplified + stable)
+// Handlers
 function handleMonthChange() {
   const [year, month] = this.value.split("-");
   currentMonthKey = `${getMonthName(month)} ${year}`;
@@ -130,7 +127,7 @@ function handleClockFormSubmit(e) {
   const cin = document.getElementById("clockIn").value;
   const cout = document.getElementById("clockOut").value;
 
-  if (cin && cout && cout <= cin) return alert("Clock Out mesti lewat!");
+  if (cin && cout && cout <= cin) return alert("Clock Out mesti lewat dari Clock In!");
 
   if (!dailyRecords[date]) dailyRecords[date] = { trips: [], clock_in: "", clock_out: "" };
   dailyRecords[date].clock_in = cin;
@@ -210,7 +207,6 @@ function updateReport() {
   document.getElementById("totalOT").textContent = totalOT.toFixed(2);
 }
 
-// Export & Import (sama)
 function exportData() {
   const data = { dailyRecords, trips, month: currentMonthKey };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
