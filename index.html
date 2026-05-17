@@ -4,133 +4,141 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Borang Kerja Lebih Masa - Khairul Reza</title>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="manifest" href="manifest.json">
     
-    <!-- PWA Improvements -->
+    <!-- PWA & Meta -->
+    <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#007bff">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <link rel="icon" href="assets/icons/icon-192.png" type="image/png">
 
-    <!-- Firebase SDK - Latest Version -->
-    <script src="https://www.gstatic.com/firebasejs/12.13.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/12.13.0/firebase-database-compat.js"></script>
+    <link rel="stylesheet" href="styles.css">
     
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+    
+    <!-- html2pdf -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body>
-<div class="container">
+    <div class="container">
+        <header>
+            <h1>🚛 Borang Kerja Lebih Masa</h1>
+            <p>WH3 Transport - Khairul Reza</p>
+        </header>
 
-    <h1>Borang Kerja Lebih Masa</h1>
+        <!-- Month Selector -->
+        <div class="no-print controls">
+            <label for="monthYear">Pilih Bulan & Tahun:</label>
+            <input type="month" id="monthYear" required>
+        </div>
 
-    <!-- Month Selector -->
-    <div class="no-print controls">
-        <label for="monthYear">Pilih Bulan & Tahun:</label>
-        <input type="month" id="monthYear" required>
+        <!-- Header Info -->
+        <div class="header-info">
+            <p><strong>Nama:</strong> Khairul Reza | <strong>Jabatan:</strong> WH3 Transport</p>
+            <p><strong>Bulan:</strong> <span id="currentMonth"></span></p>
+            <p><strong>Nama Ketua:</strong> <span id="supervisorName">Talib</span></p>
+        </div>
+
+        <hr class="no-print">
+
+        <!-- Clock Form -->
+        <form id="clockForm" class="no-print form-grid">
+            <div>
+                <label for="date">Tarikh:</label>
+                <input type="date" id="date" required>
+            </div>
+            <div>
+                <label for="clockIn">Clock-In:</label>
+                <input type="time" id="clockIn" required>
+            </div>
+            <div>
+                <label for="clockOut">Clock-Out:</label>
+                <input type="time" id="clockOut" required>
+            </div>
+            <button type="submit">✅ Simpan Kehadiran</button>
+        </form>
+
+        <hr class="no-print">
+
+        <!-- Trip Form -->
+        <form id="tripForm" class="no-print form-grid">
+            <div>
+                <label for="destination">Destinasi:</label>
+                <select id="destination" required></select>
+            </div>
+            <div id="airwayBillField" style="display: none;">
+                <label for="airwayBill">Airway Bill (KLIA Cargo):</label>
+                <input type="text" id="airwayBill" placeholder="Contoh: ABC12345">
+            </div>
+            <button type="submit">➕ Tambah Trip</button>
+        </form>
+
+        <!-- Manage Destinations -->
+        <div class="no-print toggle-section">
+            <button id="toggleManageBtn" class="secondary-btn">⚙️ Manage Destinasi</button>
+        </div>
+
+        <div id="manageDestinations" class="no-print manage-trips" style="display: none;">
+            <h3>Manage Destinasi</h3>
+            <div class="add-trip">
+                <input type="text" id="newTrip" placeholder="Nama destinasi baru">
+                <button id="addTripButton">Tambah</button>
+            </div>
+            <h4>Senarai Destinasi Semasa:</h4>
+            <ul id="tripList" class="trip-list"></ul>
+        </div>
+
+        <hr class="no-print">
+
+        <!-- Report Table -->
+        <h2>Laporan Bulanan</h2>
+        <table id="reportTable">
+            <thead>
+                <tr>
+                    <th>Tarikh</th>
+                    <th>Destinasi</th>
+                    <th>Clock-In</th>
+                    <th>Clock-Out</th>
+                    <th>OT (Jam)</th>
+                    <th class="print-only">Tandatangan Anda</th>
+                    <th class="print-only">Tandatangan Penyelia</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+        <p id="noRecordsMessage" class="no-records">Tiada rekod untuk bulan ini.</p>
+
+        <div class="total-ot">
+            <h3>Jumlah OT Bulan Ini: <span id="totalOT">0.00</span> Jam</h3>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="no-print actions">
+            <button id="exportPDF">Export ke PDF</button>
+            <button id="printButton">🖨️ Cetak Laporan (A4)</button>
+            <button id="exportDataBtn">Export Data (Backup)</button>
+            <label class="import-btn">
+                Import Data
+                <input type="file" id="importDataInput" accept=".json" style="display:none;">
+            </label>
+        </div>
     </div>
 
-    <!-- Header Info -->
-    <div class="header-info">
-        <p><strong>Nama:</strong> Khairul Reza | <strong>Jabatan:</strong> WH3 Transport</p>
-        <p><strong>Bulan:</strong> <span id="currentMonth"></span></p>
-        <p><strong>Nama Ketua:</strong> <span id="supervisorName">Talib</span></p>
-    </div>
-    <hr class="no-print">
+    <!-- Scripts -->
+    <script src="constants.js"></script>
+    <script src="utils.js"></script>
+    <script src="main.js"></script>
 
-    <!-- Clock Form -->
-    <form id="clockForm" class="no-print form-grid">
-        <div>
-            <label for="date">Tarikh:</label>
-            <input type="date" id="date" required>
-        </div>
-        <div>
-            <label for="clockIn">Clock-In:</label>
-            <input type="time" id="clockIn" required>
-        </div>
-        <div>
-            <label for="clockOut">Clock-Out:</label>
-            <input type="time" id="clockOut" required>
-        </div>
-        <button type="submit">Simpan Kehadiran</button>
-    </form>
-    <hr class="no-print">
-
-    <!-- Trip Form -->
-    <form id="tripForm" class="no-print form-grid">
-        <div>
-            <label for="destination">Destinasi:</label>
-            <select id="destination" required></select>
-        </div>
-        <div id="airwayBillField" style="display: none;">
-            <label for="airwayBill">Airway Bill (KLIA Cargo):</label>
-            <input type="text" id="airwayBill" placeholder="Contoh: ABC12345">
-        </div>
-        <button type="submit">Tambah Trip</button>
-    </form>
-
-    <!-- Toggle Manage Destinations -->
-    <div class="no-print toggle-section">
-        <button id="toggleManageBtn" class="secondary-btn">Manage Destinasi ▼</button>
-    </div>
-
-    <!-- Manage Destinations -->
-    <div id="manageDestinations" class="no-print manage-trips" style="display: none;">
-        <h3>Manage Destinasi</h3>
-        <div class="add-trip">
-            <input type="text" id="newTrip" placeholder="Nama destinasi baru">
-            <button id="addTripButton">Tambah</button>
-        </div>
-        <h4>Senarai Destinasi Semasa:</h4>
-        <ul id="tripList" class="trip-list"></ul>
-    </div>
-    <hr class="no-print">
-
-    <!-- Report Table -->
-    <h2>Laporan Bulanan</h2>
-    <table id="reportTable">
-        <thead>
-            <tr>
-                <th>Tarikh</th>
-                <th>Destinasi</th>
-                <th>Clock-In</th>
-                <th>Clock-Out</th>
-                <th>OT (Jam)</th>
-                <th class="print-only">Tandatangan Anda</th>
-                <th class="print-only">Tandatangan Penyelia</th>
-                <th>Aksi</th>
-            </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
-
-    <p id="noRecordsMessage" class="no-records">Tiada rekod untuk bulan ini.</p>
-
-    <div class="total-ot">
-        <h3>Jumlah OT Bulan Ini: <span id="totalOT">0.00</span> Jam</h3>
-    </div>
-
-    <!-- Action Buttons -->
-    <div class="no-print actions">
-        <button id="exportPDF">Export ke PDF</button>
-        <button id="printButton">Cetak Laporan (A4)</button>
-        <button id="exportDataBtn">Export Data (Backup)</button>
-        <label class="import-btn">
-            Import Data
-            <input type="file" id="importDataInput" accept=".json" style="display:none;">
-        </label>
-    </div>
-
-</div>
-
-<!-- Scripts -->
-<script src="constants.js"></script>
-<script src="utils.js"></script>
-<script src="main.js"></script>
-
-<script>
-    if ("serviceWorker" in navigator) {
-        navigator.serviceWorker.register("sw.js");
-    }
-</script>
+    <script>
+        if ("serviceWorker" in navigator) {
+            navigator.serviceWorker.register("sw.js")
+                .then(() => console.log("✅ Service Worker Registered"))
+                .catch(err => console.log("SW Error:", err));
+        }
+    </script>
 </body>
 </html>
