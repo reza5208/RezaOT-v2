@@ -1,40 +1,46 @@
-const CACHE_NAME = "rezaot-v5";   // Naikkan version
+// sw.js - RezaOT Service Worker v6
+const CACHE_NAME = "rezaot-v6";   // Naikkan version bila update
 
 const urlsToCache = [
   "./",
   "./index.html",
   "./styles.css",
-  "./constants.js",
-  "./utils.js",
   "./main.js",
+  "./utils.js",
+  "./constants.js",
   "./manifest.json",
-  "./assets/icons/android-icon-192x192.png",
-  "./assets/icons/android-icon-512x512.png",
-  "./assets/icons/apple-icon-180x180.png"
+  "./icon-192.png",
+  "./icon-512.png",
+  "./apple-icon-180.png"
 ];
 
-self.addEventListener("install", event => {
-  console.log("✅ Installing RezaOT Service Worker v5...");
+self.addEventListener("install", (event) => {
+  console.log("✅ RezaOT Service Worker installing... v6");
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache))
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(urlsToCache);
+    })
   );
 });
 
-self.addEventListener("activate", event => {
+self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then(cacheNames => {
+    caches.keys().then((cacheNames) => {
       return Promise.all(
-        cacheNames.map(cache => {
-          if (cache !== CACHE_NAME) return caches.delete(cache);
+        cacheNames.map((cache) => {
+          if (cache !== CACHE_NAME) {
+            console.log("Deleting old cache:", cache);
+            return caches.delete(cache);
+          }
         })
       );
     })
   );
 });
 
-self.addEventListener("fetch", event => {
+self.addEventListener("fetch", (event) => {
   event.respondWith(
-    caches.match(event.request).then(response => {
+    caches.match(event.request).then((response) => {
       return response || fetch(event.request);
     })
   );
