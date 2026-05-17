@@ -1,7 +1,7 @@
 {
   "name": "RezaOT - Rekod OT & Kehadiran",
   "short_name": "RezaOT",
-  "description": "Aplikasi Rekod Clock In/Out, Trip dan Overtime",
+  "description": "Aplikasi Rekod Clock In/Out, Trip dan Overtime Khairul Reza",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#ffffff",
