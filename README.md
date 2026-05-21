@@ -28,7 +28,7 @@ Semua jam dikira sebagai OT.
 
 ## 📥 Cara Guna
 
-1. Buka [Link](https://reza5208.github.io/RezaOT/)
+1. Buka [Link](https://reza5208.github.io/RezaOT-v2/)
 2. Clock-in/clock-out, tambah trip, dan simpan.
 3. Laporan auto update. Tekan **Cetak** atau **Export PDF**.
 
