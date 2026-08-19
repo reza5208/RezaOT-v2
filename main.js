@@ -1,4 +1,4 @@
-// main.js - RezaOT v2 (Complete + Excel Fix)
+// main.js - RezaOT v2 (Complete + Excel Fix + XSS-safe)
 
 const firebaseConfig = {
   apiKey: "AIzaSyAIxHsCJYkJ05MflQnGTibGlCNru-dEPPs",
@@ -138,7 +138,6 @@ function handleMonthChange() {
   const currentMonthEl = document.getElementById("currentMonth");
   if (currentMonthEl) currentMonthEl.textContent = currentMonthKey;
 
-  // Load data for the new month
   loadFromLocalStorage();
   loadDataFromFirebase();
 }
@@ -219,7 +218,6 @@ function handleTripFormSubmit(e) {
     return;
   }
 
-  // Ensure record exists
   if (!dailyRecords[date]) {
     dailyRecords[date] = { clock_in: "", clock_out: "", trips: [] };
   }
@@ -236,7 +234,6 @@ function handleTripFormSubmit(e) {
   saveToLocalStorage();
   updateReport();
 
-  // Reset form partially
   document.getElementById("destination").value = "";
   if (awbInput) awbInput.value = "";
   document.getElementById("airwayBillField").style.display = "none";
@@ -260,12 +257,11 @@ function editRecord(date) {
   document.getElementById("clockIn").value = rec.clock_in || "";
   document.getElementById("clockOut").value = rec.clock_out || "";
 
-  // Scroll to form
   document.getElementById("clockForm").scrollIntoView({ behavior: "smooth" });
   alert("Data dimuatkan ke form. Klik Simpan Kehadiran untuk kemaskini.");
 }
 
-// ==================== UPDATE REPORT ====================
+// ==================== UPDATE REPORT (XSS-safe) ====================
 function updateReport() {
   const tbody = document.querySelector("#reportTable tbody");
   const noRecordsMsg = document.getElementById("noRecordsMessage");
@@ -292,31 +288,73 @@ function updateReport() {
     totalOT += ot;
 
     const dateObj = new Date(date + "T00:00:00");
-    const day = dateObj.getDay(); // 0 = Sunday, 6 = Saturday
-
-    let rowClass = "";
-    if (day === 6) rowClass = "saturday";
-    if (day === 0) rowClass = "sunday";
-
-    const tripsText = (rec.trips && rec.trips.length > 0)
-      ? rec.trips.join("<br>")
-      : "—";
+    const day = dateObj.getDay();
 
     const tr = document.createElement("tr");
-    tr.className = rowClass;
-    tr.innerHTML = `
-      <td>${formatDateForPDF(date)}</td>
-      <td>${tripsText}</td>
-      <td>${formatTime(rec.clock_in)}</td>
-      <td>${formatTime(rec.clock_out)}</td>
-      <td><strong>${ot.toFixed(2)}</strong></td>
-      <td class="print-only"></td>
-      <td class="print-only"></td>
-      <td class="no-print">
-        <button class="edit-btn" onclick="editRecord('${date}')">Edit</button>
-        <button class="delete-btn" onclick="deleteRecord('${date}')">Padam</button>
-      </td>
-    `;
+    if (day === 6) tr.className = "saturday";
+    if (day === 0) tr.className = "sunday";
+
+    // Tarikh
+    const tdDate = document.createElement("td");
+    tdDate.textContent = formatDateForPDF(date);
+
+    // Destinasi (safe — each trip as text + <br>)
+    const tdTrips = document.createElement("td");
+    const tripList = rec.trips || [];
+    if (tripList.length === 0) {
+      tdTrips.textContent = "—";
+    } else {
+      tripList.forEach((trip, i) => {
+        if (i > 0) tdTrips.appendChild(document.createElement("br"));
+        tdTrips.appendChild(document.createTextNode(String(trip)));
+      });
+    }
+
+    // Clock in / out
+    const tdIn = document.createElement("td");
+    tdIn.textContent = formatTime(rec.clock_in);
+
+    const tdOut = document.createElement("td");
+    tdOut.textContent = formatTime(rec.clock_out);
+
+    // OT
+    const tdOT = document.createElement("td");
+    const strong = document.createElement("strong");
+    strong.textContent = ot.toFixed(2);
+    tdOT.appendChild(strong);
+
+    // Signature columns (print only)
+    const tdSig1 = document.createElement("td");
+    tdSig1.className = "print-only";
+    const tdSig2 = document.createElement("td");
+    tdSig2.className = "print-only";
+
+    // Actions (no-print) — use addEventListener, not inline onclick
+    const tdActions = document.createElement("td");
+    tdActions.className = "no-print";
+
+    const editBtn = document.createElement("button");
+    editBtn.className = "edit-btn";
+    editBtn.textContent = "Edit";
+    editBtn.addEventListener("click", () => editRecord(date));
+
+    const delBtn = document.createElement("button");
+    delBtn.className = "delete-btn";
+    delBtn.textContent = "Padam";
+    delBtn.addEventListener("click", () => deleteRecord(date));
+
+    tdActions.appendChild(editBtn);
+    tdActions.appendChild(delBtn);
+
+    tr.appendChild(tdDate);
+    tr.appendChild(tdTrips);
+    tr.appendChild(tdIn);
+    tr.appendChild(tdOut);
+    tr.appendChild(tdOT);
+    tr.appendChild(tdSig1);
+    tr.appendChild(tdSig2);
+    tr.appendChild(tdActions);
+
     tbody.appendChild(tr);
   });
 
@@ -333,7 +371,6 @@ function exportToExcel() {
   const wb = XLSX.utils.book_new();
   const data = [];
 
-  // Header
   data.push([
     "Tarikh",
     "Hari",
@@ -358,8 +395,8 @@ function exportToExcel() {
     const dateObj = new Date(date + "T00:00:00");
     const dayName = dateObj.toLocaleDateString("ms-MY", { weekday: "long" });
 
-    const hasKLIA = (rec.trips || []).some(t =>
-      typeof t === "string" && t.toLowerCase().includes("klia cargo")
+    const hasKLIA = (rec.trips || []).some(
+      (t) => typeof t === "string" && t.toLowerCase().includes("klia cargo")
     );
     if (hasKLIA) kliaCargoDays++;
 
@@ -376,7 +413,6 @@ function exportToExcel() {
           }
         }
 
-        // OT only shown on the first row of the day to avoid double-counting
         const otValue = index === 0 ? ot.toFixed(2) : "";
 
         data.push([
@@ -408,16 +444,18 @@ function exportToExcel() {
 
   const ws = XLSX.utils.aoa_to_sheet(data);
 
-  // Summary section
   const summaryRow = data.length + 2;
-  XLSX.utils.sheet_add_aoa(ws, [
-    ["Ringkasan Bulan", ""],
-    ["Total OT Keseluruhan", totalOT.toFixed(2) + " jam"],
-    ["Total Hari KLIA Cargo", kliaCargoDays + " hari"],
-    ["Total AWB", totalAWB]
-  ], { origin: summaryRow });
+  XLSX.utils.sheet_add_aoa(
+    ws,
+    [
+      ["Ringkasan Bulan", ""],
+      ["Total OT Keseluruhan", totalOT.toFixed(2) + " jam"],
+      ["Total Hari KLIA Cargo", kliaCargoDays + " hari"],
+      ["Total AWB", totalAWB]
+    ],
+    { origin: summaryRow }
+  );
 
-  // Column widths
   ws["!cols"] = [
     { wch: 12 },
     { wch: 12 },
@@ -445,7 +483,9 @@ function exportData() {
     exportedAt: new Date().toISOString()
   };
 
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {
+    type: "application/json"
+  });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -481,6 +521,5 @@ function importData(e) {
   };
   reader.readAsText(file);
 
-  // Reset input so same file can be selected again
   e.target.value = "";
 }
