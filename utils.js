@@ -8,17 +8,6 @@ function getMonthName(month) {
   return monthNames[parseInt(month, 10) - 1] || "Unknown";
 }
 
-/** Escape HTML special chars (defense-in-depth) */
-function escapeHtml(str) {
-  if (str == null) return "";
-  return String(str)
-    .replace(/&/g, "&")
-    .replace(/</g, "<")
-    .replace(/>/g, ">")
-    .replace(/"/g, """)
-    .replace(/'/g, "&#39;");
-}
-
 function loadTrips() {
   const destinationDropdown = document.getElementById("destination");
   if (!destinationDropdown) return;
@@ -71,9 +60,8 @@ function renderTripList() {
   document.querySelectorAll(".delete-trip-btn").forEach((btn) => {
     btn.addEventListener("click", function () {
       const index = parseInt(this.dataset.index, 10);
-      if (confirm(`Padam "${trips[index]}"?`)) {
+      if (confirm("Padam destinasi ini?")) {
         trips.splice(index, 1);
-        // Sync full storage + Firebase if available
         if (typeof saveToLocalStorage === "function") {
           saveToLocalStorage();
         } else {
@@ -87,8 +75,11 @@ function renderTripList() {
 
 function formatDateForPDF(date) {
   if (!date) return "";
-  const [year, month, day] = date.split("-");
-  return `${day.padStart(2, "0")}/${month.padStart(2, "0")}/${year.slice(-2)}`;
+  const parts = date.split("-");
+  const year = parts[0];
+  const month = parts[1];
+  const day = parts[2];
+  return day.padStart(2, "0") + "/" + month.padStart(2, "0") + "/" + year.slice(-2);
 }
 
 function formatTime(time) {
@@ -96,35 +87,35 @@ function formatTime(time) {
 }
 
 // ==================== OT LOGIC ====================
-function calculateOT(clockIn, clockOut, date, recordTrips = []) {
+function calculateOT(clockIn, clockOut, date, recordTrips) {
   if (!clockIn || !clockOut) return 0;
+  if (!recordTrips) recordTrips = [];
 
-  const toMinutes = (time) => {
-    const [h, m] = time.split(":").map(Number);
-    return h * 60 + m;
-  };
+  function toMinutes(time) {
+    var parts = time.split(":");
+    return Number(parts[0]) * 60 + Number(parts[1]);
+  }
 
-  let start = toMinutes(clockIn);
-  let end = toMinutes(clockOut);
+  var start = toMinutes(clockIn);
+  var end = toMinutes(clockOut);
   if (end < start) end += 1440;
 
-  const hasKLIACargo = recordTrips.some(
-    (t) => typeof t === "string" && t.toLowerCase().includes("klia cargo")
-  );
+  var hasKLIACargo = recordTrips.some(function (t) {
+    return typeof t === "string" && t.toLowerCase().includes("klia cargo");
+  });
 
-  // Consistent local date parse (avoid UTC shift)
-  const day = new Date(date + "T00:00:00").getDay();
+  var day = new Date(date + "T00:00:00").getDay();
 
-  let otMinutes = 0;
+  var otMinutes = 0;
 
   if (hasKLIACargo && day !== 0) {
     otMinutes = 0;
   } else if (day === 0) {
     otMinutes = end - start;
   } else if (day === 6) {
-    otMinutes = Math.max(end - Math.max(start, 840), 0); // 14:00
+    otMinutes = Math.max(end - Math.max(start, 840), 0);
   } else {
-    otMinutes = Math.max(end - Math.max(start, 1020), 0); // 17:00
+    otMinutes = Math.max(end - Math.max(start, 1020), 0);
   }
 
   return Math.round((otMinutes / 60) * 100) / 100;
