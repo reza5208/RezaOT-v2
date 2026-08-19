@@ -4,8 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RezaOT - Rekod OT</title>
- 
-    <!-- FAVICON & APPLE TOUCH ICON -->
+
     <link rel="apple-touch-icon" sizes="57x57" href="assets/icons/apple-icon-57x57.png">
     <link rel="apple-touch-icon" sizes="60x60" href="assets/icons/apple-icon-60x60.png">
     <link rel="apple-touch-icon" sizes="72x72" href="assets/icons/apple-icon-72x72.png">
@@ -15,43 +14,38 @@
     <link rel="apple-touch-icon" sizes="144x144" href="assets/icons/apple-icon-144x144.png">
     <link rel="apple-touch-icon" sizes="152x152" href="assets/icons/apple-icon-152x152.png">
     <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-icon-180x180.png">
-    
-    <!-- ANDROID ICON -->
+
     <link rel="icon" type="image/png" sizes="192x192" href="assets/icons/android-icon-192x192.png">
     <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="96x96" href="assets/icons/favicon-96x96.png">
     <link rel="icon" type="image/png" sizes="16x16" href="assets/icons/favicon-16x16.png">
-    
-    <!-- MANIFEST -->
+
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#007bff">
     <meta name="msapplication-TileColor" content="#007bff">
     <meta name="msapplication-TileImage" content="assets/icons/ms-icon-144x144.png">
 
-    <!-- CSS -->
     <link rel="stylesheet" href="styles.css">
 
-    <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
-    
-    <!-- SheetJS - Excel Export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>🚛 Borang Kerja Lebih Masa</h1>
+            <div class="header-top">
+                <h1>🚛 Borang Kerja Lebih Masa</h1>
+                <button type="button" id="darkModeBtn" class="icon-btn no-print" title="Tukar tema">🌙</button>
+            </div>
             <p>WH3 Transport - Khairul Reza</p>
         </header>
 
-        <!-- Month Selector -->
         <div class="no-print controls">
             <label for="monthYear">Pilih Bulan & Tahun:</label>
             <input type="month" id="monthYear" required>
         </div>
 
-        <!-- Header Info -->
         <div class="header-info">
             <p><strong>Nama:</strong> Khairul Reza | <strong>Jabatan:</strong> WH3 Transport</p>
             <p><strong>Bulan:</strong> <span id="currentMonth"></span></p>
@@ -60,7 +54,6 @@
 
         <hr class="no-print">
 
-        <!-- Clock Form -->
         <form id="clockForm" class="no-print form-grid">
             <div>
                 <label for="date">Tarikh:</label>
@@ -68,18 +61,23 @@
             </div>
             <div>
                 <label for="clockIn">Clock-In:</label>
-                <input type="time" id="clockIn" required>
+                <div class="time-row">
+                    <input type="time" id="clockIn" required>
+                    <button type="button" class="now-btn" id="nowInBtn" title="Guna masa sekarang">⏱️ Sekarang</button>
+                </div>
             </div>
             <div>
                 <label for="clockOut">Clock-Out:</label>
-                <input type="time" id="clockOut" required>
+                <div class="time-row">
+                    <input type="time" id="clockOut" required>
+                    <button type="button" class="now-btn" id="nowOutBtn" title="Guna masa sekarang">⏱️ Sekarang</button>
+                </div>
             </div>
             <button type="submit">✅ Simpan Kehadiran</button>
         </form>
 
         <hr class="no-print">
 
-        <!-- Trip Form -->
         <form id="tripForm" class="no-print form-grid">
             <div>
                 <label for="destination">Destinasi:</label>
@@ -92,7 +90,6 @@
             <button type="submit">➕ Tambah Trip</button>
         </form>
 
-        <!-- Manage Destinations -->
         <div class="no-print toggle-section">
             <button id="toggleManageBtn" class="secondary-btn">⚙️ Manage Destinasi</button>
         </div>
@@ -108,7 +105,6 @@
 
         <hr class="no-print">
 
-        <!-- Report Table -->
         <h2>Laporan Bulanan</h2>
         <table id="reportTable">
             <thead>
@@ -132,12 +128,28 @@
             <h3>Jumlah OT Bulan Ini: <span id="totalOT">0.00</span> Jam</h3>
         </div>
 
-        <!-- Action Buttons -->
+        <div class="summary-cards no-print" id="summaryCards">
+            <div class="summary-card">
+                <span class="summary-label">Hari Berkerja</span>
+                <span class="summary-value" id="sumDays">0</span>
+            </div>
+            <div class="summary-card">
+                <span class="summary-label">Hari KLIA Cargo</span>
+                <span class="summary-value" id="sumKlia">0</span>
+            </div>
+            <div class="summary-card">
+                <span class="summary-label">Total AWB</span>
+                <span class="summary-value" id="sumAwb">0</span>
+            </div>
+            <div class="summary-card">
+                <span class="summary-label">Total Trip</span>
+                <span class="summary-value" id="sumTrips">0</span>
+            </div>
+        </div>
+
         <div class="no-print actions">
             <button id="printButton">🖨️ Cetak Laporan (A4)</button>
-            <button id="exportExcelBtn" style="background:#28a745; color:white; padding:12px 20px; font-size:16px;">
-                📊 Export ke Excel
-            </button>
+            <button id="exportExcelBtn" class="excel-btn">📊 Export ke Excel</button>
             <button id="exportDataBtn">Export Data (Backup)</button>
             <label class="import-btn">
                 Import Data
@@ -146,7 +158,8 @@
         </div>
     </div>
 
-    <!-- Scripts -->
+    <div id="toast" class="toast no-print" hidden></div>
+
     <script src="constants.js"></script>
     <script src="utils.js"></script>
     <script src="main.js"></script>

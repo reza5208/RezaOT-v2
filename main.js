@@ -1,4 +1,4 @@
-// main.js - RezaOT v2 (Complete + Excel Fix + XSS-safe)
+// main.js - RezaOT v2 (Complete + features)
 
 const firebaseConfig = {
   apiKey: "AIzaSyAIxHsCJYkJ05MflQnGTibGlCNru-dEPPs",
@@ -13,10 +13,57 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// ==================== GLOBAL STATE ====================
 let trips = [];
 let currentMonthKey = "";
 let dailyRecords = {};
+
+// ==================== TOAST ====================
+function showToast(message, duration = 2500) {
+  const el = document.getElementById("toast");
+  if (!el) {
+    alert(message);
+    return;
+  }
+  el.textContent = message;
+  el.hidden = false;
+  el.classList.add("show");
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => {
+    el.classList.remove("show");
+    setTimeout(() => { el.hidden = true; }, 300);
+  }, duration);
+}
+
+// ==================== DARK MODE ====================
+function initDarkMode() {
+  const saved = localStorage.getItem("darkMode") === "1";
+  document.body.classList.toggle("dark", saved);
+  const btn = document.getElementById("darkModeBtn");
+  if (btn) btn.textContent = saved ? "☀️" : "🌙";
+}
+
+function toggleDarkMode() {
+  const isDark = document.body.classList.toggle("dark");
+  localStorage.setItem("darkMode", isDark ? "1" : "0");
+  const btn = document.getElementById("darkModeBtn");
+  if (btn) btn.textContent = isDark ? "☀️" : "🌙";
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.content = isDark ? "#1e2229" : "#007bff";
+}
+
+// ==================== TIME HELPERS ====================
+function getCurrentTimeString() {
+  const now = new Date();
+  return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+}
+
+function setNowTime(inputId) {
+  const input = document.getElementById(inputId);
+  if (input) {
+    input.value = getCurrentTimeString();
+    showToast("Masa dikemaskini");
+  }
+}
 
 // ==================== LOCAL STORAGE ====================
 function loadFromLocalStorage() {
@@ -65,6 +112,8 @@ function loadDataFromFirebase() {
 
 // ==================== INITIALIZE ====================
 document.addEventListener("DOMContentLoaded", () => {
+  initDarkMode();
+
   const now = new Date();
   currentMonthKey = `${monthNames[now.getMonth()]} ${now.getFullYear()}`;
 
@@ -119,9 +168,17 @@ function setupEventListeners() {
 
   const excelBtn = document.getElementById("exportExcelBtn");
   if (excelBtn) excelBtn.addEventListener("click", exportToExcel);
+
+  const nowIn = document.getElementById("nowInBtn");
+  if (nowIn) nowIn.addEventListener("click", () => setNowTime("clockIn"));
+
+  const nowOut = document.getElementById("nowOutBtn");
+  if (nowOut) nowOut.addEventListener("click", () => setNowTime("clockOut"));
+
+  const darkBtn = document.getElementById("darkModeBtn");
+  if (darkBtn) darkBtn.addEventListener("click", toggleDarkMode);
 }
 
-// ==================== TOGGLE & HANDLERS ====================
 function toggleManageSection() {
   const section = document.getElementById("manageDestinations");
   if (!section) return;
@@ -162,12 +219,12 @@ function handleAddTrip() {
 
   const name = input.value.trim();
   if (!name) {
-    alert("Sila masukkan nama destinasi.");
+    showToast("Sila masukkan nama destinasi.");
     return;
   }
 
   if (trips.includes(name)) {
-    alert("Destinasi ini sudah wujud.");
+    showToast("Destinasi ini sudah wujud.");
     return;
   }
 
@@ -175,6 +232,7 @@ function handleAddTrip() {
   saveToLocalStorage();
   loadTrips();
   input.value = "";
+  showToast("Destinasi ditambah");
 }
 
 function handleClockFormSubmit(e) {
@@ -185,8 +243,12 @@ function handleClockFormSubmit(e) {
   const clockOut = document.getElementById("clockOut").value;
 
   if (!date || !clockIn || !clockOut) {
-    alert("Sila isi semua medan (Tarikh, Clock-In, Clock-Out).");
+    showToast("Sila isi semua medan (Tarikh, Clock-In, Clock-Out).");
     return;
+  }
+
+  if (dailyRecords[date] && (dailyRecords[date].clock_in || dailyRecords[date].clock_out)) {
+    if (!confirm(`Rekod untuk ${date} sudah wujud. Tulis ganti?`)) return;
   }
 
   if (!dailyRecords[date]) {
@@ -198,7 +260,7 @@ function handleClockFormSubmit(e) {
 
   saveToLocalStorage();
   updateReport();
-  alert("Kehadiran berjaya disimpan!");
+  showToast("Kehadiran berjaya disimpan!");
 }
 
 function handleTripFormSubmit(e) {
@@ -210,11 +272,11 @@ function handleTripFormSubmit(e) {
   const awb = awbInput ? awbInput.value.trim() : "";
 
   if (!date) {
-    alert("Sila pilih tarikh dahulu.");
+    showToast("Sila pilih tarikh dahulu.");
     return;
   }
   if (!destination) {
-    alert("Sila pilih destinasi.");
+    showToast("Sila pilih destinasi.");
     return;
   }
 
@@ -238,7 +300,7 @@ function handleTripFormSubmit(e) {
   if (awbInput) awbInput.value = "";
   document.getElementById("airwayBillField").style.display = "none";
 
-  alert("Trip berjaya ditambah!");
+  showToast("Trip berjaya ditambah!");
 }
 
 function deleteRecord(date) {
@@ -247,6 +309,20 @@ function deleteRecord(date) {
   delete dailyRecords[date];
   saveToLocalStorage();
   updateReport();
+  showToast("Rekod dipadam");
+}
+
+function deleteTrip(date, tripIndex) {
+  const rec = dailyRecords[date];
+  if (!rec || !Array.isArray(rec.trips)) return;
+
+  const name = rec.trips[tripIndex];
+  if (!confirm(`Padam trip "${name}"?`)) return;
+
+  rec.trips.splice(tripIndex, 1);
+  saveToLocalStorage();
+  updateReport();
+  showToast("Trip dipadam");
 }
 
 function editRecord(date) {
@@ -258,10 +334,45 @@ function editRecord(date) {
   document.getElementById("clockOut").value = rec.clock_out || "";
 
   document.getElementById("clockForm").scrollIntoView({ behavior: "smooth" });
-  alert("Data dimuatkan ke form. Klik Simpan Kehadiran untuk kemaskini.");
+  showToast("Data dimuatkan. Klik Simpan Kehadiran untuk kemaskini.");
 }
 
-// ==================== UPDATE REPORT (XSS-safe) ====================
+function updateSummary(totalOT) {
+  let days = 0;
+  let kliaDays = 0;
+  let awbCount = 0;
+  let tripCount = 0;
+
+  Object.keys(dailyRecords).forEach((date) => {
+    const rec = dailyRecords[date];
+    days++;
+    const list = rec.trips || [];
+    tripCount += list.length;
+
+    const hasKLIA = list.some(
+      (t) => typeof t === "string" && t.toLowerCase().includes("klia cargo")
+    );
+    if (hasKLIA) kliaDays++;
+
+    list.forEach((t) => {
+      if (typeof t === "string" && t.toLowerCase().includes("klia cargo") && /\(.+\)/.test(t)) {
+        awbCount++;
+      }
+    });
+  });
+
+  const elDays = document.getElementById("sumDays");
+  const elKlia = document.getElementById("sumKlia");
+  const elAwb = document.getElementById("sumAwb");
+  const elTrips = document.getElementById("sumTrips");
+
+  if (elDays) elDays.textContent = String(days);
+  if (elKlia) elKlia.textContent = String(kliaDays);
+  if (elAwb) elAwb.textContent = String(awbCount);
+  if (elTrips) elTrips.textContent = String(tripCount);
+}
+
+// ==================== UPDATE REPORT ====================
 function updateReport() {
   const tbody = document.querySelector("#reportTable tbody");
   const noRecordsMsg = document.getElementById("noRecordsMessage");
@@ -277,6 +388,7 @@ function updateReport() {
   if (dates.length === 0) {
     if (noRecordsMsg) noRecordsMsg.style.display = "block";
     if (totalOTEl) totalOTEl.textContent = "0.00";
+    updateSummary(0);
     return;
   }
 
@@ -294,42 +406,50 @@ function updateReport() {
     if (day === 6) tr.className = "saturday";
     if (day === 0) tr.className = "sunday";
 
-    // Tarikh
     const tdDate = document.createElement("td");
     tdDate.textContent = formatDateForPDF(date);
 
-    // Destinasi (safe — each trip as text + <br>)
     const tdTrips = document.createElement("td");
     const tripList = rec.trips || [];
     if (tripList.length === 0) {
       tdTrips.textContent = "—";
     } else {
       tripList.forEach((trip, i) => {
-        if (i > 0) tdTrips.appendChild(document.createElement("br"));
-        tdTrips.appendChild(document.createTextNode(String(trip)));
+        const row = document.createElement("div");
+        row.className = "trip-item";
+
+        const text = document.createElement("span");
+        text.textContent = String(trip);
+
+        const del = document.createElement("button");
+        del.type = "button";
+        del.className = "trip-del-btn no-print";
+        del.title = "Padam trip";
+        del.textContent = "×";
+        del.addEventListener("click", () => deleteTrip(date, i));
+
+        row.appendChild(text);
+        row.appendChild(del);
+        tdTrips.appendChild(row);
       });
     }
 
-    // Clock in / out
     const tdIn = document.createElement("td");
     tdIn.textContent = formatTime(rec.clock_in);
 
     const tdOut = document.createElement("td");
     tdOut.textContent = formatTime(rec.clock_out);
 
-    // OT
     const tdOT = document.createElement("td");
     const strong = document.createElement("strong");
     strong.textContent = ot.toFixed(2);
     tdOT.appendChild(strong);
 
-    // Signature columns (print only)
     const tdSig1 = document.createElement("td");
     tdSig1.className = "print-only";
     const tdSig2 = document.createElement("td");
     tdSig2.className = "print-only";
 
-    // Actions (no-print) — use addEventListener, not inline onclick
     const tdActions = document.createElement("td");
     tdActions.className = "no-print";
 
@@ -359,12 +479,13 @@ function updateReport() {
   });
 
   if (totalOTEl) totalOTEl.textContent = totalOT.toFixed(2);
+  updateSummary(totalOT);
 }
 
-// ==================== EXPORT TO EXCEL (FIXED) ====================
+// ==================== EXPORT TO EXCEL ====================
 function exportToExcel() {
   if (Object.keys(dailyRecords).length === 0) {
-    alert("Tiada data untuk dieksport!");
+    showToast("Tiada data untuk dieksport!");
     return;
   }
 
@@ -372,15 +493,9 @@ function exportToExcel() {
   const data = [];
 
   data.push([
-    "Tarikh",
-    "Hari",
-    "Destinasi",
-    "AWB",
-    "Clock In",
-    "Clock Out",
-    "OT (Jam)",
-    "Signature Anda",
-    "Signature Penyelia"
+    "Tarikh", "Hari", "Destinasi", "AWB",
+    "Clock In", "Clock Out", "OT (Jam)",
+    "Signature Anda", "Signature Penyelia"
   ]);
 
   let totalOT = 0;
@@ -416,28 +531,14 @@ function exportToExcel() {
         const otValue = index === 0 ? ot.toFixed(2) : "";
 
         data.push([
-          formatDateForPDF(date),
-          dayName,
-          dest,
-          awb,
-          rec.clock_in || "-",
-          rec.clock_out || "-",
-          otValue,
-          "",
-          ""
+          formatDateForPDF(date), dayName, dest, awb,
+          rec.clock_in || "-", rec.clock_out || "-", otValue, "", ""
         ]);
       });
     } else {
       data.push([
-        formatDateForPDF(date),
-        dayName,
-        "—",
-        "-",
-        rec.clock_in || "-",
-        rec.clock_out || "-",
-        ot.toFixed(2),
-        "",
-        ""
+        formatDateForPDF(date), dayName, "—", "-",
+        rec.clock_in || "-", rec.clock_out || "-", ot.toFixed(2), "", ""
       ]);
     }
   });
@@ -445,36 +546,23 @@ function exportToExcel() {
   const ws = XLSX.utils.aoa_to_sheet(data);
 
   const summaryRow = data.length + 2;
-  XLSX.utils.sheet_add_aoa(
-    ws,
-    [
-      ["Ringkasan Bulan", ""],
-      ["Total OT Keseluruhan", totalOT.toFixed(2) + " jam"],
-      ["Total Hari KLIA Cargo", kliaCargoDays + " hari"],
-      ["Total AWB", totalAWB]
-    ],
-    { origin: summaryRow }
-  );
+  XLSX.utils.sheet_add_aoa(ws, [
+    ["Ringkasan Bulan", ""],
+    ["Total OT Keseluruhan", totalOT.toFixed(2) + " jam"],
+    ["Total Hari KLIA Cargo", kliaCargoDays + " hari"],
+    ["Total AWB", totalAWB]
+  ], { origin: summaryRow });
 
   ws["!cols"] = [
-    { wch: 12 },
-    { wch: 12 },
-    { wch: 28 },
-    { wch: 14 },
-    { wch: 10 },
-    { wch: 10 },
-    { wch: 10 },
-    { wch: 16 },
-    { wch: 18 }
+    { wch: 12 }, { wch: 12 }, { wch: 28 }, { wch: 14 },
+    { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 16 }, { wch: 18 }
   ];
 
   XLSX.utils.book_append_sheet(wb, ws, "Laporan OT Bulanan");
-
-  const fileName = `RezaOT_${currentMonthKey.replace(/\s+/g, "_")}.xlsx`;
-  XLSX.writeFile(wb, fileName);
+  XLSX.writeFile(wb, `RezaOT_${currentMonthKey.replace(/\s+/g, "_")}.xlsx`);
+  showToast("Excel dieksport");
 }
 
-// ==================== EXPORT / IMPORT JSON ====================
 function exportData() {
   const payload = {
     month: currentMonthKey,
@@ -492,6 +580,7 @@ function exportData() {
   a.download = `RezaOT_backup_${currentMonthKey.replace(/\s+/g, "_")}.json`;
   a.click();
   URL.revokeObjectURL(url);
+  showToast("Backup dieksport");
 }
 
 function importData(e) {
@@ -503,23 +592,18 @@ function importData(e) {
     try {
       const data = JSON.parse(event.target.result);
 
-      if (data.dailyRecords) {
-        dailyRecords = data.dailyRecords;
-      }
-      if (data.trips) {
-        trips = data.trips;
-      }
+      if (data.dailyRecords) dailyRecords = data.dailyRecords;
+      if (data.trips) trips = data.trips;
 
       saveToLocalStorage();
       updateReport();
       loadTrips();
-      alert("Data berjaya diimport!");
+      showToast("Data berjaya diimport!");
     } catch (err) {
       console.error(err);
-      alert("Fail JSON tidak sah. Sila cuba lagi.");
+      showToast("Fail JSON tidak sah.");
     }
   };
   reader.readAsText(file);
-
   e.target.value = "";
 }
