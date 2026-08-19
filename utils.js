@@ -5,7 +5,7 @@ function getCurrentMonthYear() {
 }
 
 function getMonthName(month) {
-  return monthNames[parseInt(month) - 1] || "Unknown";
+  return monthNames[parseInt(month, 10) - 1] || "Unknown";
 }
 
 /** Escape HTML special chars (defense-in-depth) */
@@ -23,7 +23,6 @@ function loadTrips() {
   const destinationDropdown = document.getElementById("destination");
   if (!destinationDropdown) return;
 
-  // Safe: clear then rebuild with createElement + textContent
   destinationDropdown.innerHTML = "";
   const placeholder = document.createElement("option");
   placeholder.value = "";
@@ -33,7 +32,7 @@ function loadTrips() {
   trips.forEach((trip) => {
     const option = document.createElement("option");
     option.value = trip;
-    option.textContent = trip; // textContent = no XSS
+    option.textContent = trip;
     destinationDropdown.appendChild(option);
   });
 
@@ -57,7 +56,7 @@ function renderTripList() {
     const li = document.createElement("li");
 
     const span = document.createElement("span");
-    span.textContent = trip; // safe — treats as plain text
+    span.textContent = trip;
 
     const btn = document.createElement("button");
     btn.className = "delete-trip-btn";
@@ -74,7 +73,12 @@ function renderTripList() {
       const index = parseInt(this.dataset.index, 10);
       if (confirm(`Padam "${trips[index]}"?`)) {
         trips.splice(index, 1);
-        localStorage.setItem("trips", JSON.stringify(trips));
+        // Sync full storage + Firebase if available
+        if (typeof saveToLocalStorage === "function") {
+          saveToLocalStorage();
+        } else {
+          localStorage.setItem("trips", JSON.stringify(trips));
+        }
         loadTrips();
       }
     });
@@ -91,7 +95,7 @@ function formatTime(time) {
   return time ? time : "—";
 }
 
-// ==================== OT LOGIC (FINAL HARMONIZED) ====================
+// ==================== OT LOGIC ====================
 function calculateOT(clockIn, clockOut, date, recordTrips = []) {
   if (!clockIn || !clockOut) return 0;
 
@@ -108,7 +112,8 @@ function calculateOT(clockIn, clockOut, date, recordTrips = []) {
     (t) => typeof t === "string" && t.toLowerCase().includes("klia cargo")
   );
 
-  const day = new Date(date).getDay();
+  // Consistent local date parse (avoid UTC shift)
+  const day = new Date(date + "T00:00:00").getDay();
 
   let otMinutes = 0;
 
