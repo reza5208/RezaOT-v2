@@ -1,5 +1,5 @@
-// sw.js - RezaOT v8
-const CACHE_NAME = "rezaot-v8";
+// sw.js - RezaOT v9
+const CACHE_NAME = "rezaot-v9";
 
 const urlsToCache = [
   "./",
@@ -18,9 +18,8 @@ const urlsToCache = [
   "./assets/icons/favicon-16x16.png"
 ];
 
-// Install - cache core assets
 self.addEventListener("install", (event) => {
-  console.log("✅ Installing RezaOT Service Worker v8...");
+  console.log("Installing RezaOT Service Worker v9...");
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => cache.addAll(urlsToCache))
@@ -28,14 +27,13 @@ self.addEventListener("install", (event) => {
   );
 });
 
-// Activate - clean old caches + take control immediately
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cache) => {
           if (cache !== CACHE_NAME) {
-            console.log("🗑 Deleting old cache:", cache);
+            console.log("Deleting old cache:", cache);
             return caches.delete(cache);
           }
         })
@@ -44,18 +42,17 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-// Fetch strategy:
-// - HTML / JS / CSS → Network first, fallback to cache (supaya update cepat)
-// - Icons & static → Cache first
+// HTML / JS / CSS → network first (update cepat)
+// Icons & static → cache first
 self.addEventListener("fetch", (event) => {
   const request = event.request;
   const url = new URL(request.url);
 
-  // Skip non-GET and external requests (Firebase, CDN, etc.)
   if (request.method !== "GET") return;
   if (url.origin !== self.location.origin) return;
 
-  const isDocument = request.destination === "document" ||
+  const isDocument =
+    request.destination === "document" ||
     url.pathname.endsWith(".html") ||
     url.pathname.endsWith("/");
 
@@ -66,7 +63,6 @@ self.addEventListener("fetch", (event) => {
     url.pathname.endsWith(".css");
 
   if (isDocument || isScriptOrStyle) {
-    // Network first
     event.respondWith(
       fetch(request)
         .then((networkResponse) => {
@@ -76,19 +72,23 @@ self.addEventListener("fetch", (event) => {
           }
           return networkResponse;
         })
-        .catch(() => caches.match(request).then((cached) => cached || caches.match("./index.html")))
+        .catch(() =>
+          caches.match(request).then((cached) => cached || caches.match("./index.html"))
+        )
     );
   } else {
-    // Cache first (icons, images, etc.)
     event.respondWith(
       caches.match(request).then((cached) => {
-        return cached || fetch(request).then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            const clone = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-          }
-          return networkResponse;
-        });
+        return (
+          cached ||
+          fetch(request).then((networkResponse) => {
+            if (networkResponse && networkResponse.status === 200) {
+              const clone = networkResponse.clone();
+              caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+            }
+            return networkResponse;
+          })
+        );
       })
     );
   }
