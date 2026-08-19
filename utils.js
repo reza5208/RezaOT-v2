@@ -8,16 +8,32 @@ function getMonthName(month) {
   return monthNames[parseInt(month) - 1] || "Unknown";
 }
 
+/** Escape HTML special chars (defense-in-depth) */
+function escapeHtml(str) {
+  if (str == null) return "";
+  return String(str)
+    .replace(/&/g, "&")
+    .replace(/</g, "<")
+    .replace(/>/g, ">")
+    .replace(/"/g, """)
+    .replace(/'/g, "&#39;");
+}
+
 function loadTrips() {
   const destinationDropdown = document.getElementById("destination");
   if (!destinationDropdown) return;
 
-  destinationDropdown.innerHTML = '<option value="">-- Pilih Destinasi --</option>';
+  // Safe: clear then rebuild with createElement + textContent
+  destinationDropdown.innerHTML = "";
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = "-- Pilih Destinasi --";
+  destinationDropdown.appendChild(placeholder);
 
-  trips.forEach(trip => {
+  trips.forEach((trip) => {
     const option = document.createElement("option");
     option.value = trip;
-    option.textContent = trip;
+    option.textContent = trip; // textContent = no XSS
     destinationDropdown.appendChild(option);
   });
 
@@ -30,19 +46,32 @@ function renderTripList() {
   tripList.innerHTML = "";
 
   if (trips.length === 0) {
-    tripList.innerHTML = `<li style="color:#888">Tiada destinasi. Tambah baru di atas.</li>`;
+    const li = document.createElement("li");
+    li.style.color = "#888";
+    li.textContent = "Tiada destinasi. Tambah baru di atas.";
+    tripList.appendChild(li);
     return;
   }
 
   trips.forEach((trip, index) => {
     const li = document.createElement("li");
-    li.innerHTML = `<span>${trip}</span><button class="delete-trip-btn" data-index="${index}">Padam</button>`;
+
+    const span = document.createElement("span");
+    span.textContent = trip; // safe — treats as plain text
+
+    const btn = document.createElement("button");
+    btn.className = "delete-trip-btn";
+    btn.dataset.index = String(index);
+    btn.textContent = "Padam";
+
+    li.appendChild(span);
+    li.appendChild(btn);
     tripList.appendChild(li);
   });
 
-  document.querySelectorAll(".delete-trip-btn").forEach(btn => {
-    btn.addEventListener("click", function() {
-      const index = parseInt(this.dataset.index);
+  document.querySelectorAll(".delete-trip-btn").forEach((btn) => {
+    btn.addEventListener("click", function () {
+      const index = parseInt(this.dataset.index, 10);
       if (confirm(`Padam "${trips[index]}"?`)) {
         trips.splice(index, 1);
         localStorage.setItem("trips", JSON.stringify(trips));
@@ -55,7 +84,7 @@ function renderTripList() {
 function formatDateForPDF(date) {
   if (!date) return "";
   const [year, month, day] = date.split("-");
-  return `${day.padStart(2,'0')}/${month.padStart(2,'0')}/${year.slice(-2)}`;
+  return `${day.padStart(2, "0")}/${month.padStart(2, "0")}/${year.slice(-2)}`;
 }
 
 function formatTime(time) {
@@ -75,8 +104,8 @@ function calculateOT(clockIn, clockOut, date, recordTrips = []) {
   let end = toMinutes(clockOut);
   if (end < start) end += 1440;
 
-  const hasKLIACargo = recordTrips.some(t => 
-    typeof t === "string" && t.toLowerCase().includes("klia cargo")
+  const hasKLIACargo = recordTrips.some(
+    (t) => typeof t === "string" && t.toLowerCase().includes("klia cargo")
   );
 
   const day = new Date(date).getDay();
@@ -93,5 +122,5 @@ function calculateOT(clockIn, clockOut, date, recordTrips = []) {
     otMinutes = Math.max(end - Math.max(start, 1020), 0); // 17:00
   }
 
-  return Math.round(otMinutes / 60 * 100) / 100;
+  return Math.round((otMinutes / 60) * 100) / 100;
 }
