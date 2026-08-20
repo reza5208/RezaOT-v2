@@ -496,11 +496,14 @@ hr {
 
     .print-only {
         display: table-cell !important;
-        width: 110px;
-        min-width: 90px;
+        width: 52px;
+        min-width: 48px;
+        max-width: 58px;
         border: 1px solid #333 !important;
-        height: 36px;
+        height: 28px;
         vertical-align: middle;
+        font-size: 8pt;
+        padding: 4px 2px !important;
     }
 
     .print-only-block {
