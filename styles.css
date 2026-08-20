@@ -590,19 +590,21 @@ hr {
     }
 
     #reportTable th:nth-child(1),
-    #reportTable td:nth-child(1) { width: 9%; }
+    #reportTable td:nth-child(1) { width: 8%; }
     #reportTable th:nth-child(2),
-    #reportTable td:nth-child(2) { width: 28%; }
+    #reportTable td:nth-child(2) { width: 9%; }
     #reportTable th:nth-child(3),
-    #reportTable td:nth-child(3) { width: 10%; }
+    #reportTable td:nth-child(3) { width: 26%; }
     #reportTable th:nth-child(4),
-    #reportTable td:nth-child(4) { width: 10%; }
+    #reportTable td:nth-child(4) { width: 9%; }
     #reportTable th:nth-child(5),
     #reportTable td:nth-child(5) { width: 9%; }
     #reportTable th:nth-child(6),
     #reportTable td:nth-child(6) { width: 8%; }
     #reportTable th:nth-child(7),
-    #reportTable td:nth-child(7) { width: 8%; }
+    #reportTable td:nth-child(7) { width: 7%; }
+    #reportTable th:nth-child(8),
+    #reportTable td:nth-child(8) { width: 7%; }
 
     #reportTable td {
         word-wrap: break-word;
