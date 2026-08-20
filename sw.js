@@ -1,5 +1,5 @@
-// sw.js - RezaOT v9
-const CACHE_NAME = "rezaot-v9";
+// sw.js - RezaOT v10
+const CACHE_NAME = "rezaot-v10";
 
 const urlsToCache = [
   "./",
@@ -19,7 +19,7 @@ const urlsToCache = [
 ];
 
 self.addEventListener("install", (event) => {
-  console.log("Installing RezaOT Service Worker v9...");
+  console.log("Installing RezaOT Service Worker v10...");
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => cache.addAll(urlsToCache))
@@ -42,8 +42,6 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-// HTML / JS / CSS → network first (update cepat)
-// Icons & static → cache first
 self.addEventListener("fetch", (event) => {
   const request = event.request;
   const url = new URL(request.url);
