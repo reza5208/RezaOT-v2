@@ -38,7 +38,8 @@
                 <h1>🚛 Borang Kerja Lebih Masa</h1>
                 <button type="button" id="darkModeBtn" class="icon-btn no-print" title="Tukar tema">🌙</button>
             </div>
-            <p>WH3 Transport - Khairul Reza</p>
+            <p class="no-print">WH3 Transport - Khairul Reza</p>
+            <p class="print-only-block print-subtitle">WH3 Transport</p>
         </header>
 
         <div class="no-print controls">
@@ -114,8 +115,8 @@
                     <th>Clock-In</th>
                     <th>Clock-Out</th>
                     <th>OT (Jam)</th>
-                    <th class="print-only">Signature Anda</th>
-                    <th class="print-only">Signature Penyelia</th>
+                    <th class="print-only">T/Tanda Pekerja</th>
+                    <th class="print-only">T/Tanda Ketua</th>
                     <th class="no-print">Tindakan</th>
                 </tr>
             </thead>
@@ -145,6 +146,29 @@
                 <span class="summary-label">Total Trip</span>
                 <span class="summary-value" id="sumTrips">0</span>
             </div>
+        </div>
+
+        <!-- Footer untuk cetak A4 -->
+        <div class="print-footer print-only-block" id="printFooter">
+            <table class="print-summary-table">
+                <tr>
+                    <td><strong>Jumlah OT</strong></td>
+                    <td><span id="printTotalOT">0.00</span> jam</td>
+                </tr>
+                <tr>
+                    <td><strong>Jumlah Trip</strong></td>
+                    <td><span id="printTotalTrips">0</span></td>
+                </tr>
+                <tr>
+                    <td><strong>Hari / Trip KLIA Cargo</strong></td>
+                    <td><span id="printKliaDays">0</span> hari · <span id="printKliaTrips">0</span> trip</td>
+                </tr>
+                <tr>
+                    <td><strong>Total AWB</strong></td>
+                    <td><span id="printAwb">0</span></td>
+                </tr>
+            </table>
+            <p class="print-note">Nota: Baris kelabu = Sabtu / Ahad</p>
         </div>
 
         <div class="no-print actions">
