@@ -132,6 +132,26 @@ document.addEventListener("DOMContentLoaded", () => {
   setupEventListeners();
 });
 
+// ==================== PRINT AUTO-SIZE ====================
+function applyPrintAutoSize() {
+  const rows = Object.keys(dailyRecords || {}).length;
+  document.body.classList.remove("print-size-sm", "print-size-xs");
+  if (rows > 22) {
+    document.body.classList.add("print-size-xs");
+  } else if (rows > 14) {
+    document.body.classList.add("print-size-sm");
+  }
+}
+
+function clearPrintAutoSize() {
+  document.body.classList.remove("print-size-sm", "print-size-xs");
+}
+
+function handlePrint() {
+  applyPrintAutoSize();
+  setTimeout(() => window.print(), 50);
+}
+
 function setupEventListeners() {
   const monthYear = document.getElementById("monthYear");
   if (monthYear) monthYear.addEventListener("change", handleMonthChange);
@@ -158,7 +178,10 @@ function setupEventListeners() {
   if (importInput) importInput.addEventListener("change", importData);
 
   const printBtn = document.getElementById("printButton");
-  if (printBtn) printBtn.addEventListener("click", () => window.print());
+  if (printBtn) printBtn.addEventListener("click", handlePrint);
+
+  window.addEventListener("afterprint", clearPrintAutoSize);
+  window.addEventListener("beforeprint", applyPrintAutoSize);
 
   const excelBtn = document.getElementById("exportExcelBtn");
   if (excelBtn) excelBtn.addEventListener("click", exportToExcel);
