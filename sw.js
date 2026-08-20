@@ -1,5 +1,5 @@
-// sw.js - RezaOT v10
-const CACHE_NAME = "rezaot-v10";
+// sw.js - RezaOT v11
+const CACHE_NAME = "rezaot-v11";
 
 const urlsToCache = [
   "./",
@@ -15,11 +15,13 @@ const urlsToCache = [
   "./assets/icons/android-icon-144x144.png",
   "./assets/icons/android-icon-96x96.png",
   "./assets/icons/favicon-32x32.png",
-  "./assets/icons/favicon-16x16.png"
+  "./assets/icons/favicon-16x16.png",
+  "./assets/icons/icon-512.png",
+  "./assets/icons/rezaot-icon.svg"
 ];
 
 self.addEventListener("install", (event) => {
-  console.log("Installing RezaOT Service Worker v10...");
+  console.log("Installing RezaOT Service Worker v11...");
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => cache.addAll(urlsToCache))
