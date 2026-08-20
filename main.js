@@ -17,7 +17,6 @@ let trips = [];
 let currentMonthKey = "";
 let dailyRecords = {};
 
-// ==================== TOAST ====================
 function showToast(message, duration = 2500) {
   const el = document.getElementById("toast");
   if (!el) {
@@ -34,7 +33,6 @@ function showToast(message, duration = 2500) {
   }, duration);
 }
 
-// ==================== DARK MODE ====================
 function initDarkMode() {
   const saved = localStorage.getItem("darkMode") === "1";
   document.body.classList.toggle("dark", saved);
@@ -51,7 +49,6 @@ function toggleDarkMode() {
   if (meta) meta.content = isDark ? "#1e2229" : "#007bff";
 }
 
-// ==================== TIME HELPERS ====================
 function getCurrentTimeString() {
   const now = new Date();
   return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
@@ -65,7 +62,6 @@ function setNowTime(inputId) {
   }
 }
 
-// ==================== LOCAL STORAGE ====================
 function loadFromLocalStorage() {
   const savedTrips = localStorage.getItem("trips");
   trips = savedTrips ? JSON.parse(savedTrips) : [...defaultTrips];
@@ -80,7 +76,6 @@ function saveToLocalStorage() {
   saveToFirebase();
 }
 
-// ==================== FIREBASE ====================
 function saveToFirebase() {
   if (!currentMonthKey) return;
   db.ref(`users/default/${currentMonthKey}`).update({
@@ -110,7 +105,6 @@ function loadDataFromFirebase() {
     });
 }
 
-// ==================== INITIALIZE ====================
 document.addEventListener("DOMContentLoaded", () => {
   initDarkMode();
 
@@ -340,6 +334,7 @@ function editRecord(date) {
 function updateSummary(totalOT) {
   let days = 0;
   let kliaDays = 0;
+  let kliaTrips = 0;
   let awbCount = 0;
   let tripCount = 0;
 
@@ -349,16 +344,15 @@ function updateSummary(totalOT) {
     const list = rec.trips || [];
     tripCount += list.length;
 
-    const hasKLIA = list.some(
-      (t) => typeof t === "string" && t.toLowerCase().includes("klia cargo")
-    );
-    if (hasKLIA) kliaDays++;
-
+    let dayHasKlia = false;
     list.forEach((t) => {
-      if (typeof t === "string" && t.toLowerCase().includes("klia cargo") && /\(.+\)/.test(t)) {
-        awbCount++;
+      if (typeof t === "string" && t.toLowerCase().includes("klia cargo")) {
+        dayHasKlia = true;
+        kliaTrips++;
+        if (/\(.+\)/.test(t)) awbCount++;
       }
     });
+    if (dayHasKlia) kliaDays++;
   });
 
   const elDays = document.getElementById("sumDays");
@@ -370,9 +364,20 @@ function updateSummary(totalOT) {
   if (elKlia) elKlia.textContent = String(kliaDays);
   if (elAwb) elAwb.textContent = String(awbCount);
   if (elTrips) elTrips.textContent = String(tripCount);
+
+  const pOT = document.getElementById("printTotalOT");
+  const pTrips = document.getElementById("printTotalTrips");
+  const pKliaDays = document.getElementById("printKliaDays");
+  const pKliaTrips = document.getElementById("printKliaTrips");
+  const pAwb = document.getElementById("printAwb");
+
+  if (pOT) pOT.textContent = (typeof totalOT === "number" ? totalOT : 0).toFixed(2);
+  if (pTrips) pTrips.textContent = String(tripCount);
+  if (pKliaDays) pKliaDays.textContent = String(kliaDays);
+  if (pKliaTrips) pKliaTrips.textContent = String(kliaTrips);
+  if (pAwb) pAwb.textContent = String(awbCount);
 }
 
-// ==================== UPDATE REPORT ====================
 function updateReport() {
   const tbody = document.querySelector("#reportTable tbody");
   const noRecordsMsg = document.getElementById("noRecordsMessage");
@@ -482,7 +487,6 @@ function updateReport() {
   updateSummary(totalOT);
 }
 
-// ==================== EXPORT TO EXCEL ====================
 function exportToExcel() {
   if (Object.keys(dailyRecords).length === 0) {
     showToast("Tiada data untuk dieksport!");
