@@ -489,6 +489,11 @@ hr {
     display: none;
 }
 
+@page {
+    size: A4 portrait;
+    margin: 8mm 10mm;
+}
+
 @media print {
     .no-print {
         display: none !important;
@@ -553,10 +558,55 @@ hr {
     }
 
     table {
+        width: 100% !important;
+        table-layout: fixed;
         font-size: 10pt;
         page-break-inside: auto;
         border: 1px solid #333;
         box-shadow: none;
+    }
+
+    body.print-size-sm table {
+        font-size: 9pt;
+    }
+
+    body.print-size-xs table {
+        font-size: 7.5pt;
+    }
+
+    body.print-size-sm .print-only,
+    body.print-size-xs .print-only {
+        height: 22px;
+        font-size: 7pt;
+    }
+
+    body.print-size-xs h1 {
+        font-size: 13pt;
+    }
+
+    body.print-size-xs .header-info {
+        font-size: 9pt;
+        padding: 5px 8px;
+    }
+
+    #reportTable th:nth-child(1),
+    #reportTable td:nth-child(1) { width: 9%; }
+    #reportTable th:nth-child(2),
+    #reportTable td:nth-child(2) { width: 28%; }
+    #reportTable th:nth-child(3),
+    #reportTable td:nth-child(3) { width: 10%; }
+    #reportTable th:nth-child(4),
+    #reportTable td:nth-child(4) { width: 10%; }
+    #reportTable th:nth-child(5),
+    #reportTable td:nth-child(5) { width: 9%; }
+    #reportTable th:nth-child(6),
+    #reportTable td:nth-child(6) { width: 8%; }
+    #reportTable th:nth-child(7),
+    #reportTable td:nth-child(7) { width: 8%; }
+
+    #reportTable td {
+        word-wrap: break-word;
+        overflow-wrap: break-word;
     }
 
     th {
