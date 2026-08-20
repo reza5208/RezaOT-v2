@@ -132,7 +132,6 @@ document.addEventListener("DOMContentLoaded", () => {
   setupEventListeners();
 });
 
-// ==================== PRINT AUTO-SIZE ====================
 function applyPrintAutoSize() {
   const rows = Object.keys(dailyRecords || {}).length;
   document.body.classList.remove("print-size-sm", "print-size-xs");
@@ -437,6 +436,10 @@ function updateReport() {
     const tdDate = document.createElement("td");
     tdDate.textContent = formatDateForPDF(date);
 
+    const dayNamesMs = ["Ahad", "Isnin", "Selasa", "Rabu", "Khamis", "Jumaat", "Sabtu"];
+    const tdDay = document.createElement("td");
+    tdDay.textContent = dayNamesMs[day];
+
     const tdTrips = document.createElement("td");
     const tripList = rec.trips || [];
     if (tripList.length === 0) {
@@ -495,6 +498,7 @@ function updateReport() {
     tdActions.appendChild(delBtn);
 
     tr.appendChild(tdDate);
+    tr.appendChild(tdDay);
     tr.appendChild(tdTrips);
     tr.appendChild(tdIn);
     tr.appendChild(tdOut);
