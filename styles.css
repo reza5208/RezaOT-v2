@@ -472,23 +472,17 @@ hr {
         padding-left: env(safe-area-inset-left);
         padding-right: env(safe-area-inset-right);
     }
-
     .container {
         margin: 6px;
         padding: 14px 12px;
         border-radius: 12px;
         max-width: 100%;
     }
-
     h1 {
         font-size: 1.25rem;
         padding-right: 48px;
     }
-
-    .header-top {
-        justify-content: flex-start;
-    }
-
+    .header-top { justify-content: flex-start; }
     .icon-btn {
         position: absolute;
         right: 0;
@@ -496,61 +490,41 @@ hr {
         width: 40px;
         height: 40px;
     }
-
     .header-info {
         font-size: 0.85rem;
         padding: 10px 12px;
     }
-
     .form-grid {
         grid-template-columns: 1fr;
         gap: 12px;
     }
-
     .form-grid input,
     .form-grid select,
     .controls input[type="month"] {
         font-size: 16px;
         min-height: 44px;
     }
-
-    .time-row {
-        flex-wrap: wrap;
-    }
-
+    .time-row { flex-wrap: wrap; }
     .now-btn {
         width: 100%;
         margin-top: 4px;
     }
-
-    table {
-        font-size: 13px;
-    }
-
-    th, td {
-        padding: 8px 5px;
-    }
-
+    table { font-size: 13px; }
+    th, td { padding: 8px 5px; }
     .summary-cards {
         grid-template-columns: 1fr 1fr;
         gap: 8px;
     }
-
-    .summary-value {
-        font-size: 1.2rem;
-    }
-
+    .summary-value { font-size: 1.2rem; }
     .actions {
         flex-direction: column;
         align-items: stretch;
     }
-
     .actions button,
     .actions .import-btn {
         width: 100%;
         text-align: center;
     }
-
     .total-ot {
         font-size: 1.15rem;
         padding: 14px;
@@ -558,75 +532,53 @@ hr {
 }
 
 @media (max-width: 900px) and (orientation: landscape) {
-    body {
-        padding: 4px 0;
-    }
-
+    body { padding: 4px 0; }
     .container {
         margin: 4px auto;
         padding: 10px 14px;
         max-width: 100%;
     }
-
     h1 {
         font-size: 1.15rem;
         margin-bottom: 4px;
     }
-
     .sync-status {
         margin: -4px 0 6px;
         font-size: 0.75rem;
     }
-
     .header-info {
         font-size: 0.8rem;
         padding: 6px 10px;
         margin-bottom: 10px;
     }
-
     .form-grid {
         grid-template-columns: 1fr 1fr;
         gap: 10px;
     }
-
     .form-grid button[type="submit"] {
         grid-column: 1 / -1;
     }
-
     .summary-cards {
         grid-template-columns: repeat(4, 1fr);
         gap: 8px;
     }
-
-    .summary-card {
-        padding: 8px 6px;
-    }
-
-    .summary-value {
-        font-size: 1.1rem;
-    }
-
+    .summary-card { padding: 8px 6px; }
+    .summary-value { font-size: 1.1rem; }
     .table-wrap table {
         min-width: 480px;
         font-size: 12px;
     }
-
-    th, td {
-        padding: 6px 4px;
-    }
-
+    th, td { padding: 6px 4px; }
     .actions {
         flex-direction: row;
         flex-wrap: wrap;
     }
-
     .actions button,
     .actions .import-btn {
         width: auto;
         flex: 1 1 auto;
         min-width: 140px;
     }
-
     .total-ot {
         font-size: 1.05rem;
         padding: 10px;
@@ -640,21 +592,16 @@ hr {
         padding: 18px;
         max-width: 96%;
     }
-
     .form-grid {
         grid-template-columns: 1fr 1fr;
     }
 }
 
 @media (max-width: 380px) {
-    h1 {
-        font-size: 1.1rem;
-    }
-
+    h1 { font-size: 1.1rem; }
     .summary-cards {
         grid-template-columns: 1fr 1fr;
     }
-
     .table-wrap table {
         min-width: 460px;
         font-size: 12px;
@@ -693,10 +640,19 @@ hr {
         display: block !important;
     }
 
+    header {
+        overflow: hidden;
+        position: relative;
+    }
+
     .print-subtitle {
         text-align: center;
-        margin-bottom: 8px;
-        font-size: 12px;
+        margin: 0 0 8px;
+        font-size: 11pt;
+        color: #000;
+        width: 100%;
+        clear: both;
+        overflow: hidden;
     }
 
     body {
@@ -744,41 +700,31 @@ hr {
         box-shadow: none;
     }
 
-    body.print-size-sm table {
-        font-size: 9pt;
-    }
-
-    body.print-size-xs table {
-        font-size: 7.5pt;
-    }
-
+    body.print-size-sm table { font-size: 9pt; }
+    body.print-size-xs table { font-size: 7.5pt; }
     body.print-size-sm .print-only,
     body.print-size-xs .print-only {
         height: 22px;
         font-size: 7pt;
     }
-
-    body.print-size-xs h1 {
-        font-size: 13pt;
-    }
-
+    body.print-size-xs h1 { font-size: 13pt; }
     body.print-size-xs .header-info {
         font-size: 9pt;
         padding: 5px 8px;
     }
 
     #reportTable th:nth-child(1),
-    #reportTable td:nth-child(1) { width: 8%; }
+    #reportTable td:nth-child(1) { width: 11%; white-space: nowrap; }
     #reportTable th:nth-child(2),
-    #reportTable td:nth-child(2) { width: 9%; }
+    #reportTable td:nth-child(2) { width: 11%; white-space: nowrap; }
     #reportTable th:nth-child(3),
-    #reportTable td:nth-child(3) { width: 26%; }
+    #reportTable td:nth-child(3) { width: 28%; }
     #reportTable th:nth-child(4),
-    #reportTable td:nth-child(4) { width: 9%; }
+    #reportTable td:nth-child(4) { width: 9%; white-space: nowrap; }
     #reportTable th:nth-child(5),
-    #reportTable td:nth-child(5) { width: 9%; }
+    #reportTable td:nth-child(5) { width: 9%; white-space: nowrap; }
     #reportTable th:nth-child(6),
-    #reportTable td:nth-child(6) { width: 8%; }
+    #reportTable td:nth-child(6) { width: 8%; white-space: nowrap; }
     #reportTable th:nth-child(7),
     #reportTable td:nth-child(7) { width: 7%; }
     #reportTable th:nth-child(8),
@@ -787,6 +733,12 @@ hr {
     #reportTable td {
         word-wrap: break-word;
         overflow-wrap: break-word;
+    }
+
+    #reportTable td:nth-child(1),
+    #reportTable td:nth-child(2) {
+        word-wrap: normal;
+        overflow-wrap: normal;
     }
 
     th {
@@ -853,17 +805,9 @@ hr {
         color: #333;
     }
 
-    .trip-del-btn {
-        display: none !important;
-    }
-
-    .table-wrap {
-        overflow: visible;
-    }
-
-    .table-wrap table {
-        min-width: 0;
-    }
+    .trip-del-btn { display: none !important; }
+    .table-wrap { overflow: visible; }
+    .table-wrap table { min-width: 0; }
 }
 
 .sync-status {
