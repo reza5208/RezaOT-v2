@@ -1,4 +1,4 @@
-// main.js - RezaOT v2 (Complete + features)
+// main.js - RezaOT v2 (Complete + multi-device Firebase sync)
 
 const firebaseConfig = {
   apiKey: "AIzaSyAIxHsCJYkJ05MflQnGTibGlCNru-dEPPs",
@@ -62,6 +62,16 @@ function setNowTime(inputId) {
   }
 }
 
+// ==================== FIREBASE MULTI-DEVICE SYNC ====================
+let firebaseRef = null;
+let syncingFromFirebase = false;
+let lastLocalSaveAt = 0;
+let firebaseReady = false;
+
+function getFirebasePath() {
+  return `users/default/${currentMonthKey}`;
+}
+
 function loadFromLocalStorage() {
   const savedTrips = localStorage.getItem("trips");
   trips = savedTrips ? JSON.parse(savedTrips) : [...defaultTrips];
@@ -70,39 +80,137 @@ function loadFromLocalStorage() {
   dailyRecords = savedRecords ? JSON.parse(savedRecords) : {};
 }
 
-function saveToLocalStorage() {
+function persistLocalOnly() {
   localStorage.setItem("trips", JSON.stringify(trips));
   localStorage.setItem(`dailyRecords_${currentMonthKey}`, JSON.stringify(dailyRecords));
-  saveToFirebase();
+}
+
+function saveToLocalStorage() {
+  persistLocalOnly();
+  if (!syncingFromFirebase) {
+    saveToFirebase();
+  }
 }
 
 function saveToFirebase() {
-  if (!currentMonthKey) return;
-  db.ref(`users/default/${currentMonthKey}`).update({
+  if (!currentMonthKey || syncingFromFirebase) return;
+
+  lastLocalSaveAt = Date.now();
+  const payload = {
     dailyRecords: dailyRecords,
     trips: trips,
-    lastUpdated: new Date().toISOString()
-  }).catch(err => console.error("Firebase save error:", err));
+    lastUpdated: new Date().toISOString(),
+    deviceId: getDeviceId()
+  };
+
+  db.ref(getFirebasePath()).update(payload)
+    .then(() => {
+      firebaseReady = true;
+      setSyncStatus("online");
+    })
+    .catch((err) => {
+      console.error("Firebase save error:", err);
+      const msg = String(err && err.message ? err.message : err);
+      if (msg.includes("permission_denied") || msg.includes("PERMISSION_DENIED")) {
+        setSyncStatus("denied");
+        showToast("Firebase locked — data simpan local sahaja. Buka rules untuk multi-device.", 4000);
+      } else {
+        setSyncStatus("offline");
+      }
+    });
+}
+
+function getDeviceId() {
+  let id = localStorage.getItem("deviceId");
+  if (!id) {
+    id = "dev-" + Math.random().toString(36).slice(2, 10);
+    localStorage.setItem("deviceId", id);
+  }
+  return id;
+}
+
+function setSyncStatus(state) {
+  const el = document.getElementById("syncStatus");
+  if (!el) return;
+  const map = {
+    online: { text: "● Sync ON", cls: "sync-on" },
+    offline: { text: "● Offline", cls: "sync-off" },
+    denied: { text: "● Sync OFF (rules)", cls: "sync-denied" },
+    syncing: { text: "● Syncing…", cls: "sync-syncing" }
+  };
+  const s = map[state] || map.offline;
+  el.textContent = s.text;
+  el.className = "sync-status " + s.cls;
+}
+
+function stopFirebaseListener() {
+  if (firebaseRef) {
+    firebaseRef.off("value");
+    firebaseRef = null;
+  }
+}
+
+function startFirebaseListener() {
+  if (!currentMonthKey) return;
+
+  stopFirebaseListener();
+  setSyncStatus("syncing");
+
+  firebaseRef = db.ref(getFirebasePath());
+  firebaseRef.on(
+    "value",
+    (snapshot) => {
+      const data = snapshot.val();
+      firebaseReady = true;
+
+      if (!data) {
+        setSyncStatus("online");
+        if (Object.keys(dailyRecords).length > 0 || trips.length > 0) {
+          saveToFirebase();
+        }
+        return;
+      }
+
+      const remoteTs = data.lastUpdated ? Date.parse(data.lastUpdated) : 0;
+      if (remoteTs && lastLocalSaveAt && remoteTs < lastLocalSaveAt - 500) {
+        setSyncStatus("online");
+        return;
+      }
+
+      if (data.deviceId && data.deviceId === getDeviceId() && Date.now() - lastLocalSaveAt < 2000) {
+        setSyncStatus("online");
+        return;
+      }
+
+      syncingFromFirebase = true;
+      try {
+        if (data.dailyRecords) dailyRecords = data.dailyRecords;
+        if (data.trips && Array.isArray(data.trips)) trips = data.trips;
+        persistLocalOnly();
+        updateReport();
+        loadTrips();
+        setSyncStatus("online");
+      } finally {
+        setTimeout(() => { syncingFromFirebase = false; }, 300);
+      }
+    },
+    (err) => {
+      console.error("Firebase listener error:", err);
+      const msg = String(err && err.message ? err.message : err);
+      if (msg.includes("permission_denied") || msg.includes("PERMISSION_DENIED")) {
+        setSyncStatus("denied");
+        showToast("Firebase permission denied. Buka Realtime Database rules.", 4000);
+      } else {
+        setSyncStatus("offline");
+      }
+      updateReport();
+      loadTrips();
+    }
+  );
 }
 
 function loadDataFromFirebase() {
-  if (!currentMonthKey) return;
-  db.ref(`users/default/${currentMonthKey}`).once("value")
-    .then((snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        if (data.dailyRecords) dailyRecords = data.dailyRecords;
-        if (data.trips) trips = data.trips;
-      }
-      saveToLocalStorage();
-      updateReport();
-      loadTrips();
-    })
-    .catch((err) => {
-      console.error("Firebase load error:", err);
-      updateReport();
-      loadTrips();
-    });
+  startFirebaseListener();
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -128,8 +236,10 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   loadFromLocalStorage();
-  loadDataFromFirebase();
+  updateReport();
+  loadTrips();
   setupEventListeners();
+  startFirebaseListener();
 });
 
 function applyPrintAutoSize() {
@@ -205,6 +315,8 @@ function handleMonthChange() {
   const monthInput = document.getElementById("monthYear");
   if (!monthInput || !monthInput.value) return;
 
+  stopFirebaseListener();
+
   const [year, month] = monthInput.value.split("-");
   currentMonthKey = `${getMonthName(month)} ${year}`;
 
@@ -212,7 +324,9 @@ function handleMonthChange() {
   if (currentMonthEl) currentMonthEl.textContent = currentMonthKey;
 
   loadFromLocalStorage();
-  loadDataFromFirebase();
+  updateReport();
+  loadTrips();
+  startFirebaseListener();
 }
 
 function handleDestinationChange() {
