@@ -679,3 +679,16 @@ hr {
         display: none !important;
     }
 }
+
+.sync-status {
+    text-align: center;
+    font-size: 0.8rem;
+    margin: -8px 0 12px;
+    font-weight: 600;
+}
+.sync-on { color: #28a745; }
+.sync-off { color: #6c757d; }
+.sync-denied { color: #dc3545; }
+.sync-syncing { color: #17a2b8; }
+body.dark .sync-on { color: #5dd879; }
+body.dark .sync-denied { color: #ff6b7a; }
