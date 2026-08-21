@@ -453,35 +453,211 @@ hr {
     margin: 16px 0;
 }
 
+.table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 12px 0;
+    border-radius: 12px;
+}
+
+.table-wrap table {
+    margin: 0;
+    min-width: 520px;
+}
+
 @media (max-width: 768px) {
+    body {
+        padding: 6px 0;
+        padding-left: env(safe-area-inset-left);
+        padding-right: env(safe-area-inset-right);
+    }
+
     .container {
-        margin: 10px;
-        padding: 15px;
+        margin: 6px;
+        padding: 14px 12px;
+        border-radius: 12px;
+        max-width: 100%;
     }
 
-    table {
-        font-size: 14px;
+    h1 {
+        font-size: 1.25rem;
+        padding-right: 48px;
     }
 
-    th, td {
-        padding: 10px 6px;
+    .header-top {
+        justify-content: flex-start;
+    }
+
+    .icon-btn {
+        position: absolute;
+        right: 0;
+        top: 0;
+        width: 40px;
+        height: 40px;
+    }
+
+    .header-info {
+        font-size: 0.85rem;
+        padding: 10px 12px;
     }
 
     .form-grid {
         grid-template-columns: 1fr;
+        gap: 12px;
     }
 
-    .header-top {
+    .form-grid input,
+    .form-grid select,
+    .controls input[type="month"] {
+        font-size: 16px;
+        min-height: 44px;
+    }
+
+    .time-row {
+        flex-wrap: wrap;
+    }
+
+    .now-btn {
+        width: 100%;
+        margin-top: 4px;
+    }
+
+    table {
+        font-size: 13px;
+    }
+
+    th, td {
+        padding: 8px 5px;
+    }
+
+    .summary-cards {
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+
+    .summary-value {
+        font-size: 1.2rem;
+    }
+
+    .actions {
         flex-direction: column;
+        align-items: stretch;
     }
 
-    .icon-btn {
-        position: static;
-        align-self: flex-end;
+    .actions button,
+    .actions .import-btn {
+        width: 100%;
+        text-align: center;
+    }
+
+    .total-ot {
+        font-size: 1.15rem;
+        padding: 14px;
+    }
+}
+
+@media (max-width: 900px) and (orientation: landscape) {
+    body {
+        padding: 4px 0;
+    }
+
+    .container {
+        margin: 4px auto;
+        padding: 10px 14px;
+        max-width: 100%;
     }
 
     h1 {
-        font-size: 1.4rem;
+        font-size: 1.15rem;
+        margin-bottom: 4px;
+    }
+
+    .sync-status {
+        margin: -4px 0 6px;
+        font-size: 0.75rem;
+    }
+
+    .header-info {
+        font-size: 0.8rem;
+        padding: 6px 10px;
+        margin-bottom: 10px;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    .form-grid button[type="submit"] {
+        grid-column: 1 / -1;
+    }
+
+    .summary-cards {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+    }
+
+    .summary-card {
+        padding: 8px 6px;
+    }
+
+    .summary-value {
+        font-size: 1.1rem;
+    }
+
+    .table-wrap table {
+        min-width: 480px;
+        font-size: 12px;
+    }
+
+    th, td {
+        padding: 6px 4px;
+    }
+
+    .actions {
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+
+    .actions button,
+    .actions .import-btn {
+        width: auto;
+        flex: 1 1 auto;
+        min-width: 140px;
+    }
+
+    .total-ot {
+        font-size: 1.05rem;
+        padding: 10px;
+        margin: 12px 0 8px;
+    }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+    .container {
+        margin: 12px auto;
+        padding: 18px;
+        max-width: 96%;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 380px) {
+    h1 {
+        font-size: 1.1rem;
+    }
+
+    .summary-cards {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .table-wrap table {
+        min-width: 460px;
+        font-size: 12px;
     }
 }
 
@@ -495,7 +671,9 @@ hr {
 }
 
 @media print {
-    .no-print {
+    .no-print,
+    .sync-status,
+    #syncStatus {
         display: none !important;
     }
 
@@ -677,6 +855,14 @@ hr {
 
     .trip-del-btn {
         display: none !important;
+    }
+
+    .table-wrap {
+        overflow: visible;
+    }
+
+    .table-wrap table {
+        min-width: 0;
     }
 }
 
