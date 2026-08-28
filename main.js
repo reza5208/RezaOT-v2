@@ -230,6 +230,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const dateInput = document.getElementById("date");
   if (dateInput) dateInput.value = now.toISOString().split("T")[0];
 
+  // Default check-in 08:00, check-out 17:00
+  const clockInInput = document.getElementById("clockIn");
+  if (clockInInput && !clockInInput.value) clockInInput.value = "08:00";
+  const clockOutInput = document.getElementById("clockOut");
+  if (clockOutInput && !clockOutInput.value) clockOutInput.value = "17:00";
+
   const supervisorEl = document.getElementById("supervisorName");
   if (supervisorEl) {
     supervisorEl.textContent = localStorage.getItem("supervisorName") || "Talib";
