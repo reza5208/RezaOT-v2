@@ -10,10 +10,11 @@
     });
   }
   function boot() {
-    loadScript("main-app-1.js?v=19")
-      .then(function () { return loadScript("main-app-2.js?v=19"); })
+    loadScript("main-app-1.js?v=19b")
+      .then(function () { return loadScript("main-app-2.js?v=19b"); })
       .then(function () {
-        if (typeof window.__rezaotInit === "function") window.__rezaotInit();
+        // Scripts loaded after document ready — trigger init listeners
+        document.dispatchEvent(new Event("DOMContentLoaded"));
       })
       .catch(function (err) {
         console.error(err);
