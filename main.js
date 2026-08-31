@@ -1,10 +1,11 @@
-// main.js - RezaOT v18.1
-const firebaseConfig = {
-  apiKey: "AIzaSyB-placeholder-check-repo",
-  authDomain: "reza-ot.firebaseapp.com",
-  databaseURL: "https://reza-ot-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "reza-ot",
-  storageBucket: "reza-ot.firebasestorage.app",
-  messagingSenderId: "0",
-  appId: "1:0:web:0"
-};
+// main.js - RezaOT v18.1 (runtime bootstrap)
+// Full logic loaded from main-app.js to avoid accidental truncation on push.
+(function () {
+  var s = document.createElement("script");
+  s.src = "main-app.js?v=19";
+  s.onerror = function () {
+    console.error("Failed to load main-app.js");
+    alert("Gagal load main-app.js — hard refresh atau clear cache.");
+  };
+  document.head.appendChild(s);
+})();
