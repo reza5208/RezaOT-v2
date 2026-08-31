@@ -105,16 +105,21 @@ function calculateOT(clockIn, clockOut, date, recordTrips) {
   });
 
   var day = new Date(date + "T00:00:00").getDay();
+  var isHoliday = typeof isPublicHoliday === "function" && isPublicHoliday(date);
 
   var otMinutes = 0;
 
-  if (hasKLIACargo && day !== 0) {
-    otMinutes = 0;
-  } else if (day === 0) {
+  // Cuti umum / Ahad = OT penuh (jam kerja sebenar)
+  if (isHoliday || day === 0) {
     otMinutes = end - start;
+  } else if (hasKLIACargo) {
+    // KLIA Cargo: tiada OT hari biasa & Sabtu
+    otMinutes = 0;
   } else if (day === 6) {
+    // Sabtu: OT selepas 14:00
     otMinutes = Math.max(end - Math.max(start, 840), 0);
   } else {
+    // Isnin–Jumaat: OT selepas 17:00
     otMinutes = Math.max(end - Math.max(start, 1020), 0);
   }
 
