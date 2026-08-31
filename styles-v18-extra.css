@@ -1,0 +1,40 @@
+/* v18 UI extras — linked from index if needed */
+.header-actions { display: flex; gap: 6px; align-items: center; }
+.quick-btn {
+  margin-left: 8px;
+  padding: 8px 12px;
+  background: #28a745;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+.quick-btn:hover { background: #218838; }
+.holiday-badge {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 4px 10px;
+  background: #e6f0ff;
+  color: #0a4d9c;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+body.dark .holiday-badge { background: #1a3a52; color: #8ec8ff; }
+.editable-name { text-decoration: underline dotted; text-underline-offset: 3px; }
+.edit-hint { font-size: 0.75rem; color: #888; margin-left: 4px; }
+.trip-text:hover { color: #007bff; text-decoration: underline; }
+body.dark .trip-text:hover { color: #5eb0ff; }
+.pdf-btn { background: #6f42c1; color: #fff; }
+.pdf-btn:hover { background: #5a32a3; }
+.version-badge { text-align: center; font-size: 0.7rem; color: #999; margin-top: 16px; margin-bottom: 8px; }
+body.dark .version-badge { color: #666; }
+body.pdf-export .no-print { display: none !important; }
+body.pdf-export .print-only-block { display: block !important; }
+body.pdf-export .print-only { display: table-cell !important; }
+@media (max-width: 600px) {
+  .controls { display: flex; flex-direction: column; gap: 8px; }
+  .quick-btn { margin-left: 0; width: 100%; }
+}
