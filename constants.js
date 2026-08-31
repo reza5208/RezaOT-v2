@@ -81,12 +81,53 @@ const publicHolidays = {
   "2027-12-25": "Hari Krismas"
 };
 
-function isPublicHoliday(dateStr) {
+// Katalog penuh sentiasa ada dalam publicHolidays.
+// Company pilih mana yang diambil → observedHolidays di localStorage.
+const OBSERVED_HOLIDAYS_KEY = "observedHolidays";
+
+function getAllHolidayDates() {
+  return Object.keys(publicHolidays).sort();
+}
+
+function getObservedHolidaysMap() {
+  try {
+    const raw = localStorage.getItem(OBSERVED_HOLIDAYS_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === "object") return parsed;
+    }
+  } catch (e) { /* ignore */ }
+  // Default: semua cuti dalam katalog = diambil (tingkah laku lama)
+  const map = {};
+  getAllHolidayDates().forEach(function (d) { map[d] = true; });
+  return map;
+}
+
+function saveObservedHolidaysMap(map) {
+  localStorage.setItem(OBSERVED_HOLIDAYS_KEY, JSON.stringify(map));
+}
+
+function isCatalogHoliday(dateStr) {
   return Object.prototype.hasOwnProperty.call(publicHolidays, dateStr);
+}
+
+/** Cuti yang company AMBIL — diguna untuk OT & highlight table */
+function isPublicHoliday(dateStr) {
+  if (!isCatalogHoliday(dateStr)) return false;
+  const map = getObservedHolidaysMap();
+  if (!Object.prototype.hasOwnProperty.call(map, dateStr)) return true;
+  return map[dateStr] === true;
 }
 
 function getHolidayName(dateStr) {
   return publicHolidays[dateStr] || "";
+}
+
+function setHolidayObserved(dateStr, observed) {
+  if (!isCatalogHoliday(dateStr)) return;
+  const map = getObservedHolidaysMap();
+  map[dateStr] = !!observed;
+  saveObservedHolidaysMap(map);
 }
 
 function timeToMinutes(time) {
