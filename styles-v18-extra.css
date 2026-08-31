@@ -119,3 +119,178 @@ body.dark .holiday-pick-item { border-bottom-color: rgba(255,255,255,0.06); }
   height: 16px;
   flex-shrink: 0;
 }
+
+/* ===== Mobile polish v20 ===== */
+
+/* Trip delete — subtle, bukan merah besar */
+.trip-item {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 4px;
+  margin: 1px 0;
+  flex-wrap: nowrap;
+  line-height: 1.25;
+}
+.trip-text {
+  font-size: 0.92em;
+  flex: 1;
+  min-width: 0;
+  word-break: break-word;
+}
+.trip-del-btn {
+  background: transparent !important;
+  color: #aaa !important;
+  border: 1px solid #ddd !important;
+  border-radius: 50%;
+  width: 18px !important;
+  height: 18px !important;
+  min-width: 18px;
+  font-size: 11px !important;
+  line-height: 1 !important;
+  padding: 0 !important;
+  opacity: 0.7;
+  box-shadow: none !important;
+  flex-shrink: 0;
+}
+.trip-del-btn:hover,
+.trip-del-btn:active {
+  background: #f8d7da !important;
+  color: #c82333 !important;
+  border-color: #f5c2c7 !important;
+  opacity: 1;
+  transform: none !important;
+}
+body.dark .trip-del-btn {
+  color: #777 !important;
+  border-color: #444 !important;
+}
+body.dark .trip-del-btn:hover,
+body.dark .trip-del-btn:active {
+  background: #3a2020 !important;
+  color: #ff8a8a !important;
+  border-color: #663333 !important;
+}
+
+/* Table scroll + sticky tarikh */
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--border-light, #e0e0e0);
+  border-radius: 10px;
+  position: relative;
+}
+.table-wrap table {
+  min-width: 640px;
+  margin: 0;
+}
+#reportTable th:nth-child(1),
+#reportTable td:nth-child(1) {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: var(--card-bg, #fff);
+  box-shadow: 2px 0 4px rgba(0,0,0,0.06);
+}
+#reportTable thead th:nth-child(1) {
+  z-index: 3;
+  background: var(--th-bg, #e8e8e8);
+}
+#reportTable tr.saturday td:nth-child(1) { background: var(--saturday, #fff8e1); }
+#reportTable tr.sunday td:nth-child(1) { background: var(--sunday, #ffebee); }
+#reportTable tr.holiday td:nth-child(1) { background: #d6eaf8; }
+body.dark #reportTable th:nth-child(1),
+body.dark #reportTable td:nth-child(1) { background: var(--card-bg, #1e2229); }
+body.dark #reportTable tr.holiday td:nth-child(1) { background: #1a3a52; }
+
+/* Pastikan lajur OT & masa nampak */
+#reportTable th:nth-child(4),
+#reportTable td:nth-child(4),
+#reportTable th:nth-child(5),
+#reportTable td:nth-child(5),
+#reportTable th:nth-child(6),
+#reportTable td:nth-child(6) {
+  white-space: nowrap;
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+    position: relative;
+  }
+  .header-actions {
+    position: static !important;
+    display: flex !important;
+    flex-shrink: 0;
+    gap: 4px;
+  }
+  .header-actions .icon-btn {
+    position: static !important;
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+  }
+  h1 {
+    padding-right: 0 !important;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .table-wrap {
+    margin: 8px -4px;
+    border-radius: 8px;
+  }
+  .table-wrap table {
+    min-width: 580px;
+    font-size: 12px !important;
+  }
+  #reportTable th,
+  #reportTable td {
+    padding: 6px 4px !important;
+  }
+  .trip-item {
+    gap: 3px;
+    margin: 0;
+  }
+  .trip-text { font-size: 11.5px; }
+  .trip-del-btn {
+    width: 16px !important;
+    height: 16px !important;
+    min-width: 16px;
+    font-size: 10px !important;
+  }
+  .edit-btn, .delete-btn {
+    padding: 4px 8px;
+    font-size: 12px;
+  }
+  .table-wrap::after {
+    content: "";
+    pointer-events: none;
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 24px;
+    background: linear-gradient(to right, transparent, rgba(0,0,0,0.06));
+    border-radius: 0 10px 10px 0;
+  }
+}
+
+@media print {
+  .trip-del-btn { display: none !important; }
+  .table-wrap {
+    overflow: visible !important;
+    border: none !important;
+  }
+  .table-wrap::after { display: none !important; }
+  #reportTable th:nth-child(1),
+  #reportTable td:nth-child(1) {
+    position: static !important;
+    box-shadow: none !important;
+  }
+}
