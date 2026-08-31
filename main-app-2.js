@@ -8,7 +8,6 @@ function handleMonthChange() {
   const monthInput = document.getElementById("monthYear");
   if (!monthInput || !monthInput.value) return;
 
-  // Simpan nilai yang user pilih — browser kadang reset selepas confirm()
   const intended = monthInput.value;
   const partsIn = intended.split("-");
   if (partsIn.length < 2) return;
@@ -25,7 +24,6 @@ function handleMonthChange() {
   }
 
   currentMonthKey = newKey;
-  // Paksa input kekal pada pilihan user (fix browser revert)
   monthInput.value = intended;
   setTimeout(function () { monthInput.value = intended; }, 0);
 
@@ -319,7 +317,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const currentMonthEl = document.getElementById("currentMonth");
   if (currentMonthEl) currentMonthEl.textContent = currentMonthKey;
   const dateInput = document.getElementById("date");
-  if (dateInput) dateInput.value = now.toISOString().split("T")[0];
+  // Guna tarikh LOKAL (bukan UTC) — elak 31 Ogos sebelum jam 8 pagi MY
+  if (dateInput) {
+    dateInput.value = (typeof getLocalDateString === "function")
+      ? getLocalDateString(now)
+      : (now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0") + "-" + String(now.getDate()).padStart(2, "0"));
+  }
   const clockInInput = document.getElementById("clockIn");
   if (clockInInput && !clockInInput.value) clockInInput.value = "08:00";
   const clockOutInput = document.getElementById("clockOut");
