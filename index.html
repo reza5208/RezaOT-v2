@@ -29,6 +29,7 @@
             <div class="header-top">
                 <h1><span class="no-print">🚛 </span>Report Trips dan OT</h1>
                 <div class="header-actions no-print">
+                    <button type="button" id="holidayPickerBtn" class="icon-btn" title="Pilih cuti company">🏖</button>
                     <button type="button" id="otSettingsBtn" class="icon-btn" title="Settings OT">⚙️</button>
                     <button type="button" id="darkModeBtn" class="icon-btn" title="Tukar tema">🌙</button>
                 </div>
@@ -42,6 +43,19 @@
             <label for="monthYear">Pilih Bulan & Tahun:</label>
             <input type="month" id="monthYear" required>
             <button type="button" id="quickSaveTodayBtn" class="quick-btn">⚡ Simpan Hari Ini (8–5)</button>
+        </div>
+
+        <div id="holidayPickerPanel" class="no-print holiday-picker-panel" style="display: none;">
+            <h3>Cuti umum — pilih yang company ambil</h3>
+            <p class="holiday-picker-hint">Data katalog kekal. Hanya cuti yang ditanda ✓ dikira OT penuh & highlight biru.</p>
+            <div class="holiday-picker-toolbar">
+                <label>Tahun:
+                    <select id="holidayPickerYear"></select>
+                </label>
+                <button type="button" id="holidaySelectAll" class="secondary-btn">✓ Semua</button>
+                <button type="button" id="holidaySelectNone" class="secondary-btn">✗ Tiada</button>
+            </div>
+            <ul id="holidayPickerList" class="holiday-picker-list"></ul>
         </div>
 
         <div class="header-info">
@@ -169,7 +183,7 @@
                     <td><span id="printAwb">0</span></td>
                 </tr>
             </table>
-            <p class="print-note">Nota: Kelabu = Sabtu · Lebih gelap = Ahad · Biru muda = Cuti umum (KL/Selangor)</p>
+            <p class="print-note">Nota: Kelabu = Sabtu · Lebih gelap = Ahad · Biru muda = Cuti umum (yang company ambil)</p>
         </div>
 
         <div class="no-print actions">
@@ -182,7 +196,7 @@
                 <input type="file" id="importDataInput" accept=".json" style="display:none;">
             </label>
         </div>
-        <p class="no-print version-badge">RezaOT v18</p>
+        <p class="no-print version-badge">RezaOT v18.1</p>
     </div>
 
     <div id="toast" class="toast no-print" hidden></div>
@@ -190,6 +204,7 @@
     <script src="constants.js"></script>
     <script src="utils.js"></script>
     <script src="main.js"></script>
+    <script src="holiday-picker.js"></script>
 
     <script>
         if ("serviceWorker" in navigator) {
