@@ -86,7 +86,7 @@ function formatTime(time) {
   return time ? time : "—";
 }
 
-// ==================== OT LOGIC ====================
+// ==================== OT LOGIC (rules dari Settings) ====================
 function calculateOT(clockIn, clockOut, date, recordTrips) {
   if (!clockIn || !clockOut) return 0;
   if (!recordTrips) recordTrips = [];
@@ -107,20 +107,20 @@ function calculateOT(clockIn, clockOut, date, recordTrips) {
   var day = new Date(date + "T00:00:00").getDay();
   var isHoliday = typeof isPublicHoliday === "function" && isPublicHoliday(date);
 
+  var settings = typeof getOtSettings === "function" ? getOtSettings() : { weekdayAfter: "17:00", saturdayAfter: "14:00" };
+  var weekdayCut = toMinutes(settings.weekdayAfter || "17:00");
+  var saturdayCut = toMinutes(settings.saturdayAfter || "14:00");
+
   var otMinutes = 0;
 
-  // Cuti umum / Ahad = OT penuh (jam kerja sebenar)
   if (isHoliday || day === 0) {
     otMinutes = end - start;
   } else if (hasKLIACargo) {
-    // KLIA Cargo: tiada OT hari biasa & Sabtu
     otMinutes = 0;
   } else if (day === 6) {
-    // Sabtu: OT selepas 14:00
-    otMinutes = Math.max(end - Math.max(start, 840), 0);
+    otMinutes = Math.max(end - Math.max(start, saturdayCut), 0);
   } else {
-    // Isnin–Jumaat: OT selepas 17:00
-    otMinutes = Math.max(end - Math.max(start, 1020), 0);
+    otMinutes = Math.max(end - Math.max(start, weekdayCut), 0);
   }
 
   return Math.round((otMinutes / 60) * 100) / 100;
