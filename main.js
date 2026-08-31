@@ -1,11 +1,18 @@
-// main.js - RezaOT v18.1 (runtime bootstrap)
-// Full logic loaded from main-app.js to avoid accidental truncation on push.
+// main.js - RezaOT v18.1 bootstrap (loads full app in 2 parts)
 (function () {
-  var s = document.createElement("script");
-  s.src = "main-app.js?v=19";
-  s.onerror = function () {
-    console.error("Failed to load main-app.js");
-    alert("Gagal load main-app.js — hard refresh atau clear cache.");
-  };
-  document.head.appendChild(s);
+  function loadScript(src) {
+    return new Promise(function (resolve, reject) {
+      var s = document.createElement("script");
+      s.src = src;
+      s.onload = resolve;
+      s.onerror = function () { reject(new Error("Failed: " + src)); };
+      document.head.appendChild(s);
+    });
+  }
+  loadScript("main-app-1.js?v=19")
+    .then(function () { return loadScript("main-app-2.js?v=19"); })
+    .catch(function (err) {
+      console.error(err);
+      alert("Gagal load app. Hard refresh (Ctrl+Shift+R) atau clear site data.");
+    });
 })();
