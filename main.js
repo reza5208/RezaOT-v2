@@ -548,17 +548,25 @@ function updateReport() {
 
     const dateObj = new Date(date + "T00:00:00");
     const day = dateObj.getDay();
+    const holiday = typeof isPublicHoliday === "function" && isPublicHoliday(date);
+    const holidayName = typeof getHolidayName === "function" ? getHolidayName(date) : "";
 
     const tr = document.createElement("tr");
-    if (day === 6) tr.className = "saturday";
-    if (day === 0) tr.className = "sunday";
+    if (holiday) tr.className = "holiday";
+    else if (day === 6) tr.className = "saturday";
+    else if (day === 0) tr.className = "sunday";
 
     const tdDate = document.createElement("td");
     tdDate.textContent = formatDateForPDF(date);
 
     const dayNamesMs = ["Ahad", "Isnin", "Selasa", "Rabu", "Khamis", "Jumaat", "Sabtu"];
     const tdDay = document.createElement("td");
-    tdDay.textContent = dayNamesMs[day];
+    if (holiday) {
+      tdDay.textContent = dayNamesMs[day] + " (Cuti)";
+      tdDay.title = holidayName;
+    } else {
+      tdDay.textContent = dayNamesMs[day];
+    }
 
     const tdTrips = document.createElement("td");
     const tripList = rec.trips || [];
