@@ -1,20 +1,24 @@
 // constants.js
 const defaultTrips = [
-    "KLIA Cargo", "MBG KLIA2", "MBG 163", "MBG AEON Maluri", "MBG NU Sentral",
-    "MBG DPulze", "MBG Setapak Sentral", "MBG Selayang", "MBG Nilai", "MBG Redtick",
-    "MBG AEON Shah Alam", "MBG IOI Putrajaya", "MBG MRT", "MBG Pavilion Bukit Jalil",
-    "MBG Ampang", "MBG Bangsar", "MBG Setia Alam", "MBG Kota Damansara"
+  "KLIA Cargo", "MBG KLIA2", "MBG 163", "MBG AEON Maluri", "MBG NU Sentral",
+  "MBG DPulze", "MBG Setapak Sentral", "MBG Selayang", "MBG Nilai", "MBG Redtick",
+  "MBG AEON Shah Alam", "MBG IOI Putrajaya", "MBG MRT", "MBG Pavilion Bukit Jalil",
+  "MBG Ampang", "MBG Bangsar", "MBG Setia Alam", "MBG Kota Damansara"
 ];
 
 const monthNames = [
-    "Januari", "Februari", "Mac", "April", "Mei", "Jun",
-    "Julai", "Ogos", "September", "Oktober", "November", "Disember"
+  "Januari", "Februari", "Mac", "April", "Mei", "Jun",
+  "Julai", "Ogos", "September", "Oktober", "November", "Disember"
 ];
 
-// Cuti umum Malaysia — fokus Nasional + WP Kuala Lumpur + Selangor
-// Tarikh Islamik tertakluk pengesahan rasmi (moon-sighting)
+const defaultOtSettings = {
+  weekdayAfter: "17:00",
+  saturdayAfter: "14:00"
+};
+
+// Cuti umum Malaysia — Nasional + WP KL + Selangor
+// Tarikh Islamik 2027 adalah anggaran (tertakluk moon-sighting rasmi)
 const publicHolidays = {
-  // ===== 2025 =====
   "2025-01-01": "Tahun Baru",
   "2025-01-29": "Tahun Baru Cina",
   "2025-01-30": "Tahun Baru Cina (Hari 2)",
@@ -33,8 +37,6 @@ const publicHolidays = {
   "2025-10-20": "Deepavali",
   "2025-12-11": "Keputeraan Sultan Selangor",
   "2025-12-25": "Hari Krismas",
-
-  // ===== 2026 =====
   "2026-01-01": "Tahun Baru",
   "2026-02-01": "Thaipusam / Hari Wilayah Persekutuan (KL)",
   "2026-02-02": "Cuti Ganti Thaipusam / Wilayah Persekutuan",
@@ -57,7 +59,26 @@ const publicHolidays = {
   "2026-11-08": "Deepavali",
   "2026-11-09": "Cuti Ganti Deepavali",
   "2026-12-11": "Keputeraan Sultan Selangor",
-  "2026-12-25": "Hari Krismas"
+  "2026-12-25": "Hari Krismas",
+  "2027-01-01": "Tahun Baru",
+  "2027-02-01": "Hari Wilayah Persekutuan (KL)",
+  "2027-02-06": "Tahun Baru Cina",
+  "2027-02-07": "Tahun Baru Cina (Hari 2)",
+  "2027-02-08": "Cuti Ganti Tahun Baru Cina",
+  "2027-02-20": "Thaipusam",
+  "2027-03-10": "Hari Raya Aidilfitri (anggaran)",
+  "2027-03-11": "Hari Raya Aidilfitri (Hari 2)",
+  "2027-05-01": "Hari Pekerja",
+  "2027-05-16": "Hari Raya Aidiladha (anggaran)",
+  "2027-05-20": "Hari Wesak (anggaran)",
+  "2027-06-05": "Keputeraan YDPA",
+  "2027-06-06": "Awal Muharram (anggaran)",
+  "2027-08-15": "Maulidur Rasul (anggaran)",
+  "2027-08-31": "Hari Kebangsaan",
+  "2027-09-16": "Hari Malaysia",
+  "2027-10-28": "Deepavali (anggaran)",
+  "2027-12-11": "Keputeraan Sultan Selangor",
+  "2027-12-25": "Hari Krismas"
 };
 
 function isPublicHoliday(dateStr) {
@@ -66,4 +87,28 @@ function isPublicHoliday(dateStr) {
 
 function getHolidayName(dateStr) {
   return publicHolidays[dateStr] || "";
+}
+
+function timeToMinutes(time) {
+  if (!time || typeof time !== "string") return 0;
+  const parts = time.split(":");
+  return Number(parts[0]) * 60 + Number(parts[1] || 0);
+}
+
+function getOtSettings() {
+  try {
+    const raw = localStorage.getItem("otSettings");
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      return {
+        weekdayAfter: parsed.weekdayAfter || defaultOtSettings.weekdayAfter,
+        saturdayAfter: parsed.saturdayAfter || defaultOtSettings.saturdayAfter
+      };
+    }
+  } catch (e) { /* ignore */ }
+  return { ...defaultOtSettings };
+}
+
+function saveOtSettings(settings) {
+  localStorage.setItem("otSettings", JSON.stringify(settings));
 }
