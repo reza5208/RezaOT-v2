@@ -52,6 +52,12 @@ function getCurrentTimeString() {
   return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
 }
 
+/** Tarikh lokal YYYY-MM-DD (bukan UTC — elak semalam sebelum 8 pagi MY) */
+function getLocalDateString(d) {
+  const x = d || new Date();
+  return x.getFullYear() + "-" + String(x.getMonth() + 1).padStart(2, "0") + "-" + String(x.getDate()).padStart(2, "0");
+}
+
 function setNowTime(inputId) {
   const input = document.getElementById(inputId);
   if (input) {
@@ -185,7 +191,6 @@ function startFirebaseListener() {
     if (data.deviceId && data.deviceId === getDeviceId() && Date.now() - lastLocalSaveAt < 2000) { setSyncStatus("online"); return; }
     syncingFromFirebase = true;
     try {
-      // JANGAN overwrite data penuh dengan objek kosong / kurang rekod
       if (data.dailyRecords && typeof data.dailyRecords === "object") {
         const remoteCount = Object.keys(data.dailyRecords).length;
         const localCount = Object.keys(dailyRecords || {}).length;
@@ -297,13 +302,31 @@ function editSupervisorName() {
 
 function quickSaveToday() {
   const now = new Date();
-  const dateStr = now.toISOString().split("T")[0];
+  const dateStr = getLocalDateString(now);
   const dateInput = document.getElementById("date");
   const clockIn = document.getElementById("clockIn");
   const clockOut = document.getElementById("clockOut");
   if (dateInput) dateInput.value = dateStr;
   if (clockIn) clockIn.value = "08:00";
   if (clockOut) clockOut.value = "17:00";
+
+  // Pastikan bulan ikut tarikh hari ini
+  const ym = dateStr.slice(0, 7);
+  const monthInput = document.getElementById("monthYear");
+  if (monthInput && monthInput.value !== ym) {
+    const [y, m] = ym.split("-");
+    const key = monthNames[parseInt(m, 10) - 1] + " " + y;
+    if (key !== currentMonthKey) {
+      currentMonthKey = key;
+      monthInput.value = ym;
+      const currentMonthEl = document.getElementById("currentMonth");
+      if (currentMonthEl) currentMonthEl.textContent = currentMonthKey;
+      stopFirebaseListener();
+      loadFromLocalStorage();
+      startFirebaseListener();
+    }
+  }
+
   updateHolidayBadge();
   if (dailyRecords[dateStr] && (dailyRecords[dateStr].clock_in || dailyRecords[dateStr].clock_out)) {
     if (!confirm(`Rekod ${dateStr} sudah wujud. Tulis ganti 08:00–17:00?`)) return;
@@ -312,7 +335,7 @@ function quickSaveToday() {
   else { dailyRecords[dateStr].clock_in = "08:00"; dailyRecords[dateStr].clock_out = "17:00"; }
   saveToLocalStorage();
   updateReport();
-  showToast("Hari ini disimpan (08:00–17:00)");
+  showToast("Hari ini disimpan (08:00–17:00) — " + dateStr);
 }
 
 function editTrip(date, tripIndex) {
