@@ -1,4 +1,4 @@
-// main.js - RezaOT v18.1 bootstrap
+// main.js - RezaOT v20 bootstrap
 (function () {
   function loadScript(src) {
     return new Promise(function (resolve, reject) {
@@ -10,10 +10,9 @@
     });
   }
   function boot() {
-    loadScript("main-app-1.js?v=19b")
-      .then(function () { return loadScript("main-app-2.js?v=19b"); })
+    loadScript("main-app-1.js?v=20")
+      .then(function () { return loadScript("main-app-2.js?v=20"); })
       .then(function () {
-        // Scripts loaded after document ready — trigger init listeners
         document.dispatchEvent(new Event("DOMContentLoaded"));
       })
       .catch(function (err) {

@@ -7,16 +7,28 @@ function toggleManageSection() {
 function handleMonthChange() {
   const monthInput = document.getElementById("monthYear");
   if (!monthInput || !monthInput.value) return;
-  const [year, month] = monthInput.value.split("-");
-  const newKey = `${monthNames[parseInt(month, 10) - 1]} ${year}`;
+
+  // Simpan nilai yang user pilih — browser kadang reset selepas confirm()
+  const intended = monthInput.value;
+  const partsIn = intended.split("-");
+  if (partsIn.length < 2) return;
+  const year = partsIn[0];
+  const month = partsIn[1];
+  const mi = parseInt(month, 10) - 1;
+  if (mi < 0 || mi > 11) return;
+  const newKey = monthNames[mi] + " " + year;
   if (newKey === currentMonthKey) return;
-  if (!confirm(`Tukar ke ${newKey}?\nData bulan semasa sudah disimpan.`)) {
-    const parts = currentMonthKey.split(" ");
-    const mi = monthNames.indexOf(parts[0]);
-    if (mi >= 0) monthInput.value = `${parts[1]}-${String(mi + 1).padStart(2, "0")}`;
+
+  if (!confirm("Tukar ke " + newKey + "?\nData bulan semasa sudah disimpan.")) {
+    restoreMonthInput(monthInput, currentMonthKey);
     return;
   }
+
   currentMonthKey = newKey;
+  // Paksa input kekal pada pilihan user (fix browser revert)
+  monthInput.value = intended;
+  setTimeout(function () { monthInput.value = intended; }, 0);
+
   const currentMonthEl = document.getElementById("currentMonth");
   if (currentMonthEl) currentMonthEl.textContent = currentMonthKey;
   stopFirebaseListener();
@@ -24,6 +36,18 @@ function handleMonthChange() {
   updateReport();
   loadTrips();
   startFirebaseListener();
+  showToast("Bulan: " + currentMonthKey);
+}
+
+function restoreMonthInput(monthInput, key) {
+  if (!monthInput || !key) return;
+  const parts = key.split(" ");
+  if (parts.length < 2) return;
+  const idx = monthNames.indexOf(parts[0]);
+  if (idx < 0) return;
+  const val = parts[1] + "-" + String(idx + 1).padStart(2, "0");
+  monthInput.value = val;
+  setTimeout(function () { monthInput.value = val; }, 0);
 }
 
 function handleDestinationChange() {
@@ -285,6 +309,8 @@ function importData(e) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  if (window.__rezaotInited) return;
+  window.__rezaotInited = true;
   initDarkMode();
   const now = new Date();
   currentMonthKey = `${monthNames[now.getMonth()]} ${now.getFullYear()}`;
