@@ -9,6 +9,18 @@
   "orientation": "any",
   "icons": [
     {
+      "src": "assets/icons/rezaot-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/icons/rezaot-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    },
+    {
       "src": "assets/icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
@@ -21,33 +33,9 @@
       "purpose": "any"
     },
     {
-      "src": "assets/icons/ms-icon-310x310.png",
-      "sizes": "310x310",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
       "src": "assets/icons/apple-icon-180x180.png",
       "sizes": "180x180",
       "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "assets/icons/android-icon-144x144.png",
-      "sizes": "144x144",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "assets/icons/android-icon-96x96.png",
-      "sizes": "96x96",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "assets/icons/rezaot-icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
       "purpose": "any"
     }
   ]
