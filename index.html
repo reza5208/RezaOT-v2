@@ -20,13 +20,17 @@
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body>
     <div class="container">
         <header>
             <div class="header-top">
                 <h1><span class="no-print">🚛 </span>Report Trips dan OT</h1>
-                <button type="button" id="darkModeBtn" class="icon-btn no-print" title="Tukar tema">🌙</button>
+                <div class="header-actions no-print">
+                    <button type="button" id="otSettingsBtn" class="icon-btn" title="Settings OT">⚙️</button>
+                    <button type="button" id="darkModeBtn" class="icon-btn" title="Tukar tema">🌙</button>
+                </div>
             </div>
             <p class="no-print">WH3 Transport - Khairul Reza</p>
             <p class="no-print sync-status sync-syncing" id="syncStatus">● Syncing…</p>
@@ -36,12 +40,14 @@
         <div class="no-print controls">
             <label for="monthYear">Pilih Bulan & Tahun:</label>
             <input type="month" id="monthYear" required>
+            <button type="button" id="quickSaveTodayBtn" class="quick-btn">⚡ Simpan Hari Ini (8–5)</button>
         </div>
 
         <div class="header-info">
             <p><strong>Nama:</strong> Khairul Reza | <strong>Jabatan:</strong> WH3 Transport</p>
             <p><strong>Bulan:</strong> <span id="currentMonth"></span></p>
-            <p><strong>Nama Ketua:</strong> <span id="supervisorName">Talib</span></p>
+            <p><strong>Nama Ketua:</strong> <span id="supervisorName" class="editable-name">Talib</span>
+               <span class="no-print edit-hint">(klik untuk edit)</span></p>
         </div>
 
         <hr class="no-print">
@@ -50,6 +56,7 @@
             <div>
                 <label for="date">Tarikh:</label>
                 <input type="date" id="date" required>
+                <span id="holidayBadge" class="holiday-badge" hidden></span>
             </div>
             <div>
                 <label for="clockIn">Clock-In:</label>
@@ -165,7 +172,8 @@
         </div>
 
         <div class="no-print actions">
-            <button id="printButton">🖨️ Cetak Laporan (A4)</button>
+            <button id="printButton">Cetak Laporan (A4)</button>
+            <button id="exportPdfBtn" class="pdf-btn">📄 Export PDF</button>
             <button id="exportExcelBtn" class="excel-btn">📊 Export ke Excel</button>
             <button id="exportDataBtn">Export Data (Backup)</button>
             <label class="import-btn">
@@ -173,6 +181,7 @@
                 <input type="file" id="importDataInput" accept=".json" style="display:none;">
             </label>
         </div>
+        <p class="no-print version-badge">RezaOT v18</p>
     </div>
 
     <div id="toast" class="toast no-print" hidden></div>
