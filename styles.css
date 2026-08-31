@@ -258,6 +258,8 @@ td {
 }
 .saturday { background: var(--saturday) !important; }
 .sunday { background: var(--sunday) !important; }
+.holiday { background: #d6eaf8 !important; }
+body.dark .holiday { background: #1a3a52 !important; }
 
 .trip-item {
     display: flex;
@@ -640,6 +642,11 @@ hr {
     }
     .sunday {
         background: #c8c8c8 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+    .holiday {
+        background: #d0e4f5 !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
     }
