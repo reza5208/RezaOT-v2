@@ -1,5 +1,5 @@
-// sw.js - RezaOT v23
-const CACHE_NAME = "rezaot-v23";
+// sw.js - RezaOT v24
+const CACHE_NAME = "rezaot-v24";
 
 const urlsToCache = [
   "./",
@@ -23,7 +23,7 @@ const urlsToCache = [
 ];
 
 self.addEventListener("install", (event) => {
-  console.log("Installing RezaOT Service Worker v23...");
+  console.log("Installing RezaOT Service Worker v24...");
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => cache.addAll(urlsToCache))
@@ -36,10 +36,7 @@ self.addEventListener("activate", (event) => {
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cache) => {
-          if (cache !== CACHE_NAME) {
-            console.log("Deleting old cache:", cache);
-            return caches.delete(cache);
-          }
+          if (cache !== CACHE_NAME) return caches.delete(cache);
         })
       );
     }).then(() => self.clients.claim())
@@ -49,7 +46,6 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const request = event.request;
   const url = new URL(request.url);
-
   if (request.method !== "GET") return;
   if (url.origin !== self.location.origin) return;
 
@@ -57,7 +53,6 @@ self.addEventListener("fetch", (event) => {
     request.destination === "document" ||
     url.pathname.endsWith(".html") ||
     url.pathname.endsWith("/");
-
   const isScriptOrStyle =
     request.destination === "script" ||
     request.destination === "style" ||
