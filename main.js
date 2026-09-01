@@ -12,6 +12,7 @@
   function boot() {
     loadScript("main-app-1.js?v=23")
       .then(function () { return loadScript("main-app-2.js?v=23"); })
+      .then(function () { return loadScript("print-lang-fix.js?v=23"); })
       .then(function () {
         document.dispatchEvent(new Event("DOMContentLoaded"));
       })
