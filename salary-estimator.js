@@ -1,5 +1,6 @@
 // salary-estimator.js — anggaran gaji (no-print only)
 // Formula ikut payslip MBG Fruits JUL 2026 (M-264)
+// KLIA: 1 hari ada trip KLIA Cargo = RM70
 (function () {
   "use strict";
 
@@ -8,7 +9,7 @@
     hoursPerMonth: 208,
     kliaAllowance: 700,
     kliaPerDay: 70,
-    usePerKliaDay: false,
+    usePerKliaDay: true,
     otNormalRate: 1.5,
     otRestRate: 2.0,
     otHolidayRate: 3.0,
@@ -96,13 +97,16 @@
 
   function estimate(records, extra) {
     var s = loadSettings();
+    // Company rule: 1 hari ada trip KLIA Cargo = RM70
+    s.usePerKliaDay = true;
+    if (!s.kliaPerDay || s.kliaPerDay <= 0) s.kliaPerDay = 70;
     extra = extra || {};
     var hourly = baseHourly(s);
     var bd = breakdownOTHours(records);
     var normalOT = bd.normal * hourly * s.otNormalRate;
     var restOT = calcRestPay(bd.rest, hourly, s);
     var holidayOT = bd.holiday * hourly * s.otHolidayRate;
-    var klia = s.usePerKliaDay ? s.kliaPerDay * bd.kliaDays : s.kliaAllowance;
+    var klia = s.kliaPerDay * bd.kliaDays;
     var unpaidDays = Number(extra.unpaidDays || 0);
     var unpaidDeduction = unpaidDays > 0 ? (s.basicSalary / 26) * unpaidDays : 0;
 
@@ -185,7 +189,7 @@
     table.className = "salary-table";
     var tb = document.createElement("tbody");
     tb.appendChild(row("Gaji pokok", est.earnings.basic));
-    tb.appendChild(row("Allowance KLIA", est.earnings.klia));
+    tb.appendChild(row("Allowance KLIA (" + est.bd.kliaDays + " hari × RM" + money(est.settings.kliaPerDay) + ")", est.earnings.klia));
     tb.appendChild(row("OT biasa (×1.5)", est.earnings.normalOT));
     tb.appendChild(row("OT hari rehat", est.earnings.restOT));
     tb.appendChild(row("OT cuti umum", est.earnings.holidayOT));
@@ -206,7 +210,7 @@
 
     var note = document.createElement("p");
     note.className = "salary-note";
-    note.textContent = "Anggaran sahaja (ikut payslip Jul 2026). EPF atas gaji pokok" + (est.settings.epfIncludeKlia ? " + KLIA" : "") + ". Tak termasuk dalam cetak/PDF.";
+    note.textContent = "Anggaran sahaja. KLIA = RM" + money(est.settings.kliaPerDay) + "/hari trip. EPF atas gaji pokok" + (est.settings.epfIncludeKlia ? " + KLIA" : "") + ". Tak keluar dalam cetak/PDF.";
     html.appendChild(note);
     panel.appendChild(html);
   }
@@ -215,12 +219,13 @@
     var s = loadSettings();
     var basic = prompt("Gaji pokok (RM):", String(s.basicSalary));
     if (basic === null) return;
-    var klia = prompt("Allowance KLIA bulanan (RM):", String(s.kliaAllowance));
-    if (klia === null) return;
+    var kliaDay = prompt("Allowance KLIA per hari trip (RM):", String(s.kliaPerDay || 70));
+    if (kliaDay === null) return;
     var skim = prompt("SKIM SKBBK 24J (RM):", String(s.skimSkbbk));
     if (skim === null) return;
     s.basicSalary = Number(basic) || s.basicSalary;
-    s.kliaAllowance = Number(klia) || 0;
+    s.kliaPerDay = Number(kliaDay) || 70;
+    s.usePerKliaDay = true;
     s.skimSkbbk = Number(skim) || 0;
     saveSettings(s);
     render();
