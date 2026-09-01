@@ -10,11 +10,12 @@
     });
   }
   function boot() {
-    loadScript("main-app-1.js?v=27")
-      .then(function () { return loadScript("main-app-2.js?v=27"); })
-      .then(function () { return loadScript("print-lang-fix.js?v=27"); })
-      .then(function () { return loadScript("salary-estimator.js?v=27"); })
-      .then(function () { return loadScript("extras-v27.js?v=27"); })
+    loadScript("main-app-1.js?v=27b")
+      .then(function () { return loadScript("main-app-2.js?v=27b"); })
+      .then(function () { return loadScript("print-lang-fix.js?v=27b"); })
+      .then(function () { return loadScript("salary-estimator.js?v=27b"); })
+      .then(function () { return loadScript("salary-patch-v27.js?v=27b"); })
+      .then(function () { return loadScript("extras-v27.js?v=27b"); })
       .then(function () {
         document.dispatchEvent(new Event("DOMContentLoaded"));
       })
