@@ -121,8 +121,6 @@ body.dark .holiday-pick-item { border-bottom-color: rgba(255,255,255,0.06); }
 }
 
 /* ===== Mobile polish v20 ===== */
-
-/* Trip delete — subtle, bukan merah besar */
 .trip-item {
   display: flex;
   align-items: center;
@@ -172,7 +170,6 @@ body.dark .trip-del-btn:active {
   border-color: #663333 !important;
 }
 
-/* Table scroll + sticky tarikh */
 .table-wrap {
   width: 100%;
   overflow-x: auto;
@@ -204,7 +201,6 @@ body.dark #reportTable th:nth-child(1),
 body.dark #reportTable td:nth-child(1) { background: var(--card-bg, #1e2229); }
 body.dark #reportTable tr.holiday td:nth-child(1) { background: #1a3a52; }
 
-/* Pastikan lajur OT & masa nampak */
 #reportTable th:nth-child(4),
 #reportTable td:nth-child(4),
 #reportTable th:nth-child(5),
@@ -293,4 +289,11 @@ body.dark #reportTable tr.holiday td:nth-child(1) { background: #1a3a52; }
     position: static !important;
     box-shadow: none !important;
   }
+}
+
+.lang-btn {
+  font-size: 12px !important;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  min-width: 36px;
 }
