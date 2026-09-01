@@ -18,6 +18,7 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="styles-v18-extra.css">
     <link rel="stylesheet" href="styles-salary.css">
+    <link rel="stylesheet" href="styles-v27.css">
 
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
@@ -33,6 +34,7 @@
                     <button type="button" id="langToggleBtn" class="icon-btn lang-btn" title="Switch language">EN</button>
                     <button type="button" id="holidayPickerBtn" class="icon-btn" title="Pilih cuti company">🏖</button>
                     <button type="button" id="otSettingsBtn" class="icon-btn" title="Settings OT">⚙️</button>
+                    <button type="button" id="pinSettingsBtn" class="icon-btn" title="PIN app">🔑</button>
                     <button type="button" id="darkModeBtn" class="icon-btn" title="Tukar tema">🌙</button>
                 </div>
             </div>
@@ -44,6 +46,7 @@
         <div class="no-print controls">
             <label for="monthYear" data-i18n="pickMonth">Pilih Bulan & Tahun:</label>
             <input type="month" id="monthYear" required>
+            <select id="monthHistory" class="month-history" title="Bulan cepat"></select>
             <button type="button" id="quickSaveTodayBtn" class="quick-btn" data-i18n="quickSave">⚡ Simpan Hari Ini (8–5)</button>
         </div>
 
@@ -64,6 +67,7 @@
             <p><strong data-i18n="nameLabel">Nama:</strong> Khairul Reza | <strong data-i18n="empNoLabel">No. pekerja:</strong> M-264 | <strong data-i18n="deptLabel">Jabatan:</strong> WH3 Transport</p>
             <p><strong data-i18n="monthLabel">Bulan:</strong> <span id="currentMonth"></span></p>
             <p><strong data-i18n="supervisorLabel">Nama Ketua:</strong> <span id="supervisorName" class="editable-name">Talib</span>
+               <button type="button" id="supervisorLockBtn" class="lock-btn no-print" title="Kunci nama ketua">🔓</button>
                <span class="no-print edit-hint" data-i18n="editHint">(klik untuk edit)</span></p>
         </div>
 
@@ -89,6 +93,7 @@
                     <button type="button" class="now-btn" id="nowOutBtn" title="Guna masa sekarang" data-i18n="nowBtn">⏱️ Sekarang</button>
                 </div>
             </div>
+            <label class="upl-check"><input type="checkbox" id="unpaidLeaveCheck"> Cuti tanpa gaji (UPL)</label>
             <button type="submit" data-i18n="saveAttendance">✅ Simpan Kehadiran</button>
         </form>
 
@@ -211,9 +216,10 @@
                 <input type="file" id="importDataInput" accept=".json" style="display:none;">
             </label>
         </div>
-        <p class="no-print version-badge">RezaOT v26</p>
+        <p class="no-print version-badge">RezaOT v27</p>
     </div>
 
+    <button type="button" id="fabAddTrip" class="fab no-print" title="Tambah trip hari ini">＋</button>
     <div id="toast" class="toast no-print" hidden></div>
 
     <script src="constants.js"></script>
