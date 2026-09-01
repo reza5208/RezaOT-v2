@@ -1,4 +1,4 @@
-// main.js - RezaOT v23 bootstrap
+// main.js - RezaOT v25 bootstrap
 (function () {
   function loadScript(src) {
     return new Promise(function (resolve, reject) {
@@ -10,9 +10,9 @@
     });
   }
   function boot() {
-    loadScript("main-app-1.js?v=23")
-      .then(function () { return loadScript("main-app-2.js?v=23"); })
-      .then(function () { return loadScript("print-lang-fix.js?v=23"); })
+    loadScript("main-app-1.js?v=25")
+      .then(function () { return loadScript("main-app-2.js?v=25"); })
+      .then(function () { return loadScript("print-lang-fix.js?v=25"); })
       .then(function () {
         document.dispatchEvent(new Event("DOMContentLoaded"));
       })
