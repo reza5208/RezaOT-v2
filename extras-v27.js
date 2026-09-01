@@ -152,6 +152,13 @@
   }
 
   function wrapSupervisor() {
+    var supervisorEl = document.getElementById("supervisorName");
+    if (supervisorEl && !supervisorEl._v27) {
+      supervisorEl._v27 = true;
+      var neoSup = supervisorEl.cloneNode(true);
+      supervisorEl.parentNode.replaceChild(neoSup, supervisorEl);
+      neoSup.addEventListener("click", function () { window.editSupervisorName(); });
+    }
     window.editSupervisorName = function () {
       if (localStorage.getItem("supervisorLocked") === "1") {
         var pin = localStorage.getItem("rezaot_pin") || "";
@@ -211,7 +218,6 @@
     }
     if (typeof currentMonthKey === "string" && keys.indexOf(currentMonthKey) < 0) keys.push(currentMonthKey);
     keys.sort();
-    var prev = sel.value;
     sel.innerHTML = "";
     var opt0 = document.createElement("option");
     opt0.value = "";
@@ -352,6 +358,9 @@
   }
 
   function boot() {
+    if (typeof handleTripFormSubmit !== "function") return false;
+    if (window.__extras27Booted) return true;
+    window.__extras27Booted = true;
     wrapSyncStatus();
     wrapDeletes();
     wrapTripSubmit();
@@ -370,12 +379,13 @@
       };
       window.updateReport._v27hist = true;
     }
+    return true;
   }
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", function () { setTimeout(boot, 400); });
-  } else {
-    setTimeout(boot, 400);
+  function tryBoot(attempt) {
+    if (boot()) return;
+    if (attempt < 8) setTimeout(function () { tryBoot(attempt + 1); }, 300);
   }
-  setTimeout(boot, 1000);
+
+  tryBoot(0);
 })();
