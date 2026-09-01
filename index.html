@@ -27,8 +27,9 @@
     <div class="container">
         <header>
             <div class="header-top">
-                <h1><span class="no-print">🚛 </span>Report Trips dan OT</h1>
+                <h1><span class="no-print">🚛 </span><span data-i18n="appTitle">Report Trips dan OT</span></h1>
                 <div class="header-actions no-print">
+                    <button type="button" id="langToggleBtn" class="icon-btn lang-btn" title="Switch language">EN</button>
                     <button type="button" id="holidayPickerBtn" class="icon-btn" title="Pilih cuti company">🏖</button>
                     <button type="button" id="otSettingsBtn" class="icon-btn" title="Settings OT">⚙️</button>
                     <button type="button" id="darkModeBtn" class="icon-btn" title="Tukar tema">🌙</button>
@@ -40,106 +41,106 @@
         </header>
 
         <div class="no-print controls">
-            <label for="monthYear">Pilih Bulan & Tahun:</label>
+            <label for="monthYear" data-i18n="pickMonth">Pilih Bulan & Tahun:</label>
             <input type="month" id="monthYear" required>
-            <button type="button" id="quickSaveTodayBtn" class="quick-btn">⚡ Simpan Hari Ini (8–5)</button>
+            <button type="button" id="quickSaveTodayBtn" class="quick-btn" data-i18n="quickSave">⚡ Simpan Hari Ini (8–5)</button>
         </div>
 
         <div id="holidayPickerPanel" class="no-print holiday-picker-panel" style="display: none;">
-            <h3>Cuti umum — pilih yang company ambil</h3>
-            <p class="holiday-picker-hint">Data katalog kekal. Hanya cuti yang ditanda ✓ dikira OT penuh & highlight biru.</p>
+            <h3 data-i18n="holidayTitle">Cuti umum — pilih yang company ambil</h3>
+            <p class="holiday-picker-hint" data-i18n="holidayHint">Data katalog kekal. Hanya cuti yang ditanda ✓ dikira OT penuh & highlight biru.</p>
             <div class="holiday-picker-toolbar">
                 <label>Tahun:
                     <select id="holidayPickerYear"></select>
                 </label>
-                <button type="button" id="holidaySelectAll" class="secondary-btn">✓ Semua</button>
-                <button type="button" id="holidaySelectNone" class="secondary-btn">✗ Tiada</button>
+                <button type="button" id="holidaySelectAll" class="secondary-btn" data-i18n="allOn">✓ Semua</button>
+                <button type="button" id="holidaySelectNone" class="secondary-btn" data-i18n="allOff">✗ Tiada</button>
             </div>
             <ul id="holidayPickerList" class="holiday-picker-list"></ul>
         </div>
 
         <div class="header-info">
-            <p><strong>Nama:</strong> Khairul Reza | <strong>Jabatan:</strong> WH3 Transport</p>
-            <p><strong>Bulan:</strong> <span id="currentMonth"></span></p>
-            <p><strong>Nama Ketua:</strong> <span id="supervisorName" class="editable-name">Talib</span>
-               <span class="no-print edit-hint">(klik untuk edit)</span></p>
+            <p><strong data-i18n="nameLabel">Nama:</strong> Khairul Reza | <strong data-i18n="deptLabel">Jabatan:</strong> WH3 Transport</p>
+            <p><strong data-i18n="monthLabel">Bulan:</strong> <span id="currentMonth"></span></p>
+            <p><strong data-i18n="supervisorLabel">Nama Ketua:</strong> <span id="supervisorName" class="editable-name">Talib</span>
+               <span class="no-print edit-hint" data-i18n="editHint">(klik untuk edit)</span></p>
         </div>
 
         <hr class="no-print">
 
         <form id="clockForm" class="no-print form-grid">
             <div>
-                <label for="date">Tarikh:</label>
+                <label for="date" data-i18n="dateLabel">Tarikh:</label>
                 <input type="date" id="date" required>
                 <span id="holidayBadge" class="holiday-badge" hidden></span>
             </div>
             <div>
-                <label for="clockIn">Clock-In:</label>
+                <label for="clockIn" data-i18n="clockIn">Clock-In:</label>
                 <div class="time-row">
                     <input type="time" id="clockIn" required>
-                    <button type="button" class="now-btn" id="nowInBtn" title="Guna masa sekarang">⏱️ Sekarang</button>
+                    <button type="button" class="now-btn" id="nowInBtn" title="Guna masa sekarang" data-i18n="nowBtn">⏱️ Sekarang</button>
                 </div>
             </div>
             <div>
-                <label for="clockOut">Clock-Out:</label>
+                <label for="clockOut" data-i18n="clockOut">Clock-Out:</label>
                 <div class="time-row">
                     <input type="time" id="clockOut" required>
-                    <button type="button" class="now-btn" id="nowOutBtn" title="Guna masa sekarang">⏱️ Sekarang</button>
+                    <button type="button" class="now-btn" id="nowOutBtn" title="Guna masa sekarang" data-i18n="nowBtn">⏱️ Sekarang</button>
                 </div>
             </div>
-            <button type="submit">✅ Simpan Kehadiran</button>
+            <button type="submit" data-i18n="saveAttendance">✅ Simpan Kehadiran</button>
         </form>
 
         <hr class="no-print">
 
         <form id="tripForm" class="no-print form-grid">
             <div>
-                <label for="destination">Destinasi:</label>
+                <label for="destination" data-i18n="destination">Destinasi:</label>
                 <select id="destination" required></select>
             </div>
             <div id="airwayBillField" style="display: none;">
-                <label for="airwayBill">Airway Bill (KLIA Cargo):</label>
+                <label for="airwayBill" data-i18n="awb">Airway Bill (KLIA Cargo):</label>
                 <input type="text" id="airwayBill" placeholder="Contoh: ABC12345">
             </div>
-            <button type="submit">➕ Tambah Trip</button>
+            <button type="submit" data-i18n="addTrip">➕ Tambah Trip</button>
         </form>
 
         <div class="no-print toggle-section">
-            <button id="toggleManageBtn" class="secondary-btn">⚙️ Manage Destinasi</button>
+            <button id="toggleManageBtn" class="secondary-btn" data-i18n="manageDest">⚙️ Manage Destinasi</button>
         </div>
         <div id="manageDestinations" class="no-print manage-trips" style="display: none;">
-            <h3>Manage Destinasi</h3>
+            <h3 data-i18n="manageTitle">Manage Destinasi</h3>
             <div class="add-trip">
-                <input type="text" id="newTrip" placeholder="Nama destinasi baru">
-                <button id="addTripButton">Tambah</button>
+                <input type="text" id="newTrip" placeholder="Nama destinasi baru" data-i18n-placeholder="newDestPlaceholder">
+                <button id="addTripButton" data-i18n="addBtn">Tambah</button>
             </div>
-            <h4>Senarai Destinasi Semasa:</h4>
+            <h4 data-i18n="currentList">Senarai Destinasi Semasa:</h4>
             <ul id="tripList" class="trip-list"></ul>
         </div>
 
         <hr class="no-print">
 
-        <h2 class="no-print">Laporan Bulanan</h2>
+        <h2 class="no-print" data-i18n="monthlyReport">Laporan Bulanan</h2>
         <div class="table-wrap">
         <table id="reportTable">
             <thead>
                 <tr>
-                    <th>Tarikh</th>
-                    <th>Hari</th>
-                    <th>Destinasi</th>
-                    <th>Clock-In</th>
-                    <th>Clock-Out</th>
-                    <th>OT (Jam)</th>
-                    <th class="print-only">T/T pekerja</th>
-                    <th class="print-only">T/T ketua</th>
-                    <th class="no-print">Tindakan</th>
+                    <th data-i18n="thDate">Tarikh</th>
+                    <th data-i18n="thDay">Hari</th>
+                    <th data-i18n="thDest">Destinasi</th>
+                    <th data-i18n="thIn">Clock-In</th>
+                    <th data-i18n="thOut">Clock-Out</th>
+                    <th data-i18n="thOT">OT (Jam)</th>
+                    <th class="print-only" data-i18n="thSig1">T/T pekerja</th>
+                    <th class="print-only" data-i18n="thSig2">T/T ketua</th>
+                    <th class="no-print" data-i18n="thAction">Tindakan</th>
                 </tr>
             </thead>
             <tbody></tbody>
         </table>
         </div>
 
-        <p id="noRecordsMessage" class="no-records">Tiada rekod untuk bulan ini.</p>
+        <p id="noRecordsMessage" class="no-records" data-i18n="noRecords">Tiada rekod untuk bulan ini.</p>
 
         <div class="total-ot no-print">
             <h3>Jumlah OT Bulan Ini: <span id="totalOT">0.00</span> Jam</h3>
@@ -147,19 +148,19 @@
 
         <div class="summary-cards no-print" id="summaryCards">
             <div class="summary-card">
-                <span class="summary-label">Hari Berkerja</span>
+                <span class="summary-label" data-i18n="sumDays">Hari Berkerja</span>
                 <span class="summary-value" id="sumDays">0</span>
             </div>
             <div class="summary-card">
-                <span class="summary-label">Hari KLIA Cargo</span>
+                <span class="summary-label" data-i18n="sumKlia">Hari KLIA Cargo</span>
                 <span class="summary-value" id="sumKlia">0</span>
             </div>
             <div class="summary-card">
-                <span class="summary-label">Total AWB</span>
+                <span class="summary-label" data-i18n="sumAwb">Total AWB</span>
                 <span class="summary-value" id="sumAwb">0</span>
             </div>
             <div class="summary-card">
-                <span class="summary-label">Total Trip</span>
+                <span class="summary-label" data-i18n="sumTrips">Total Trip</span>
                 <span class="summary-value" id="sumTrips">0</span>
             </div>
         </div>
@@ -167,42 +168,43 @@
         <div class="print-footer print-only-block" id="printFooter">
             <table class="print-summary-table">
                 <tr>
-                    <td><strong>Jumlah OT</strong></td>
+                    <td><strong data-i18n="printOT">Jumlah OT</strong></td>
                     <td><span id="printTotalOT">0.00</span> jam</td>
                 </tr>
                 <tr>
-                    <td><strong>Jumlah Trip</strong></td>
+                    <td><strong data-i18n="printTrips">Jumlah Trip</strong></td>
                     <td><span id="printTotalTrips">0</span></td>
                 </tr>
                 <tr>
-                    <td><strong>Hari / Trip KLIA Cargo</strong></td>
+                    <td><strong data-i18n="printKlia">Hari / Trip KLIA Cargo</strong></td>
                     <td><span id="printKliaDays">0</span> hari · <span id="printKliaTrips">0</span> trip</td>
                 </tr>
                 <tr>
-                    <td><strong>Total AWB</strong></td>
+                    <td><strong data-i18n="sumAwb">Total AWB</strong></td>
                     <td><span id="printAwb">0</span></td>
                 </tr>
             </table>
-            <p class="print-note">Nota: Kelabu = Sabtu · Lebih gelap = Ahad · Biru muda = Cuti umum (yang company ambil)</p>
+            <p class="print-note" data-i18n="printNote">Nota: Kelabu = Sabtu · Lebih gelap = Ahad · Biru muda = Cuti umum (yang company ambil)</p>
         </div>
 
         <div class="no-print actions">
-            <button id="printButton">Cetak Laporan (A4)</button>
-            <button id="exportPdfBtn" class="pdf-btn">📄 Export PDF</button>
-            <button id="exportExcelBtn" class="excel-btn">📊 Export ke Excel</button>
-            <button id="exportDataBtn">Export Data (Backup)</button>
+            <button id="printButton" data-i18n="printBtn">Cetak Laporan (A4)</button>
+            <button id="exportPdfBtn" class="pdf-btn" data-i18n="pdfBtn">📄 Export PDF</button>
+            <button id="exportExcelBtn" class="excel-btn" data-i18n="excelBtn">📊 Export ke Excel</button>
+            <button id="exportDataBtn" data-i18n="backupBtn">Export Data (Backup)</button>
             <label class="import-btn">
-                Import Data
+                <span data-i18n="importBtn">Import Data</span>
                 <input type="file" id="importDataInput" accept=".json" style="display:none;">
             </label>
         </div>
-        <p class="no-print version-badge">RezaOT v18.1</p>
+        <p class="no-print version-badge">RezaOT v23</p>
     </div>
 
     <div id="toast" class="toast no-print" hidden></div>
 
     <script src="constants.js"></script>
     <script src="utils.js"></script>
+    <script src="i18n.js"></script>
     <script src="main.js"></script>
     <script src="holiday-picker.js"></script>
 
