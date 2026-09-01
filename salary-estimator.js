@@ -97,7 +97,6 @@
 
   function estimate(records, extra) {
     var s = loadSettings();
-    // Company rule: 1 hari ada trip KLIA Cargo = RM70
     s.usePerKliaDay = true;
     if (!s.kliaPerDay || s.kliaPerDay <= 0) s.kliaPerDay = 70;
     extra = extra || {};
@@ -210,7 +209,7 @@
 
     var note = document.createElement("p");
     note.className = "salary-note";
-    note.textContent = "Anggaran sahaja. KLIA = RM" + money(est.settings.kliaPerDay) + "/hari trip. EPF atas gaji pokok" + (est.settings.epfIncludeKlia ? " + KLIA" : "") + ". Tak keluar dalam cetak/PDF.";
+    note.textContent = "Anggaran sahaja. KLIA = RM" + money(est.settings.kliaPerDay) + "/hari trip. EPF atas gaji pokok" + (est.settings.epfIncludeKlia ? " + KLIA" : "") + ".";
     html.appendChild(note);
     panel.appendChild(html);
   }
