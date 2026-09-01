@@ -187,6 +187,19 @@
             <p class="print-note" data-i18n="printNote">Nota: Kelabu = Sabtu · Lebih gelap = Ahad · Biru muda = Cuti umum (yang company ambil)</p>
         </div>
 
+        <div class="no-print salary-toggle-wrap">
+            <button type="button" id="salaryToggleBtn" class="salary-toggle-btn">💰 Anggaran Gaji (tersembunyi dari cetak)</button>
+        </div>
+        <div id="salaryPanel" class="no-print" style="display: none;">
+            <div class="salary-toolbar">
+                <label>Cuti tanpa gaji (hari):
+                    <input type="number" id="salaryUnpaidDays" min="0" step="0.5" value="0">
+                </label>
+                <button type="button" id="salarySettingsBtn" class="secondary-btn">⚙️ Tetapan gaji</button>
+            </div>
+            <div id="salaryPanelBody"></div>
+        </div>
+
         <div class="no-print actions">
             <button id="printButton" data-i18n="printBtn">Cetak Laporan (A4)</button>
             <button id="exportPdfBtn" class="pdf-btn" data-i18n="pdfBtn">📄 Export PDF</button>
@@ -197,7 +210,7 @@
                 <input type="file" id="importDataInput" accept=".json" style="display:none;">
             </label>
         </div>
-        <p class="no-print version-badge">RezaOT v23</p>
+        <p class="no-print version-badge">RezaOT v26</p>
     </div>
 
     <div id="toast" class="toast no-print" hidden></div>
