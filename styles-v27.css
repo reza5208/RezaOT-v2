@@ -1,0 +1,127 @@
+/* v27 extras */
+.month-history {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 0.9rem;
+  max-width: 160px;
+}
+.upl-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  margin: 8px 0;
+  grid-column: 1 / -1;
+}
+.lock-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0 4px;
+  vertical-align: middle;
+}
+.fab {
+  position: fixed;
+  right: 16px;
+  bottom: 20px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  background: #007bff;
+  color: #fff;
+  font-size: 28px;
+  line-height: 1;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+  z-index: 90;
+  cursor: pointer;
+}
+.fab:active { transform: scale(0.96); }
+body.dark .fab { background: #0d6efd; }
+@media (min-width: 900px) {
+  .fab { display: none; }
+}
+@media print {
+  .fab, .pin-overlay, .lock-btn, .month-history, .upl-check { display: none !important; }
+}
+.table-wrap.is-loading {
+  position: relative;
+  min-height: 80px;
+}
+.table-wrap.is-loading::before {
+  content: "Memuatkan…";
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.7);
+  z-index: 5;
+  font-size: 0.9rem;
+  color: #666;
+}
+body.dark .table-wrap.is-loading::before {
+  background: rgba(30,34,41,0.75);
+  color: #aaa;
+}
+.pin-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.72);
+  z-index: 9999;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+.pin-box {
+  background: #fff;
+  padding: 24px 28px;
+  border-radius: 12px;
+  width: 280px;
+  text-align: center;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+}
+body.dark .pin-box { background: #1e2229; color: #eee; }
+.pin-box h2 { margin: 0 0 8px; }
+.pin-hint { font-size: 0.9rem; color: #666; margin-bottom: 12px; }
+.pin-box input {
+  width: 100%;
+  padding: 10px;
+  font-size: 1.2rem;
+  text-align: center;
+  letter-spacing: 0.2em;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  box-sizing: border-box;
+}
+.pin-box button {
+  width: 100%;
+  padding: 10px;
+  background: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.pin-error { color: #c82333; font-size: 0.85rem; margin-top: 8px; }
+body.pin-locked .container { filter: blur(6px); pointer-events: none; }
+.salary-compare {
+  margin-top: 12px;
+  padding: 10px;
+  background: #f5f5f5;
+  border-radius: 8px;
+  font-size: 0.85rem;
+}
+body.dark .salary-compare { background: #252a32; }
+.salary-compare input {
+  width: 100px;
+  margin-left: 6px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+.salary-diff { margin: 6px 0 0; font-weight: 600; }
