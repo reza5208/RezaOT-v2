@@ -1,0 +1,86 @@
+/* Salary estimator — app only, never print */
+.salary-toggle-wrap { margin: 12px 0; }
+.salary-toggle-btn {
+  width: 100%;
+  padding: 10px 14px;
+  background: #2c3e50;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+.salary-toggle-btn:hover { background: #1a252f; }
+#salaryPanel {
+  margin: 10px 0 16px;
+  padding: 14px;
+  background: #f7f9fb;
+  border: 1px solid #cfd8e3;
+  border-radius: 10px;
+}
+body.dark #salaryPanel {
+  background: #1a222c;
+  border-color: #333;
+}
+.salary-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.salary-toolbar label {
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.salary-toolbar input[type="number"] {
+  width: 64px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+.salary-meta {
+  font-size: 0.8rem;
+  color: #555;
+  margin: 0 0 8px;
+}
+body.dark .salary-meta { color: #aaa; }
+.salary-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+.salary-table td {
+  padding: 5px 8px;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+body.dark .salary-table td { border-bottom-color: rgba(255,255,255,0.06); }
+.salary-net {
+  margin-top: 12px;
+  padding: 12px;
+  background: #e8f5e9;
+  color: #1b5e20;
+  font-weight: 700;
+  font-size: 1.05rem;
+  text-align: center;
+  border-radius: 8px;
+}
+body.dark .salary-net {
+  background: #1b3d24;
+  color: #a5d6a7;
+}
+.salary-note {
+  font-size: 0.75rem;
+  color: #888;
+  margin: 8px 0 0;
+}
+@media print {
+  .salary-toggle-wrap,
+  #salaryPanel,
+  #salaryToggleBtn { display: none !important; }
+}
+body.pdf-export .salary-toggle-wrap,
+body.pdf-export #salaryPanel { display: none !important; }
