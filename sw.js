@@ -11,6 +11,7 @@ const urlsToCache = [
   "./main.js",
   "./main-app-1.js",
   "./main-app-2.js",
+  "./core-v28.js",
   "./i18n.js",
   "./salary-estimator.js",
   "./utils.js",

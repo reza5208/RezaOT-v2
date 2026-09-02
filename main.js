@@ -1,4 +1,4 @@
-// main.js - RezaOT v28 bootstrap (no patch layers)
+// main.js - RezaOT v28 bootstrap
 (function () {
   function loadScript(src) {
     return new Promise(function (resolve, reject) {
@@ -13,6 +13,7 @@
     loadScript("main-app-1.js?v=28")
       .then(function () { return loadScript("main-app-2.js?v=28"); })
       .then(function () { return loadScript("salary-estimator.js?v=28"); })
+      .then(function () { return loadScript("core-v28.js?v=28"); })
       .then(function () {
         document.dispatchEvent(new Event("DOMContentLoaded"));
       })
