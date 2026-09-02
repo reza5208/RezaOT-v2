@@ -1,13 +1,4 @@
 // utils.js
-function getCurrentMonthYear() {
-  const date = new Date();
-  return `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
-}
-
-function getMonthName(month) {
-  return monthNames[parseInt(month, 10) - 1] || "Unknown";
-}
-
 function loadTrips() {
   const destinationDropdown = document.getElementById("destination");
   if (!destinationDropdown) return;
