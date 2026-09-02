@@ -1,5 +1,5 @@
-// sw.js - RezaOT v27b
-const CACHE_NAME = "rezaot-v27b";
+// sw.js - RezaOT v28
+const CACHE_NAME = "rezaot-v28";
 
 const urlsToCache = [
   "./",
@@ -12,10 +12,7 @@ const urlsToCache = [
   "./main-app-1.js",
   "./main-app-2.js",
   "./i18n.js",
-  "./print-lang-fix.js",
   "./salary-estimator.js",
-  "./salary-patch-v27.js",
-  "./extras-v27.js",
   "./utils.js",
   "./constants.js",
   "./holiday-picker.js",
@@ -28,7 +25,7 @@ const urlsToCache = [
 ];
 
 self.addEventListener("install", (event) => {
-  console.log("Installing RezaOT Service Worker v27b...");
+  console.log("Installing RezaOT Service Worker v28...");
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => cache.addAll(urlsToCache))
