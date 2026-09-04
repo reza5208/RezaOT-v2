@@ -1,12 +1,13 @@
-/* styles-print-v39.css — formal clean B&W print/PDF footer */
+/* styles-print-v39.css — formal clean B&W print/PDF */
 @media print {
-  body.pdf-export,
-  body {
+  body, body.pdf-export {
     overflow: visible !important;
+    height: auto !important;
   }
   .container {
     overflow: visible !important;
     max-width: 100% !important;
+    height: auto !important;
   }
   .total-ot,
   .summary-cards,
@@ -15,11 +16,19 @@
   .version-badge,
   .sync-status,
   #syncStatus,
-  .fab {
+  .fab,
+  .actions,
+  .no-print {
     display: none !important;
   }
-  .print-footer {
+  .print-only-block,
+  .print-footer,
+  #printFooter {
     display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    height: auto !important;
+    overflow: visible !important;
     margin-top: 16px !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
@@ -60,8 +69,33 @@
     min-width: 48px !important;
     max-width: 64px !important;
   }
+  .table-wrap {
+    overflow: visible !important;
+    height: auto !important;
+  }
+  #reportTable td {
+    overflow: visible !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+  }
+  .trip-item { display: block !important; }
+  .trip-del-btn { display: none !important; }
 }
 
+body.pdf-export {
+  overflow: visible !important;
+  height: auto !important;
+  background: #fff !important;
+  color: #000 !important;
+}
+body.pdf-export .container {
+  overflow: visible !important;
+  height: auto !important;
+  max-width: 100% !important;
+  box-shadow: none !important;
+  background: #fff !important;
+  padding: 12px !important;
+}
 body.pdf-export .total-ot,
 body.pdf-export .summary-cards,
 body.pdf-export .salary-toggle-wrap,
@@ -69,11 +103,19 @@ body.pdf-export #salaryPanel,
 body.pdf-export .version-badge,
 body.pdf-export .sync-status,
 body.pdf-export #syncStatus,
-body.pdf-export .fab {
+body.pdf-export .fab,
+body.pdf-export .actions,
+body.pdf-export .no-print {
   display: none !important;
 }
-body.pdf-export .print-footer {
+body.pdf-export .print-only-block,
+body.pdf-export .print-footer,
+body.pdf-export #printFooter {
   display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  height: auto !important;
+  overflow: visible !important;
   margin-top: 16px !important;
   page-break-inside: avoid !important;
 }
@@ -105,9 +147,53 @@ body.pdf-export .print-note {
   font-size: 11px !important;
   color: #444 !important;
 }
+body.pdf-export .print-only {
+  display: table-cell !important;
+}
 body.pdf-export #reportTable th.print-only,
 body.pdf-export #reportTable td.print-only {
   width: 56px !important;
+}
+body.pdf-export .table-wrap {
+  overflow: visible !important;
+  height: auto !important;
+  border: none !important;
+}
+body.pdf-export .table-wrap::after {
+  display: none !important;
+}
+body.pdf-export #reportTable {
+  width: 100% !important;
+  min-width: 0 !important;
+  border-collapse: collapse !important;
+  border: 1.5px solid #000 !important;
+}
+body.pdf-export #reportTable th {
+  background: #d9d9d9 !important;
+  color: #000 !important;
+  border: 1px solid #000 !important;
+}
+body.pdf-export #reportTable td {
+  background: #fff !important;
+  color: #000 !important;
+  border: 1px solid #000 !important;
+  overflow: visible !important;
+  white-space: normal !important;
+  word-break: break-word !important;
+  vertical-align: top !important;
+}
+body.pdf-export #reportTable td.tarikh,
+body.pdf-export #reportTable td:nth-child(1) {
+  white-space: nowrap !important;
+  position: static !important;
+  box-shadow: none !important;
+}
+body.pdf-export .trip-item {
+  display: block !important;
+  margin: 0 0 2px !important;
+}
+body.pdf-export .trip-del-btn {
+  display: none !important;
 }
 body.pdf-export .total-ot h3,
 body.pdf-export .total-ot {
