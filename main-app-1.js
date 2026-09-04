@@ -1,4 +1,4 @@
-// main-app-1.js - RezaOT core (v39 — print/PDF only via app-p1)
+// main-app-1.js - RezaOT core (v41 — print auto-fit A4)
 
 const firebaseConfig = {
   apiKey: "AIzaSyAIxHsCJYkJ05MflQnGTibGlCNru-dEPPs",
@@ -243,15 +243,14 @@ function applyPrintAutoSize() {
   const tbody = document.querySelector("#reportTable tbody");
   if (!tbody) return;
   const rows = tbody.querySelectorAll("tr").length;
-  const table = document.getElementById("reportTable");
-  if (!table) return;
-  table.classList.remove("print-compact", "print-tiny");
-  if (rows > 22) table.classList.add("print-tiny");
-  else if (rows > 14) table.classList.add("print-compact");
+  document.body.classList.remove("print-size-sm", "print-size-xs", "print-size-xxs");
+  // Target: 1 page A4 even with ~31 workdays
+  if (rows > 26) document.body.classList.add("print-size-xxs");
+  else if (rows > 18) document.body.classList.add("print-size-xs");
+  else if (rows > 12) document.body.classList.add("print-size-sm");
 }
 function clearPrintAutoSize() {
-  const table = document.getElementById("reportTable");
-  if (table) table.classList.remove("print-compact", "print-tiny");
+  document.body.classList.remove("print-size-sm", "print-size-xs", "print-size-xxs");
 }
 
 // Fallback only — app-p1 overrides window.handlePrint / handleExportPdf
