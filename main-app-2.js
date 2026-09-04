@@ -331,7 +331,7 @@ function importData(e) {
   e.target.value = "";
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+function rezaotInitApp() {
   if (window.__rezaotInited) return;
   window.__rezaotInited = true;
   initDarkMode();
@@ -360,4 +360,7 @@ document.addEventListener("DOMContentLoaded", () => {
   updateHolidayBadge();
   startFirebaseListener();
   if (!navigator.onLine) setSyncStatus("offline");
-});
+}
+
+// main.js will fire "rezaot-ready" after all app scripts load (not DOMContentLoaded — elak loop)
+document.addEventListener("rezaot-ready", rezaotInitApp);
