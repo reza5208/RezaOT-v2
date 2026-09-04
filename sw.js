@@ -1,5 +1,5 @@
-// sw.js - RezaOT v33
-const CACHE_NAME = "rezaot-v33";
+// sw.js - RezaOT v34b
+const CACHE_NAME = "rezaot-v34b";
 
 const urlsToCache = [
   "./",
@@ -25,26 +25,17 @@ const urlsToCache = [
 ];
 
 self.addEventListener("install", (event) => {
-  console.log("Installing RezaOT Service Worker v33...");
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) =>
-      Promise.all(
-        urlsToCache.map((url) =>
-          cache.add(url).catch((err) => console.warn("SW skip", url, err))
-        )
-      )
+      Promise.all(urlsToCache.map((url) => cache.add(url).catch(() => {})))
     ).then(() => self.skipWaiting())
   );
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) =>
-      Promise.all(
-        cacheNames.map((cache) => {
-          if (cache !== CACHE_NAME) return caches.delete(cache);
-        })
-      )
+    caches.keys().then((names) =>
+      Promise.all(names.map((n) => (n !== CACHE_NAME ? caches.delete(n) : null)))
     ).then(() => self.clients.claim())
   );
 });
@@ -52,43 +43,30 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const request = event.request;
   const url = new URL(request.url);
-  if (request.method !== "GET") return;
-  if (url.origin !== self.location.origin) return;
-
-  const isHTML =
-    request.destination === "document" ||
-    url.pathname.endsWith(".html") ||
-    url.pathname.endsWith("/");
-
+  if (request.method !== "GET" || url.origin !== self.location.origin) return;
+  const isHTML = request.destination === "document" || url.pathname.endsWith(".html") || url.pathname.endsWith("/");
   if (isHTML) {
     event.respondWith(
-      fetch(request)
-        .then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            const clone = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-          }
-          return networkResponse;
-        })
-        .catch(() =>
-          caches.match(request).then((cached) => cached || caches.match("./index.html"))
-        )
+      fetch(request).then((r) => {
+        if (r && r.status === 200) {
+          const c = r.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, c));
+        }
+        return r;
+      }).catch(() => caches.match(request).then((c) => c || caches.match("./index.html")))
     );
     return;
   }
-
   event.respondWith(
     caches.match(request).then((cached) => {
-      const networkFetch = fetch(request)
-        .then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            const clone = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-          }
-          return networkResponse;
-        })
-        .catch(() => cached);
-      return cached || networkFetch;
+      const net = fetch(request).then((r) => {
+        if (r && r.status === 200) {
+          const c = r.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, c));
+        }
+        return r;
+      }).catch(() => cached);
+      return cached || net;
     })
   );
 });
