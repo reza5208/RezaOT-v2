@@ -14,7 +14,6 @@
     });
   }
 
-  /** Load heavy export libs only when user needs them */
   window.loadExportLibs = function () {
     if (window.__exportLibsReady) return window.__exportLibsReady;
     window.__exportLibsReady = Promise.all([
@@ -32,17 +31,15 @@
     if (window.__rezaotScriptsLoaded) return;
     window.__rezaotScriptsLoaded = true;
 
-    loadScript("main-app-1.js?v=30b")
-      .then(function () { return loadScript("main-app-2.js?v=30b"); })
+    loadScript("main-app-1.js?v=30c")
+      .then(function () { return loadScript("main-app-2.js?v=30c"); })
       .then(function () {
         return Promise.all([
-          loadScript("salary-estimator.js?v=30b"),
-          loadScript("app-p1.js?v=30b")
+          loadScript("salary-estimator.js?v=30c"),
+          loadScript("app-p1.js?v=30c")
         ]);
       })
       .then(function () {
-        // Jangan dispatch DOMContentLoaded semula (akan trigger boot loop).
-        // Guna event khas untuk init app.
         document.dispatchEvent(new Event("rezaot-ready"));
       })
       .catch(function (err) {
