@@ -92,6 +92,10 @@
                     <button type="button" class="now-btn" id="nowOutBtn" title="Guna masa sekarang" data-i18n="nowBtn">⏱️ Sekarang</button>
                 </div>
             </div>
+            <label class="upl-check" for="unpaidLeaveCheck">
+              <input type="checkbox" id="unpaidLeaveCheck">
+              <span>Cuti tanpa gaji (UPL) — OT = 0, potong gaji auto</span>
+            </label>
             <button type="submit" data-i18n="saveAttendance">✅ Simpan Kehadiran</button>
         </form>
 
@@ -196,8 +200,9 @@
         </div>
         <div id="salaryPanel" class="no-print" style="display: none;">
             <div class="salary-toolbar">
-                <label>Cuti tanpa gaji (hari):
-                    <input type="number" id="salaryUnpaidDays" min="0" step="0.5" value="0">
+                <span id="salaryUplAutoHint" class="upl-auto-hint">Rekod UPL: 0 hari</span>
+                <label>UPL tambahan (optional):
+                    <input type="number" id="salaryUnpaidDays" min="0" step="0.5" value="0" title="Hari UPL dari rekod dikira automatik. Field ini untuk tambah manual jika perlu.">
                 </label>
                 <button type="button" id="salarySettingsBtn" class="secondary-btn">⚙️ Tetapan gaji</button>
             </div>
@@ -214,7 +219,7 @@
                 <input type="file" id="importDataInput" accept=".json" style="display:none;">
             </label>
         </div>
-        <p class="no-print version-badge">RezaOT v36</p>
+        <p class="no-print version-badge">RezaOT v37</p>
     </div>
 
     <button type="button" id="fabAddTrip" class="fab no-print" title="Tambah trip hari ini">＋</button>
