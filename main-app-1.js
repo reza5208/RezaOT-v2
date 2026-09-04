@@ -1,5 +1,4 @@
-// main-app.js - RezaOT v18.1 (Complete + safe Firebase merge)
-// Restored base — v18 features via v18-features.js
+// main-app-1.js - RezaOT core (v39 — print/PDF only via app-p1)
 
 const firebaseConfig = {
   apiKey: "AIzaSyAIxHsCJYkJ05MflQnGTibGlCNru-dEPPs",
@@ -11,7 +10,9 @@ const firebaseConfig = {
   appId: "1:882084129955:web:6556807195973a093ce316"
 };
 
-firebase.initializeApp(firebaseConfig);
+if (!firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+}
 const db = firebase.database();
 
 let trips = [];
@@ -52,7 +53,6 @@ function getCurrentTimeString() {
   return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
 }
 
-/** Tarikh lokal YYYY-MM-DD (bukan UTC — elak semalam sebelum 8 pagi MY) */
 function getLocalDateString(d) {
   const x = d || new Date();
   return x.getFullYear() + "-" + String(x.getMonth() + 1).padStart(2, "0") + "-" + String(x.getDate()).padStart(2, "0");
@@ -87,6 +87,14 @@ async function flushOfflineQueue() {
   if (!q.length) return;
   for (const item of q) {
     try {
+      const snap = await db.ref(item.path).once("value");
+      const remote = snap.val();
+      const remoteTs = remote && remote.lastUpdated ? Date.parse(remote.lastUpdated) : 0;
+      const queueTs = item.data && item.data.lastUpdated ? Date.parse(item.data.lastUpdated) : 0;
+      if (remoteTs && queueTs && remoteTs > queueTs) {
+        clearOfflineQueueItem(item.path);
+        continue;
+      }
       await db.ref(item.path).set(item.data);
       clearOfflineQueueItem(item.path);
     } catch (err) {
@@ -185,29 +193,32 @@ function startFirebaseListener() {
   firebaseRef.on("value", (snap) => {
     firebaseReady = true;
     const data = snap.val();
-    if (!data) { setSyncStatus("online"); return; }
+    if (!data) {
+      const localCount = Object.keys(dailyRecords || {}).length;
+      if (localCount > 0 && lastLocalSaveAt && (Date.now() - lastLocalSaveAt < 8000)) {
+        setTimeout(() => saveToFirebase(), 200);
+      } else if (localCount > 0) {
+        dailyRecords = {};
+        persistLocalOnly();
+        updateReport();
+      }
+      setSyncStatus("online");
+      return;
+    }
     const remoteTs = data.lastUpdated ? Date.parse(data.lastUpdated) : 0;
-    if (remoteTs && lastLocalSaveAt && remoteTs < lastLocalSaveAt - 500) { setSyncStatus("online"); return; }
-    if (data.deviceId && data.deviceId === getDeviceId() && Date.now() - lastLocalSaveAt < 2000) { setSyncStatus("online"); return; }
+    if (data.deviceId && data.deviceId === getDeviceId() && Date.now() - lastLocalSaveAt < 2500) {
+      setSyncStatus("online"); return;
+    }
+    if (remoteTs && lastLocalSaveAt && remoteTs < lastLocalSaveAt - 800) {
+      setSyncStatus("online"); return;
+    }
     syncingFromFirebase = true;
     try {
-      if (data.dailyRecords && typeof data.dailyRecords === "object") {
-        const remoteCount = Object.keys(data.dailyRecords).length;
-        const localCount = Object.keys(dailyRecords || {}).length;
-        if (remoteCount === 0 && localCount > 0) {
-          setTimeout(() => { syncingFromFirebase = false; saveToFirebase(); }, 300);
-          setSyncStatus("online");
-          return;
-        }
-        if (remoteCount > 0) {
-          const merged = { ...dailyRecords, ...data.dailyRecords };
-          dailyRecords = merged;
-        }
-      }
-      if (data.trips && Array.isArray(data.trips) && data.trips.length) {
-        const set = new Set([...(trips || []), ...data.trips]);
-        trips = Array.from(set);
-      }
+      const remoteRecords = (data.dailyRecords && typeof data.dailyRecords === "object")
+        ? data.dailyRecords : {};
+      dailyRecords = Object.assign({}, remoteRecords);
+      if (data.trips && Array.isArray(data.trips)) trips = data.trips.slice();
+      try { clearOfflineQueueItem(path); } catch (e) {}
       persistLocalOnly();
       updateReport();
       loadTrips();
@@ -242,20 +253,29 @@ function clearPrintAutoSize() {
   const table = document.getElementById("reportTable");
   if (table) table.classList.remove("print-compact", "print-tiny");
 }
+
+// Fallback only — app-p1 overrides window.handlePrint / handleExportPdf
 function handlePrint() {
+  if (typeof window.handlePrint === "function" && window.handlePrint !== handlePrint) {
+    return window.handlePrint();
+  }
   applyPrintAutoSize();
   window.print();
   setTimeout(clearPrintAutoSize, 1000);
 }
 
 function handleExportPdf() {
+  if (typeof window.handleExportPdf === "function" && window.handleExportPdf !== handleExportPdf) {
+    return window.handleExportPdf();
+  }
   applyPrintAutoSize();
   const el = document.querySelector(".container");
   if (!el || typeof html2pdf === "undefined") {
     showToast("PDF library belum load — cuba Cetak");
-    handlePrint();
     return;
   }
+  if (window.__pdfBusy) return;
+  window.__pdfBusy = true;
   showToast("Menjana PDF…");
   document.body.classList.add("pdf-export");
   html2pdf().set({
@@ -272,6 +292,8 @@ function handleExportPdf() {
     console.error(err);
     document.body.classList.remove("pdf-export");
     showToast("Gagal jana PDF — cuba Cetak");
+  }).finally(() => {
+    setTimeout(() => { window.__pdfBusy = false; }, 800);
   });
 }
 
@@ -282,9 +304,11 @@ function updateHolidayBadge() {
   const d = dateInput.value;
   if (d && isPublicHoliday(d)) {
     badge.hidden = false;
+    badge.classList.add("holiday-badge-on");
     badge.textContent = "🏖 Cuti: " + getHolidayName(d);
   } else {
     badge.hidden = true;
+    badge.classList.remove("holiday-badge-on");
     badge.textContent = "";
   }
 }
@@ -310,7 +334,6 @@ function quickSaveToday() {
   if (clockIn) clockIn.value = "08:00";
   if (clockOut) clockOut.value = "17:00";
 
-  // Pastikan bulan ikut tarikh hari ini
   const ym = dateStr.slice(0, 7);
   const monthInput = document.getElementById("monthYear");
   if (monthInput && monthInput.value !== ym) {
@@ -353,9 +376,9 @@ function editTrip(date, tripIndex) {
 
 function openOtSettings() {
   const s = getOtSettings();
-  const weekday = prompt("OT Isnin–Jumaat bermula selepas (HH:MM):", s.weekdayAfter);
+  const weekday = prompt("OT Isnin–Jumaat bermula selepas (HH:MM):", s.weekdayAfter || s.weekdayStart || "17:00");
   if (weekday === null) return;
-  const saturday = prompt("OT Sabtu bermula selepas (HH:MM):", s.saturdayAfter);
+  const saturday = prompt("OT Sabtu bermula selepas (HH:MM):", s.saturdayAfter || s.saturdayStart || "14:00");
   if (saturday === null) return;
   const w = weekday.trim() || "17:00";
   const sa = saturday.trim() || "14:00";
@@ -363,7 +386,7 @@ function openOtSettings() {
     showToast("Format masa tidak sah. Guna HH:MM");
     return;
   }
-  saveOtSettings({ weekdayAfter: w, saturdayAfter: sa });
+  saveOtSettings({ weekdayAfter: w, saturdayAfter: sa, weekdayStart: w, saturdayStart: sa });
   updateReport();
   showToast(`OT rules: Isnin–Jumaat lepas ${w}, Sabtu lepas ${sa}`);
 }
@@ -387,10 +410,7 @@ function setupEventListeners() {
   if (toggleManage) toggleManage.addEventListener("click", toggleManageSection);
   const monthYear = document.getElementById("monthYear");
   if (monthYear) monthYear.addEventListener("change", handleMonthChange);
-  const printBtn = document.getElementById("printButton");
-  if (printBtn) printBtn.addEventListener("click", handlePrint);
-  const pdfBtn = document.getElementById("exportPdfBtn");
-  if (pdfBtn) pdfBtn.addEventListener("click", handleExportPdf);
+  // Print / PDF: wired sekali sahaja dalam app-p1 (elak double download)
   const excelBtn = document.getElementById("exportExcelBtn");
   if (excelBtn) excelBtn.addEventListener("click", exportToExcel);
   const exportBtn = document.getElementById("exportDataBtn");
