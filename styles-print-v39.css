@@ -1,0 +1,120 @@
+/* styles-print-v39.css — formal clean B&W print/PDF footer */
+@media print {
+  body.pdf-export,
+  body {
+    overflow: visible !important;
+  }
+  .container {
+    overflow: visible !important;
+    max-width: 100% !important;
+  }
+  .total-ot,
+  .summary-cards,
+  .salary-toggle-wrap,
+  #salaryPanel,
+  .version-badge,
+  .sync-status,
+  #syncStatus,
+  .fab {
+    display: none !important;
+  }
+  .print-footer {
+    display: block !important;
+    margin-top: 16px !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+  .print-summary-table {
+    width: 70% !important;
+    max-width: 420px !important;
+    margin: 0 !important;
+    border-collapse: collapse !important;
+    border: 1.5px solid #000 !important;
+    font-size: 10pt !important;
+    background: #fff !important;
+  }
+  .print-summary-table td {
+    border: 1px solid #000 !important;
+    padding: 6px 12px !important;
+    color: #000 !important;
+    background: #fff !important;
+  }
+  .print-summary-table tr td:first-child {
+    font-weight: 700 !important;
+    background: #f0f0f0 !important;
+    width: 58% !important;
+  }
+  .print-summary-table tr td:last-child {
+    text-align: right !important;
+    background: #fff !important;
+  }
+  .print-note {
+    display: block !important;
+    margin-top: 10px !important;
+    font-size: 8pt !important;
+    color: #444 !important;
+  }
+  #reportTable th.print-only,
+  #reportTable td.print-only {
+    width: 56px !important;
+    min-width: 48px !important;
+    max-width: 64px !important;
+  }
+}
+
+body.pdf-export .total-ot,
+body.pdf-export .summary-cards,
+body.pdf-export .salary-toggle-wrap,
+body.pdf-export #salaryPanel,
+body.pdf-export .version-badge,
+body.pdf-export .sync-status,
+body.pdf-export #syncStatus,
+body.pdf-export .fab {
+  display: none !important;
+}
+body.pdf-export .print-footer {
+  display: block !important;
+  margin-top: 16px !important;
+  page-break-inside: avoid !important;
+}
+body.pdf-export .print-summary-table {
+  width: 70% !important;
+  max-width: 420px !important;
+  border-collapse: collapse !important;
+  border: 1.5px solid #000 !important;
+  background: #fff !important;
+  font-size: 13px !important;
+}
+body.pdf-export .print-summary-table td {
+  border: 1px solid #000 !important;
+  padding: 6px 12px !important;
+  color: #000 !important;
+  background: #fff !important;
+}
+body.pdf-export .print-summary-table tr td:first-child {
+  font-weight: 700 !important;
+  background: #f0f0f0 !important;
+}
+body.pdf-export .print-summary-table tr td:last-child {
+  text-align: right !important;
+  background: #fff !important;
+}
+body.pdf-export .print-note {
+  display: block !important;
+  margin-top: 10px !important;
+  font-size: 11px !important;
+  color: #444 !important;
+}
+body.pdf-export #reportTable th.print-only,
+body.pdf-export #reportTable td.print-only {
+  width: 56px !important;
+}
+body.pdf-export .total-ot h3,
+body.pdf-export .total-ot {
+  background: transparent !important;
+  color: transparent !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
