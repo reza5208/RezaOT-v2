@@ -1,5 +1,5 @@
-// sw.js - RezaOT v30 (faster install)
-const CACHE_NAME = "rezaot-v30";
+// sw.js - RezaOT v31 (cache-first assets = faster PC reload)
+const CACHE_NAME = "rezaot-v31";
 
 const urlsToCache = [
   "./",
@@ -23,12 +23,12 @@ const urlsToCache = [
 ];
 
 self.addEventListener("install", (event) => {
-  console.log("Installing RezaOT Service Worker v30...");
+  console.log("Installing RezaOT Service Worker v31...");
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) =>
       Promise.all(
         urlsToCache.map((url) =>
-          cache.add(url).catch((err) => console.warn("SW skip cache", url, err))
+          cache.add(url).catch((err) => console.warn("SW skip", url, err))
         )
       )
     ).then(() => self.skipWaiting())
@@ -53,17 +53,13 @@ self.addEventListener("fetch", (event) => {
   if (request.method !== "GET") return;
   if (url.origin !== self.location.origin) return;
 
-  const isDocument =
+  const isHTML =
     request.destination === "document" ||
     url.pathname.endsWith(".html") ||
     url.pathname.endsWith("/");
-  const isScriptOrStyle =
-    request.destination === "script" ||
-    request.destination === "style" ||
-    url.pathname.endsWith(".js") ||
-    url.pathname.endsWith(".css");
 
-  if (isDocument || isScriptOrStyle) {
+  // HTML: network-first (supaya update main cepat sampai)
+  if (isHTML) {
     event.respondWith(
       fetch(request)
         .then((networkResponse) => {
@@ -77,20 +73,22 @@ self.addEventListener("fetch", (event) => {
           caches.match(request).then((cached) => cached || caches.match("./index.html"))
         )
     );
-  } else {
-    event.respondWith(
-      caches.match(request).then((cached) => {
-        return (
-          cached ||
-          fetch(request).then((networkResponse) => {
-            if (networkResponse && networkResponse.status === 200) {
-              const clone = networkResponse.clone();
-              caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-            }
-            return networkResponse;
-          })
-        );
-      })
-    );
+    return;
   }
+
+  // JS/CSS/icons: cache-first (PC reload laju), background refresh
+  event.respondWith(
+    caches.match(request).then((cached) => {
+      const networkFetch = fetch(request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const clone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+          }
+          return networkResponse;
+        })
+        .catch(() => cached);
+      return cached || networkFetch;
+    })
+  );
 });
