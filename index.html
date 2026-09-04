@@ -20,6 +20,7 @@
     <link rel="stylesheet" href="styles-salary.css">
     <link rel="stylesheet" href="styles-v27.css">
     <link rel="stylesheet" href="styles-header-fix.css">
+    <link rel="stylesheet" href="styles-ux-v38.css">
 
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
@@ -42,10 +43,10 @@
             <p class="print-only-block print-subtitle">WH3 Transport</p>
         </header>
 
-        <div class="no-print controls">
-            <label for="monthYear" data-i18n="pickMonth">Pilih Bulan & Tahun:</label>
+        <div class="no-print controls month-row">
+            <label for="monthYear" data-i18n="pickMonth">Bulan:</label>
             <input type="month" id="monthYear" required>
-            <select id="monthHistory" class="month-history" title="Bulan cepat"></select>
+            <select id="monthHistory" class="month-history" title="Bulan cepat" aria-label="Bulan cepat"></select>
             <button type="button" id="quickSaveTodayBtn" class="quick-btn" data-i18n="quickSave">⚡ Simpan Hari Ini (8–5)</button>
         </div>
 
@@ -94,7 +95,7 @@
             </div>
             <label class="upl-check" for="unpaidLeaveCheck">
               <input type="checkbox" id="unpaidLeaveCheck">
-              <span>Cuti tanpa gaji (UPL) — OT = 0, potong gaji auto</span>
+              <span data-i18n="uplLabel">UPL (cuti tanpa gaji)</span>
             </label>
             <button type="submit" data-i18n="saveAttendance">✅ Simpan Kehadiran</button>
         </form>
@@ -102,7 +103,7 @@
         <hr class="no-print">
 
         <form id="tripForm" class="no-print form-grid">
-            <div>
+            <div class="trip-dest-wrap">
                 <label for="destination" data-i18n="destination">Destinasi:</label>
                 <select id="destination" required></select>
             </div>
@@ -210,16 +211,22 @@
         </div>
 
         <div class="no-print actions">
-            <button id="printButton" data-i18n="printBtn">Cetak Laporan (A4)</button>
-            <button id="exportPdfBtn" class="pdf-btn" data-i18n="pdfBtn">📄 Export PDF</button>
-            <button id="exportExcelBtn" class="excel-btn" data-i18n="excelBtn">📊 Export ke Excel</button>
-            <button id="exportDataBtn" data-i18n="backupBtn">Export Data (Backup)</button>
-            <label class="import-btn">
-                <span data-i18n="importBtn">Import Data</span>
-                <input type="file" id="importDataInput" accept=".json" style="display:none;">
-            </label>
+            <div class="actions-group report-actions">
+                <p class="actions-label" data-i18n="groupReport">Laporan</p>
+                <button id="printButton" data-i18n="printBtn">Cetak Laporan (A4)</button>
+                <button id="exportPdfBtn" class="pdf-btn" data-i18n="pdfBtn">📄 Export PDF</button>
+                <button id="exportExcelBtn" class="excel-btn" data-i18n="excelBtn">📊 Export ke Excel</button>
+            </div>
+            <div class="actions-group data-actions">
+                <p class="actions-label" data-i18n="groupData">Data</p>
+                <button id="exportDataBtn" data-i18n="backupBtn">Export Data (Backup)</button>
+                <label class="import-btn">
+                    <span data-i18n="importBtn">Import Data</span>
+                    <input type="file" id="importDataInput" accept=".json" style="display:none;">
+                </label>
+            </div>
         </div>
-        <p class="no-print version-badge">RezaOT v37</p>
+        <p class="no-print version-badge">RezaOT v38</p>
     </div>
 
     <button type="button" id="fabAddTrip" class="fab no-print" title="Tambah trip hari ini">＋</button>
