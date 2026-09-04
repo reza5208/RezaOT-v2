@@ -1,0 +1,33 @@
+/* v32: show all header action buttons on desktop (were stacked absolute) */
+.header-top {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  position: relative !important;
+}
+.header-top h1 {
+  flex: 1;
+  min-width: 0;
+  text-align: left !important;
+  margin-bottom: 0 !important;
+  padding-right: 0 !important;
+}
+.header-actions {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 6px !important;
+  align-items: center !important;
+  position: static !important;
+  flex-shrink: 0 !important;
+  margin-left: auto !important;
+}
+.header-actions .icon-btn {
+  position: static !important;
+  right: auto !important;
+  top: auto !important;
+  width: 40px !important;
+  height: 40px !important;
+  font-size: 16px !important;
+  flex-shrink: 0;
+}

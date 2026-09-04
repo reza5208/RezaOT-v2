@@ -1,28 +1,89 @@
-// sync-fix.js — multi-device last-write-wins (v31)
+// sync-fix.js — multi-device last-write-wins + settings sync (v32)
 (function () {
   "use strict";
 
+  function settingsPath() {
+    return "users/default/settings";
+  }
+
+  function pushSettingsToCloud() {
+    if (typeof db === "undefined" || !navigator.onLine) return;
+    try {
+      var payload = {
+        observedHolidays: (typeof getObservedHolidaysMap === "function")
+          ? getObservedHolidaysMap() : {},
+        otSettings: (typeof getOtSettings === "function")
+          ? getOtSettings() : {},
+        lastUpdated: new Date().toISOString(),
+        deviceId: (typeof getDeviceId === "function") ? getDeviceId() : ""
+      };
+      db.ref(settingsPath()).set(payload).catch(function (err) {
+        console.warn("settings push failed", err);
+      });
+    } catch (e) {
+      console.warn(e);
+    }
+  }
+
+  function pullSettingsFromCloud(data) {
+    if (!data) return;
+    if (data.observedHolidays && typeof data.observedHolidays === "object") {
+      try {
+        localStorage.setItem("observedHolidays", JSON.stringify(data.observedHolidays));
+      } catch (e) {}
+    }
+    if (data.otSettings && typeof data.otSettings === "object") {
+      try {
+        localStorage.setItem("otSettings", JSON.stringify(data.otSettings));
+      } catch (e) {}
+    }
+    if (typeof updateHolidayBadge === "function") updateHolidayBadge();
+    if (typeof updateReport === "function") updateReport();
+  }
+
+  function wrapHolidaySave() {
+    if (typeof setHolidayObserved === "function" && !setHolidayObserved._sync32) {
+      var orig = setHolidayObserved;
+      window.setHolidayObserved = function (dateStr, observed) {
+        orig(dateStr, observed);
+        window.__settingsLocalAt = Date.now();
+        pushSettingsToCloud();
+      };
+      window.setHolidayObserved._sync32 = true;
+    }
+    if (typeof saveObservedHolidaysMap === "function" && !saveObservedHolidaysMap._sync32) {
+      var origSave = saveObservedHolidaysMap;
+      window.saveObservedHolidaysMap = function (map) {
+        origSave(map);
+        window.__settingsLocalAt = Date.now();
+        clearTimeout(window.__settingsPushT);
+        window.__settingsPushT = setTimeout(pushSettingsToCloud, 400);
+      };
+      window.saveObservedHolidaysMap._sync32 = true;
+    }
+  }
+
   function installBetterSync() {
     if (typeof db === "undefined" || typeof getFirebasePath !== "function") return false;
-    if (window.__syncFix31) return true;
-    window.__syncFix31 = true;
+    if (window.__syncFix32) return true;
+    window.__syncFix32 = true;
 
     window.startFirebaseListener = function () {
       if (typeof stopFirebaseListener === "function") stopFirebaseListener();
       if (!currentMonthKey) return;
-      const path = getFirebasePath();
+      var path = getFirebasePath();
       firebaseRef = db.ref(path);
       setSyncStatus("syncing");
       firebaseRef.on("value", function (snap) {
         firebaseReady = true;
-        const data = snap.val();
+        var data = snap.val();
         if (!data) {
-          const localCount = Object.keys(dailyRecords || {}).length;
+          var localCount = Object.keys(dailyRecords || {}).length;
           if (localCount > 0) setTimeout(function () { saveToFirebase(); }, 200);
           setSyncStatus("online");
           return;
         }
-        const remoteTs = data.lastUpdated ? Date.parse(data.lastUpdated) : 0;
+        var remoteTs = data.lastUpdated ? Date.parse(data.lastUpdated) : 0;
         if (data.deviceId && data.deviceId === getDeviceId() && Date.now() - lastLocalSaveAt < 2500) {
           setSyncStatus("online");
           return;
@@ -33,10 +94,10 @@
         }
         syncingFromFirebase = true;
         try {
-          const remoteRecords = (data.dailyRecords && typeof data.dailyRecords === "object")
+          var remoteRecords = (data.dailyRecords && typeof data.dailyRecords === "object")
             ? data.dailyRecords : {};
-          const remoteCount = Object.keys(remoteRecords).length;
-          const localCount = Object.keys(dailyRecords || {}).length;
+          var remoteCount = Object.keys(remoteRecords).length;
+          var localCount = Object.keys(dailyRecords || {}).length;
 
           if (remoteCount === 0 && localCount > 0) {
             setTimeout(function () { syncingFromFirebase = false; saveToFirebase(); }, 300);
@@ -45,8 +106,7 @@
           }
 
           if (remoteCount > 0) {
-            // Remote wins per-date (mobile → PC). Keep local-only dates.
-            const merged = Object.assign({}, dailyRecords);
+            var merged = Object.assign({}, dailyRecords);
             Object.keys(remoteRecords).forEach(function (date) {
               merged[date] = remoteRecords[date];
             });
@@ -54,7 +114,7 @@
           }
 
           if (data.trips && Array.isArray(data.trips) && data.trips.length) {
-            const set = new Set([].concat(trips || [], data.trips));
+            var set = new Set([].concat(trips || [], data.trips));
             trips = Array.from(set);
           }
           persistLocalOnly();
@@ -66,7 +126,7 @@
         }
       }, function (err) {
         console.error("Firebase listener error:", err);
-        const msg = String(err && err.message ? err.message : err);
+        var msg = String(err && err.message ? err.message : err);
         if (msg.indexOf("permission") >= 0) {
           setSyncStatus("denied");
           showToast("Firebase permission denied.", 4000);
@@ -75,9 +135,30 @@
         if (typeof loadTrips === "function") loadTrips();
       });
       if (typeof flushOfflineQueue === "function") flushOfflineQueue();
+
+      if (!window.__settingsListener32) {
+        window.__settingsListener32 = true;
+        db.ref(settingsPath()).on("value", function (snap) {
+          var s = snap.val();
+          if (!s) {
+            window.__settingsLocalAt = Date.now();
+            pushSettingsToCloud();
+            return;
+          }
+          if (s.deviceId && typeof getDeviceId === "function" &&
+              s.deviceId === getDeviceId() &&
+              Date.now() - (window.__settingsLocalAt || 0) < 2500) {
+            return;
+          }
+          pullSettingsFromCloud(s);
+        }, function (err) {
+          console.warn("settings listener", err);
+        });
+      }
     };
 
-    // Reset so first cloud snapshot always applies after page open
+    wrapHolidaySave();
+
     lastLocalSaveAt = 0;
     if (typeof startFirebaseListener === "function" && currentMonthKey) {
       startFirebaseListener();
