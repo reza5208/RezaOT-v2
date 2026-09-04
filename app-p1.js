@@ -1,4 +1,4 @@
-// app-p1.js — feature layer v39 (PIN, print/PDF once, FAB, sync)
+// app-p1.js — feature layer v40 (PIN, print/PDF once, FAB, sync)
 (function () {
   "use strict";
 
@@ -45,11 +45,20 @@
       if (typeof applyPrintAutoSize === "function") applyPrintAutoSize();
       document.body.classList.add("pdf-export");
       var opt = {
-        margin: [8, 8, 8, 8],
+        margin: [10, 8, 12, 8],
         filename: "RezaOT_" + (currentMonthKey || "report").replace(/\s+/g, "_") + ".pdf",
         image: { type: "jpeg", quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true },
-        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          scrollY: 0,
+          scrollX: 0,
+          windowWidth: el.scrollWidth,
+          windowHeight: el.scrollHeight + 40,
+          logging: false
+        },
+        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+        pagebreak: { mode: ["css", "legacy"] }
       };
       setTimeout(function () {
         html2pdf().set(opt).from(el).save()
@@ -120,7 +129,6 @@
   }
 
   function wireExtras() {
-    // Wire print/PDF AFTER init — and only once (clone clears other listeners)
     rebind("printButton", function () { window.handlePrint(); });
     rebind("exportPdfBtn", function () { window.handleExportPdf(); });
 
@@ -491,32 +499,24 @@
 
   function tryInstallSync(n) {
     if (installSyncAndMonth()) return;
-    if (n < 25) setTimeout(function () { tryInstallSync(n + 1); }, 200);
+    if (n > 40) return;
+    setTimeout(function () { tryInstallSync(n + 1); }, 150);
   }
 
   function boot() {
-    if (typeof handleClockFormSubmit !== "function") return false;
-    if (window.__appP1) return true;
-    window.__appP1 = true;
     wireSyncSkeleton();
-    wireExtras();
     wrapExcel();
+    wireExtras();
     tryInstallSync(0);
-    return true;
   }
 
-  function tryBoot(n) {
-    if (boot()) return;
-    if (n < 15) setTimeout(function () { tryBoot(n + 1); }, 250);
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", boot);
+  } else {
+    boot();
   }
-
-  // Rebind print AFTER rezaot-ready so setupEventListeners tidak tambah listener kedua
   document.addEventListener("rezaot-ready", function () {
-    setTimeout(function () {
-      rebind("printButton", function () { window.handlePrint(); });
-      rebind("exportPdfBtn", function () { window.handleExportPdf(); });
-    }, 0);
+    wireExtras();
+    tryInstallSync(0);
   });
-
-  tryBoot(0);
 })();
