@@ -97,6 +97,18 @@ function handleClockFormSubmit(e) {
   dailyRecords[date].unpaid = !!(upl && upl.checked);
   saveToLocalStorage();
   updateReport();
+  try {
+    document.querySelectorAll("#reportTable tbody tr").forEach(function (r) {
+      var cell = r.querySelector("td.tarikh");
+      if (!cell) return;
+      var txt = cell.textContent || "";
+      var rev = date.split("-").reverse().join("/");
+      if (txt.indexOf(date) >= 0 || txt.indexOf(rev) >= 0) {
+        r.classList.add("flash-save");
+        setTimeout(function () { r.classList.remove("flash-save"); }, 1500);
+      }
+    });
+  } catch (e) {}
   showToast(dailyRecords[date].unpaid ? "Kehadiran UPL disimpan (OT = 0)" : "Kehadiran berjaya disimpan!");
 }
 
@@ -265,9 +277,11 @@ function updateReport() {
     const tdSig1 = document.createElement("td"); tdSig1.className = "print-only";
     const tdSig2 = document.createElement("td"); tdSig2.className = "print-only";
     const tdActions = document.createElement("td"); tdActions.className = "no-print";
-    const editBtn = document.createElement("button"); editBtn.className = "edit-btn"; editBtn.textContent = "Edit";
+    const tEdit = (window.RezaOT_i18n && RezaOT_i18n.t("btnEdit")) || "Edit";
+    const tDel = (window.RezaOT_i18n && RezaOT_i18n.t("btnDelete")) || "Padam";
+    const editBtn = document.createElement("button"); editBtn.className = "edit-btn"; editBtn.textContent = tEdit;
     editBtn.addEventListener("click", () => editRecord(date));
-    const delBtn = document.createElement("button"); delBtn.className = "delete-btn"; delBtn.textContent = "Padam";
+    const delBtn = document.createElement("button"); delBtn.className = "delete-btn"; delBtn.textContent = tDel;
     delBtn.addEventListener("click", () => deleteRecord(date));
     tdActions.appendChild(editBtn); tdActions.appendChild(delBtn);
     [tdDate, tdDay, tdTrips, tdIn, tdOut, tdOT, tdSig1, tdSig2, tdActions].forEach((td) => tr.appendChild(td));
