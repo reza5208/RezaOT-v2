@@ -1,128 +1,141 @@
-// utils.js
+// utils.js — shared helpers (v38)
 function loadTrips() {
-  const destinationDropdown = document.getElementById("destination");
-  if (!destinationDropdown) return;
-
-  destinationDropdown.innerHTML = "";
+  const dest = document.getElementById("destination");
+  const tripList = document.getElementById("tripList");
+  if (!dest) return;
+  dest.innerHTML = "";
   const placeholder = document.createElement("option");
   placeholder.value = "";
-  placeholder.textContent = "-- Pilih Destinasi --";
-  destinationDropdown.appendChild(placeholder);
-
-  trips.forEach((trip) => {
-    const option = document.createElement("option");
-    option.value = trip;
-    option.textContent = trip;
-    destinationDropdown.appendChild(option);
+  placeholder.textContent = (window.RezaOT_i18n && RezaOT_i18n.t("selectDest")) || "-- Pilih Destinasi --";
+  dest.appendChild(placeholder);
+  (trips || []).forEach((t) => {
+    const opt = document.createElement("option");
+    opt.value = t;
+    opt.textContent = t;
+    dest.appendChild(opt);
   });
-
-  renderTripList();
-}
-
-function renderTripList() {
-  const tripList = document.getElementById("tripList");
-  if (!tripList) return;
-  tripList.innerHTML = "";
-
-  if (trips.length === 0) {
-    const li = document.createElement("li");
-    li.style.color = "#888";
-    li.textContent = "Tiada destinasi. Tambah baru di atas.";
-    tripList.appendChild(li);
-    return;
-  }
-
-  trips.forEach((trip, index) => {
-    const li = document.createElement("li");
-    const span = document.createElement("span");
-    span.textContent = trip;
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.textContent = "Padam";
-    btn.dataset.index = String(index);
-    btn.addEventListener("click", function () {
-      const index = parseInt(this.dataset.index, 10);
-      if (Number.isNaN(index)) return;
-      trips.splice(index, 1);
-      saveToLocalStorage();
-      loadTrips();
-      showToast("Destinasi dipadam");
+  if (tripList) {
+    tripList.innerHTML = "";
+    (trips || []).forEach((t, i) => {
+      const li = document.createElement("li");
+      li.textContent = t + " ";
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.textContent = "×";
+      btn.className = "trip-del-btn";
+      btn.addEventListener("click", () => {
+        if (!confirm("Padam destinasi \"" + t + "\"?")) return;
+        trips.splice(i, 1);
+        saveToLocalStorage();
+        loadTrips();
+      });
+      li.appendChild(btn);
+      tripList.appendChild(li);
     });
-    li.appendChild(span);
-    li.appendChild(btn);
-    tripList.appendChild(li);
-  });
-}
-
-function formatDateForPDF(date) {
-  if (!date) return "";
-  const parts = date.split("-");
-  const year = parts[0];
-  const month = parts[1];
-  const day = parts[2];
-  return `${day}/${month}/${year}`;
-}
-
-function formatTime(time) {
-  if (!time) return "-";
-  return time;
-}
-
-function calculateOT(clockIn, clockOut, date, recordTrips) {
-  if (!clockIn || !clockOut) return 0;
-
-  function toMinutes(time) {
-    const p = String(time).split(":");
-    return parseInt(p[0], 10) * 60 + parseInt(p[1] || "0", 10);
   }
+}
 
-  const inM = toMinutes(clockIn);
-  const outM = toMinutes(clockOut);
-  if (outM <= inM) return 0;
+function formatTime(t) {
+  if (!t) return "-";
+  return String(t).slice(0, 5);
+}
 
-  var hasKLIACargo = recordTrips.some(function (t) {
-    return String(t).toLowerCase().indexOf("klia cargo") >= 0;
-  });
-
-  const day = new Date(date + "T00:00:00").getDay();
-  const isHol = typeof isPublicHoliday === "function" && isPublicHoliday(date);
-  const settings = typeof getOtSettings === "function" ? getOtSettings() : { weekdayStart: "17:00", saturdayStart: "14:00" };
-
-  // Ahad / cuti: semua jam = OT
-  if (day === 0 || isHol) {
-    return Math.round(((outM - inM) / 60) * 100) / 100;
-  }
-
-  // KLIA Cargo: tiada OT hari biasa & Sabtu
-  if (hasKLIACargo) return 0;
-
-  let otStart;
-  if (day === 6) otStart = toMinutes(settings.saturdayStart || "14:00");
-  else otStart = toMinutes(settings.weekdayStart || "17:00");
-
-  if (outM <= otStart) return 0;
-  const start = Math.max(inM, otStart);
-  return Math.round(((outM - start) / 60) * 100) / 100;
+function formatDateForPDF(dateStr) {
+  if (!dateStr) return "-";
+  const p = String(dateStr).split("-");
+  if (p.length !== 3) return dateStr;
+  return p[2] + "/" + p[1] + "/" + p[0];
 }
 
 function getLocalDateString(d) {
   const x = d || new Date();
-  const y = x.getFullYear();
-  const m = String(x.getMonth() + 1).padStart(2, "0");
-  const day = String(x.getDate()).padStart(2, "0");
-  return y + "-" + m + "-" + day;
+  return x.getFullYear() + "-" + String(x.getMonth() + 1).padStart(2, "0") + "-" + String(x.getDate()).padStart(2, "0");
 }
 
-function getCurrentTimeString() {
-  const now = new Date();
-  return String(now.getHours()).padStart(2, "0") + ":" + String(now.getMinutes()).padStart(2, "0");
-}
-
-function showToast(message, duration = 2500) {
+function showToast(msg) {
   const el = document.getElementById("toast");
   if (!el) return;
-  el.textContent = message;
+  el.textContent = msg;
   el.hidden = false;
-  clearTimeout(showToast._t);
-  showToast._t = setTimeout(function () { el.hidden = true; }, duration);
+  clearTimeout(window.__toastT);
+  window.__toastT = setTimeout(() => { el.hidden = true; }, 2800);
+}
+
+function calculateOT(clockIn, clockOut, date, recordTrips) {
+  if (!clockIn || !clockOut) return 0;
+  const [hIn, mIn] = String(clockIn).split(":").map(Number);
+  const [hOut, mOut] = String(clockOut).split(":").map(Number);
+  if (Number.isNaN(hIn) || Number.isNaN(hOut)) return 0;
+  let mins = (hOut * 60 + (mOut || 0)) - (hIn * 60 + (mIn || 0));
+  if (mins <= 0) mins += 24 * 60;
+  const totalHrs = mins / 60;
+  const day = new Date(date + "T00:00:00").getDay();
+  const isHol = typeof isPublicHoliday === "function" && isPublicHoliday(date);
+  const settings = (typeof getOtSettings === "function") ? getOtSettings() : {};
+  const weekdayStart = settings.weekdayOtStart || "17:00";
+  const saturdayStart = settings.saturdayOtStart || "14:00";
+
+  const hasKlia = (recordTrips || []).some((t) => String(t).toLowerCase().includes("klia cargo"));
+
+  if (isHol || day === 0) return Math.round(totalHrs * 100) / 100;
+
+  function startMins(s) {
+    const [h, m] = String(s).split(":").map(Number);
+    return h * 60 + (m || 0);
+  }
+  const outMins = hOut * 60 + (mOut || 0);
+  let otStart = day === 6 ? startMins(saturdayStart) : startMins(weekdayStart);
+  if (hasKlia && (day >= 1 && day <= 6)) return 0;
+  if (outMins <= otStart) return 0;
+  const ot = (outMins - Math.max(otStart, hIn * 60 + (mIn || 0))) / 60;
+  return Math.max(0, Math.round(ot * 100) / 100);
+}
+
+function initDarkMode() {
+  const btn = document.getElementById("darkModeBtn");
+  const apply = () => {
+    const dark = localStorage.getItem("darkMode") === "1";
+    document.body.classList.toggle("dark", dark);
+    if (btn) btn.textContent = dark ? "☀️" : "🌙";
+  };
+  apply();
+  if (btn && !btn._wired) {
+    btn._wired = true;
+    btn.addEventListener("click", () => {
+      const next = localStorage.getItem("darkMode") !== "1";
+      localStorage.setItem("darkMode", next ? "1" : "0");
+      apply();
+    });
+  }
+}
+
+function updateHolidayBadge() {
+  const dateInput = document.getElementById("date");
+  const badge = document.getElementById("holidayBadge");
+  if (!dateInput || !badge) return;
+  const d = dateInput.value;
+  if (d && typeof isPublicHoliday === "function" && isPublicHoliday(d)) {
+    badge.hidden = false;
+    badge.classList.add("holiday-badge-on");
+    badge.textContent = (typeof getHolidayName === "function" && getHolidayName(d)) || "Cuti";
+  } else {
+    badge.hidden = true;
+    badge.classList.remove("holiday-badge-on");
+    badge.textContent = "";
+  }
+}
+
+function applyPrintAutoSize() {
+  const table = document.getElementById("reportTable");
+  if (!table) return;
+  table.style.fontSize = "";
+  const rows = table.querySelectorAll("tbody tr").length;
+  if (rows > 20) table.style.fontSize = "9px";
+  else if (rows > 14) table.style.fontSize = "10px";
+  else if (rows > 10) table.style.fontSize = "11px";
+}
+
+function clearPrintAutoSize() {
+  const table = document.getElementById("reportTable");
+  if (table) table.style.fontSize = "";
 }
