@@ -34,33 +34,23 @@ function renderTripList() {
 
   trips.forEach((trip, index) => {
     const li = document.createElement("li");
-
     const span = document.createElement("span");
     span.textContent = trip;
-
     const btn = document.createElement("button");
-    btn.className = "delete-trip-btn";
-    btn.dataset.index = String(index);
+    btn.type = "button";
     btn.textContent = "Padam";
-
+    btn.dataset.index = String(index);
+    btn.addEventListener("click", function () {
+      const index = parseInt(this.dataset.index, 10);
+      if (Number.isNaN(index)) return;
+      trips.splice(index, 1);
+      saveToLocalStorage();
+      loadTrips();
+      showToast("Destinasi dipadam");
+    });
     li.appendChild(span);
     li.appendChild(btn);
     tripList.appendChild(li);
-  });
-
-  document.querySelectorAll(".delete-trip-btn").forEach((btn) => {
-    btn.addEventListener("click", function () {
-      const index = parseInt(this.dataset.index, 10);
-      if (confirm("Padam destinasi ini?")) {
-        trips.splice(index, 1);
-        if (typeof saveToLocalStorage === "function") {
-          saveToLocalStorage();
-        } else {
-          localStorage.setItem("trips", JSON.stringify(trips));
-        }
-        loadTrips();
-      }
-    });
   });
 }
 
@@ -70,49 +60,69 @@ function formatDateForPDF(date) {
   const year = parts[0];
   const month = parts[1];
   const day = parts[2];
-  return day.padStart(2, "0") + "/" + month.padStart(2, "0") + "/" + year.slice(-2);
+  return `${day}/${month}/${year}`;
 }
 
 function formatTime(time) {
-  return time ? time : "—";
+  if (!time) return "-";
+  return time;
 }
 
-// ==================== OT LOGIC (rules dari Settings) ====================
 function calculateOT(clockIn, clockOut, date, recordTrips) {
   if (!clockIn || !clockOut) return 0;
-  if (!recordTrips) recordTrips = [];
 
   function toMinutes(time) {
-    var parts = time.split(":");
-    return Number(parts[0]) * 60 + Number(parts[1]);
+    const p = String(time).split(":");
+    return parseInt(p[0], 10) * 60 + parseInt(p[1] || "0", 10);
   }
 
-  var start = toMinutes(clockIn);
-  var end = toMinutes(clockOut);
-  if (end < start) end += 1440;
+  const inM = toMinutes(clockIn);
+  const outM = toMinutes(clockOut);
+  if (outM <= inM) return 0;
 
   var hasKLIACargo = recordTrips.some(function (t) {
-    return typeof t === "string" && t.toLowerCase().includes("klia cargo");
+    return String(t).toLowerCase().indexOf("klia cargo") >= 0;
   });
 
-  var day = new Date(date + "T00:00:00").getDay();
-  var isHoliday = typeof isPublicHoliday === "function" && isPublicHoliday(date);
+  const day = new Date(date + "T00:00:00").getDay();
+  const isHol = typeof isPublicHoliday === "function" && isPublicHoliday(date);
+  const settings = typeof getOtSettings === "function" ? getOtSettings() : { weekdayStart: "17:00", saturdayStart: "14:00" };
 
-  var settings = typeof getOtSettings === "function" ? getOtSettings() : { weekdayAfter: "17:00", saturdayAfter: "14:00" };
-  var weekdayCut = toMinutes(settings.weekdayAfter || "17:00");
-  var saturdayCut = toMinutes(settings.saturdayAfter || "14:00");
-
-  var otMinutes = 0;
-
-  if (isHoliday || day === 0) {
-    otMinutes = end - start;
-  } else if (hasKLIACargo) {
-    otMinutes = 0;
-  } else if (day === 6) {
-    otMinutes = Math.max(end - Math.max(start, saturdayCut), 0);
-  } else {
-    otMinutes = Math.max(end - Math.max(start, weekdayCut), 0);
+  // Ahad / cuti: semua jam = OT
+  if (day === 0 || isHol) {
+    return Math.round(((outM - inM) / 60) * 100) / 100;
   }
 
-  return Math.round((otMinutes / 60) * 100) / 100;
+  // KLIA Cargo: tiada OT hari biasa & Sabtu
+  if (hasKLIACargo) return 0;
+
+  let otStart;
+  if (day === 6) otStart = toMinutes(settings.saturdayStart || "14:00");
+  else otStart = toMinutes(settings.weekdayStart || "17:00");
+
+  if (outM <= otStart) return 0;
+  const start = Math.max(inM, otStart);
+  return Math.round(((outM - start) / 60) * 100) / 100;
+}
+
+function getLocalDateString(d) {
+  const x = d || new Date();
+  const y = x.getFullYear();
+  const m = String(x.getMonth() + 1).padStart(2, "0");
+  const day = String(x.getDate()).padStart(2, "0");
+  return y + "-" + m + "-" + day;
+}
+
+function getCurrentTimeString() {
+  const now = new Date();
+  return String(now.getHours()).padStart(2, "0") + ":" + String(now.getMinutes()).padStart(2, "0");
+}
+
+function showToast(message, duration = 2500) {
+  const el = document.getElementById("toast");
+  if (!el) return;
+  el.textContent = message;
+  el.hidden = false;
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(function () { el.hidden = true; }, duration);
 }
