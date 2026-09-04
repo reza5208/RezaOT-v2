@@ -1,5 +1,8 @@
-// main.js - RezaOT v30 (fast bootstrap)
+// main.js - RezaOT v30 (fast bootstrap, single boot only)
 (function () {
+  if (window.__rezaotMainBooting) return;
+  window.__rezaotMainBooting = true;
+
   function loadScript(src) {
     return new Promise(function (resolve, reject) {
       var s = document.createElement("script");
@@ -26,25 +29,31 @@
   };
 
   function boot() {
-    loadScript("main-app-1.js?v=30")
-      .then(function () { return loadScript("main-app-2.js?v=30"); })
+    if (window.__rezaotScriptsLoaded) return;
+    window.__rezaotScriptsLoaded = true;
+
+    loadScript("main-app-1.js?v=30b")
+      .then(function () { return loadScript("main-app-2.js?v=30b"); })
       .then(function () {
         return Promise.all([
-          loadScript("salary-estimator.js?v=30"),
-          loadScript("app-p1.js?v=30")
+          loadScript("salary-estimator.js?v=30b"),
+          loadScript("app-p1.js?v=30b")
         ]);
       })
       .then(function () {
-        document.dispatchEvent(new Event("DOMContentLoaded"));
+        // Jangan dispatch DOMContentLoaded semula (akan trigger boot loop).
+        // Guna event khas untuk init app.
+        document.dispatchEvent(new Event("rezaot-ready"));
       })
       .catch(function (err) {
         console.error(err);
+        window.__rezaotScriptsLoaded = false;
         alert("Gagal load app. Hard refresh (Ctrl+Shift+R).");
       });
   }
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", boot);
+    document.addEventListener("DOMContentLoaded", boot, { once: true });
   } else {
     boot();
   }
