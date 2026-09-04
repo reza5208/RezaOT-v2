@@ -1,0 +1,187 @@
+/* styles-ux-v38.css — density mobile/PC, form, table, actions */
+.controls.month-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  margin-bottom: 12px;
+}
+.controls.month-row label { margin: 0; white-space: nowrap; }
+.controls.month-row input[type="month"] {
+  flex: 1 1 140px;
+  min-width: 130px;
+  max-width: 200px;
+}
+.controls.month-row .month-history {
+  flex: 1 1 120px;
+  min-width: 110px;
+  max-width: 180px;
+}
+.controls.month-row .quick-btn {
+  flex: 1 1 100%;
+}
+
+.form-grid { max-width: 720px; }
+.form-grid .time-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.form-grid .time-row input[type="time"] {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.form-grid .time-row .now-btn {
+  flex: 0 0 auto;
+  width: auto !important;
+  min-width: 88px;
+  padding: 8px 12px;
+  white-space: nowrap;
+}
+
+.upl-check {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  grid-column: 1 / -1;
+  margin: 2px 0 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  user-select: none;
+}
+.upl-check input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: #c82333;
+  flex-shrink: 0;
+}
+
+#holidayBadge[hidden],
+#holidayBadge:not(.holiday-badge-on) {
+  display: none !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+}
+.holiday-badge { display: inline-block; margin-top: 4px; }
+input[type="date"], input[type="time"], input[type="month"] {
+  background-image: none !important;
+}
+
+#tripForm.form-grid {
+  max-width: 720px;
+  align-items: end;
+}
+#tripForm .trip-dest-wrap { min-width: 0; }
+#tripForm button[type="submit"] {
+  width: auto;
+  min-width: 140px;
+  justify-self: start;
+}
+
+#reportTable tbody tr:hover td { filter: brightness(0.97); }
+body.dark #reportTable tbody tr:hover td { filter: brightness(1.12); }
+.trip-del-btn {
+  min-width: 28px;
+  min-height: 28px;
+  font-size: 1rem;
+  line-height: 1;
+  opacity: 0.85;
+  border-radius: 6px;
+}
+.trip-del-btn:hover { opacity: 1; background: #f8d7da; }
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-width: 720px;
+}
+.actions-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+}
+.actions-group.report-actions button { flex: 1 1 140px; }
+.actions-group.data-actions button,
+.actions-group.data-actions .import-btn { flex: 1 1 140px; }
+.actions-label {
+  width: 100%;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #888;
+  margin: 4px 0 0;
+}
+
+@media (min-width: 768px) {
+  .container { max-width: 980px; }
+  .controls.month-row .quick-btn {
+    flex: 0 0 auto;
+    width: auto;
+  }
+  #tripForm.form-grid {
+    grid-template-columns: 1fr auto;
+  }
+  #tripForm #airwayBillField {
+    grid-column: 1 / -1;
+  }
+  .form-grid {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+  .form-grid .upl-check,
+  .form-grid button[type="submit"] {
+    grid-column: 1 / -1;
+  }
+  .form-grid button[type="submit"] {
+    max-width: 280px;
+  }
+}
+
+@media (max-width: 600px) {
+  .controls.month-row input[type="month"],
+  .controls.month-row .month-history {
+    flex: 1 1 calc(50% - 6px);
+    max-width: none;
+  }
+  .form-grid {
+    grid-template-columns: 1fr;
+    max-width: 100%;
+  }
+  .form-grid .time-row .now-btn {
+    min-width: 72px;
+    padding: 8px 10px;
+    font-size: 0.85rem;
+  }
+  .table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  #reportTable th:first-child,
+  #reportTable td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: inherit;
+    box-shadow: 2px 0 4px rgba(0,0,0,0.06);
+  }
+  body.dark #reportTable th:first-child,
+  body.dark #reportTable td:first-child {
+    box-shadow: 2px 0 4px rgba(0,0,0,0.3);
+  }
+  .actions button,
+  .actions .import-btn {
+    min-height: 44px;
+  }
+}
+
+@keyframes rowFlash {
+  0% { background: rgba(40, 167, 69, 0.35); }
+  100% { background: transparent; }
+}
+#reportTable tbody tr.flash-save td {
+  animation: rowFlash 1.4s ease-out;
+}
