@@ -22,6 +22,7 @@
     <link rel="stylesheet" href="styles-header-fix.css">
     <link rel="stylesheet" href="styles-ux-v38.css">
     <link rel="stylesheet" href="styles-print-v39.css">
+    <link rel="stylesheet" href="styles-app-v42.css">
 
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
@@ -53,7 +54,7 @@
 
         <div id="holidayPickerPanel" class="no-print holiday-picker-panel" style="display: none;">
             <h3 data-i18n="holidayTitle">Cuti umum — pilih yang company ambil</h3>
-            <p class="holiday-picker-hint" data-i18n="holidayHint">Data katalog kekal. Hanya cuti yang ditanda ✓ dikira OT penuh & highlight biru.</p>
+            <p class="holiday-picker-hint" data-i18n="holidayHint">Data katalog kekal. Hanya cuti yang ditanda ✓ dikira OT penuh &amp; highlight biru.</p>
             <div class="holiday-picker-toolbar">
                 <label>Tahun:
                     <select id="holidayPickerYear"></select>
@@ -131,6 +132,16 @@
         <hr class="no-print">
 
         <h2 class="no-print" data-i18n="monthlyReport">Laporan Bulanan</h2>
+        <div class="no-print report-toolbar">
+            <button type="button" id="dupYesterdayBtn" class="dup-btn" data-i18n="dupBtn">Salin trip semalam</button>
+        </div>
+        <div class="no-print filter-bar" id="filterBar">
+            <span class="filter-label" data-i18n="filterLabel">Tapis:</span>
+            <button type="button" class="filter-chip active" data-filter="all" data-i18n="filterAll">Semua</button>
+            <button type="button" class="filter-chip" data-filter="ot" data-i18n="filterOT">Ada OT</button>
+            <button type="button" class="filter-chip" data-filter="klia" data-i18n="filterKlia">KLIA</button>
+            <button type="button" class="filter-chip" data-filter="upl" data-i18n="filterUpl">UPL</button>
+        </div>
         <div class="table-wrap">
         <table id="reportTable">
             <thead>
@@ -204,7 +215,7 @@
             <div class="salary-toolbar">
                 <span id="salaryUplAutoHint" class="upl-auto-hint">Rekod UPL: 0 hari</span>
                 <label>UPL tambahan (optional):
-                    <input type="number" id="salaryUnpaidDays" min="0" step="0.5" value="0" title="Hari UPL dari rekod dikira automatik. Field ini untuk tambah manual jika perlu.">
+                    <input type="number" id="salaryUnpaidDays" min="0" step="0.5" value="0" title="Hari UPL dari rekod dikira automatik.">
                 </label>
                 <button type="button" id="salarySettingsBtn" class="secondary-btn">⚙️ Tetapan gaji</button>
             </div>
@@ -227,7 +238,7 @@
                 </label>
             </div>
         </div>
-        <p class="no-print version-badge">RezaOT v41</p>
+        <p class="no-print version-badge">RezaOT v42</p>
     </div>
 
     <button type="button" id="fabAddTrip" class="fab no-print" title="Tambah trip hari ini">＋</button>
@@ -236,6 +247,7 @@
     <script src="constants.js"></script>
     <script src="utils.js"></script>
     <script src="i18n.js"></script>
+    <script src="modal.js"></script>
     <script src="main.js"></script>
     <script src="holiday-picker.js"></script>
 
