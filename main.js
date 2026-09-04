@@ -1,4 +1,4 @@
-// main.js - RezaOT v29 (P1 cleaned bootstrap)
+// main.js - RezaOT v29 (P1 cleaned)
 (function () {
   function loadScript(src) {
     return new Promise(function (resolve, reject) {
@@ -13,6 +13,7 @@
     loadScript("main-app-1.js?v=29")
       .then(function () { return loadScript("main-app-2.js?v=29"); })
       .then(function () { return loadScript("salary-estimator.js?v=29"); })
+      .then(function () { return loadScript("app-p1.js?v=29"); })
       .then(function () {
         document.dispatchEvent(new Event("DOMContentLoaded"));
       })
