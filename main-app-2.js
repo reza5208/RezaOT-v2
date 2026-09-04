@@ -304,7 +304,7 @@ function exportToExcel() {
   data.push(["Nama", empName, "No. pekerja", empNo]);
   data.push(["Jabatan", dept, "Ketua", supervisor]);
   data.push([]);
-  data.push(["Tarikh", "Hari", "Destinasi", "AWB", "Trip", "Clock-In", "Clock-Out", "OT (Jam)"]);
+  data.push(["Tarikh", "Hari", "Destinasi", "AWB", "Trip", "Clock-In", "Clock-Out", "OT (Jam)", "T/T Pekerja", "T/T Ketua"]);
 
   let totalOT = 0, workDays = 0, kliaCargoDays = 0, totalAWB = 0, totalTrips = 0;
 
@@ -353,7 +353,9 @@ function exportToExcel() {
       tripsArr.length,
       rec.clock_in || "—",
       rec.clock_out || "—",
-      ot.toFixed(2)
+      ot.toFixed(2),
+      "",
+      ""
     ]);
   });
 
@@ -375,7 +377,9 @@ function exportToExcel() {
     { wch: 6 },
     { wch: 10 },
     { wch: 10 },
-    { wch: 10 }
+    { wch: 10 },
+    { wch: 12 },
+    { wch: 12 }
   ];
   XLSX.utils.book_append_sheet(wb, ws, "Laporan OT");
   XLSX.writeFile(wb, "RezaOT_" + String(currentMonthKey || "report").replace(/\s+/g, "_") + ".xlsx");
