@@ -1,5 +1,5 @@
-// sw.js - RezaOT v29
-const CACHE_NAME = "rezaot-v29";
+// sw.js - RezaOT v30 (faster install)
+const CACHE_NAME = "rezaot-v30";
 
 const urlsToCache = [
   "./",
@@ -18,31 +18,32 @@ const urlsToCache = [
   "./constants.js",
   "./holiday-picker.js",
   "./manifest.json",
-  "./assets/icons/rezaot-icon.svg",
-  "./assets/icons/icon-512.png",
-  "./assets/icons/android-icon-192x192.png",
-  "./assets/icons/apple-icon-180x180.png",
-  "./assets/icons/favicon-32x32.png"
+  "./assets/icons/favicon-32x32.png",
+  "./assets/icons/android-icon-192x192.png"
 ];
 
 self.addEventListener("install", (event) => {
-  console.log("Installing RezaOT Service Worker v29...");
+  console.log("Installing RezaOT Service Worker v30...");
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(urlsToCache))
-      .then(() => self.skipWaiting())
+    caches.open(CACHE_NAME).then((cache) =>
+      Promise.all(
+        urlsToCache.map((url) =>
+          cache.add(url).catch((err) => console.warn("SW skip cache", url, err))
+        )
+      )
+    ).then(() => self.skipWaiting())
   );
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
+    caches.keys().then((cacheNames) =>
+      Promise.all(
         cacheNames.map((cache) => {
           if (cache !== CACHE_NAME) return caches.delete(cache);
         })
-      );
-    }).then(() => self.clients.claim())
+      )
+    ).then(() => self.clients.claim())
   );
 });
 
