@@ -1,11 +1,9 @@
-// i18n.js — BM / EN toggle
+// i18n.js — BM / EN (v38)
 (function () {
-  "use strict";
-
-  const STR = {
+  const dict = {
     ms: {
       appTitle: "Report Trips dan OT",
-      pickMonth: "Pilih Bulan & Tahun:",
+      pickMonth: "Bulan:",
       quickSave: "⚡ Simpan Hari Ini (8–5)",
       nameLabel: "Nama:",
       empNoLabel: "No. pekerja:",
@@ -70,11 +68,18 @@
       confirmOverwrite: "sudah wujud. Tulis ganti?",
       fillAll: "Sila isi semua medan.",
       pickDate: "Sila pilih tarikh dahulu.",
-      pickDest: "Sila pilih destinasi."
+      pickDest: "Sila pilih destinasi.",
+      uplLabel: "UPL (cuti tanpa gaji)",
+      groupReport: "Laporan",
+      groupData: "Data",
+      btnEdit: "Edit",
+      btnDelete: "Padam",
+      selectDest: "-- Pilih Destinasi --",
+      monthQuick: "Bulan cepat"
     },
     en: {
       appTitle: "Trips & OT Report",
-      pickMonth: "Select Month & Year:",
+      pickMonth: "Month:",
       quickSave: "⚡ Save Today (8–5)",
       nameLabel: "Name:",
       empNoLabel: "Emp. No.:",
@@ -102,8 +107,8 @@
       thIn: "Clock-In",
       thOut: "Clock-Out",
       thOT: "OT (Hrs)",
-      thSig1: "Staff sign",
-      thSig2: "Supervisor",
+      thSig1: "Emp. sign",
+      thSig2: "Sup. sign",
       thAction: "Actions",
       noRecords: "No records for this month.",
       totalOT: "Total OT this month:",
@@ -117,20 +122,20 @@
       excelBtn: "📊 Export Excel",
       backupBtn: "Export Data (Backup)",
       importBtn: "Import Data",
-      holidayTitle: "Public holidays — select company days off",
-      holidayHint: "Full catalogue kept. Only checked days count as full OT & blue highlight.",
+      holidayTitle: "Public holidays — mark company observed",
+      holidayHint: "Catalog stays. Only checked days count as full OT & blue highlight.",
       yearLabel: "Year:",
       allOn: "✓ All",
       allOff: "✗ None",
       printOT: "Total OT",
-      printTrips: "Total Trips",
+      printTrips: "Total trips",
       printKlia: "KLIA Cargo days / trips",
-      printNote: "Note: Grey = Saturday · Darker = Sunday · Light blue = Public holiday (observed)",
-      days: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+      printNote: "Note: Grey = Saturday · Darker = Sunday · Light blue = observed public holiday",
+      days: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
       holidaySuffix: " (PH)",
       langBtn: "BM",
       langTitle: "Tukar ke Bahasa Melayu",
-      toastPrintPdf: "Phone/PWA: opening PDF for print…",
+      toastPrintPdf: "Phone/PWA: open PDF to print…",
       toastSaved: "Attendance saved!",
       toastTrip: "Trip added!",
       toastToday: "Today saved (08:00–17:00)",
@@ -139,30 +144,35 @@
       confirmOverwrite: "already exists. Overwrite?",
       fillAll: "Please fill all fields.",
       pickDate: "Please select a date first.",
-      pickDest: "Please select a destination."
+      pickDest: "Please select a destination.",
+      uplLabel: "UPL (unpaid leave)",
+      groupReport: "Reports",
+      groupData: "Data",
+      btnEdit: "Edit",
+      btnDelete: "Delete",
+      selectDest: "-- Select destination --",
+      monthQuick: "Quick month"
     }
   };
 
+  function getLang() {
+    return localStorage.getItem("rezaot_lang") === "en" ? "en" : "ms";
+  }
+
   window.RezaOT_i18n = {
-    lang: localStorage.getItem("rezaot_lang") || "ms",
     t: function (key) {
-      const pack = STR[this.lang] || STR.ms;
-      return pack[key] != null ? pack[key] : (STR.ms[key] || key);
+      const lang = getLang();
+      const pack = dict[lang] || dict.ms;
+      return pack[key] != null ? pack[key] : (dict.ms[key] != null ? dict.ms[key] : key);
     },
     days: function () {
       return this.t("days");
     },
     apply: function () {
-      const lang = this.lang;
-      document.documentElement.lang = lang === "en" ? "en" : "ms";
       document.querySelectorAll("[data-i18n]").forEach(function (el) {
         const key = el.getAttribute("data-i18n");
         const val = window.RezaOT_i18n.t(key);
-        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
-          if (el.hasAttribute("data-i18n-placeholder")) el.placeholder = val;
-        } else {
-          el.textContent = val;
-        }
+        if (val != null) el.textContent = val;
       });
       document.querySelectorAll("[data-i18n-title]").forEach(function (el) {
         el.title = window.RezaOT_i18n.t(el.getAttribute("data-i18n-title"));
@@ -170,39 +180,22 @@
       document.querySelectorAll("[data-i18n-placeholder]").forEach(function (el) {
         el.placeholder = window.RezaOT_i18n.t(el.getAttribute("data-i18n-placeholder"));
       });
-
       const langBtn = document.getElementById("langToggleBtn");
       if (langBtn) {
         langBtn.textContent = window.RezaOT_i18n.t("langBtn");
         langBtn.title = window.RezaOT_i18n.t("langTitle");
       }
-
-      const totalWrap = document.querySelector(".total-ot h3");
-      if (totalWrap) {
-        const span = document.getElementById("totalOT");
-        const otVal = span ? span.textContent : "0.00";
-        totalWrap.textContent = "";
-        totalWrap.appendChild(document.createTextNode(window.RezaOT_i18n.t("totalOT") + " "));
-        const s = document.createElement("span");
-        s.id = "totalOT";
-        s.textContent = otVal;
-        totalWrap.appendChild(s);
-        totalWrap.appendChild(document.createTextNode(" " + window.RezaOT_i18n.t("hours")));
-      }
-
+      if (typeof loadTrips === "function") loadTrips();
       if (typeof updateReport === "function") updateReport();
     },
     toggle: function () {
-      this.lang = this.lang === "ms" ? "en" : "ms";
-      localStorage.setItem("rezaot_lang", this.lang);
+      const next = getLang() === "en" ? "ms" : "en";
+      localStorage.setItem("rezaot_lang", next);
       this.apply();
-      if (typeof showToast === "function") {
-        showToast(this.lang === "en" ? "Language: English" : "Bahasa: Melayu");
-      }
     }
   };
 
-  window.t = function (key) {
-    return window.RezaOT_i18n.t(key);
-  };
+  document.addEventListener("DOMContentLoaded", function () {
+    window.RezaOT_i18n.apply();
+  });
 })();
