@@ -1,4 +1,4 @@
-// main.js - RezaOT v32
+// main.js - RezaOT v33
 (function () {
   if (window.__rezaotMainBooting) return;
   window.__rezaotMainBooting = true;
@@ -31,13 +31,13 @@
     if (window.__rezaotScriptsLoaded) return;
     window.__rezaotScriptsLoaded = true;
 
-    loadScript("main-app-1.js?v=32")
-      .then(function () { return loadScript("main-app-2.js?v=32"); })
+    loadScript("main-app-1.js?v=33")
+      .then(function () { return loadScript("main-app-2.js?v=33"); })
       .then(function () {
         return Promise.all([
-          loadScript("salary-estimator.js?v=32"),
-          loadScript("app-p1.js?v=32"),
-          loadScript("sync-fix.js?v=32")
+          loadScript("salary-estimator.js?v=33"),
+          loadScript("app-p1.js?v=33"),
+          loadScript("sync-fix.js?v=33")
         ]);
       })
       .then(function () {

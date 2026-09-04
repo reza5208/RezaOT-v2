@@ -1,5 +1,5 @@
-// sw.js - RezaOT v32
-const CACHE_NAME = "rezaot-v32";
+// sw.js - RezaOT v33
+const CACHE_NAME = "rezaot-v33";
 
 const urlsToCache = [
   "./",
@@ -25,7 +25,7 @@ const urlsToCache = [
 ];
 
 self.addEventListener("install", (event) => {
-  console.log("Installing RezaOT Service Worker v32...");
+  console.log("Installing RezaOT Service Worker v33...");
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) =>
       Promise.all(
