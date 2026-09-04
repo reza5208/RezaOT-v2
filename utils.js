@@ -60,7 +60,8 @@ function formatDateForPDF(date) {
   const year = parts[0];
   const month = parts[1];
   const day = parts[2];
-  return `${day}/${month}/${year}`;
+  const yy = String(year).slice(-2);
+  return day + "/" + month + "/" + yy;
 }
 
 function formatTime(time) {

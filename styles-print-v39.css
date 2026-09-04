@@ -204,3 +204,60 @@ body.pdf-export .total-ot {
   padding: 0 !important;
   overflow: hidden !important;
 }
+
+/* ===== 1-page A4 density (row count driven by applyPrintAutoSize) ===== */
+@media print {
+  body.print-size-sm #reportTable { font-size: 8.5pt !important; }
+  body.print-size-sm #reportTable th,
+  body.print-size-sm #reportTable td { padding: 3px 3px !important; }
+  body.print-size-sm .header-info { font-size: 9pt !important; padding: 5px 8px !important; }
+  body.print-size-sm h1 { font-size: 13pt !important; }
+  body.print-size-sm .print-summary-table { font-size: 9pt !important; }
+  body.print-size-sm .print-summary-table td { padding: 4px 8px !important; }
+
+  body.print-size-xs #reportTable { font-size: 7.5pt !important; }
+  body.print-size-xs #reportTable th,
+  body.print-size-xs #reportTable td { padding: 2px 2px !important; line-height: 1.2 !important; }
+  body.print-size-xs .header-info { font-size: 8pt !important; padding: 4px 6px !important; margin-bottom: 6px !important; }
+  body.print-size-xs h1 { font-size: 12pt !important; margin-bottom: 2px !important; }
+  body.print-size-xs .print-subtitle { font-size: 9pt !important; margin-bottom: 4px !important; }
+  body.print-size-xs .print-summary-table { font-size: 8pt !important; }
+  body.print-size-xs .print-summary-table td { padding: 3px 6px !important; }
+  body.print-size-xs .print-note { font-size: 7pt !important; }
+  body.print-size-xs .print-footer { margin-top: 8px !important; }
+
+  body.print-size-xxs #reportTable { font-size: 6.5pt !important; }
+  body.print-size-xxs #reportTable th,
+  body.print-size-xxs #reportTable td { padding: 1px 2px !important; line-height: 1.15 !important; }
+  body.print-size-xxs .header-info { font-size: 7.5pt !important; padding: 3px 5px !important; margin-bottom: 4px !important; }
+  body.print-size-xxs h1 { font-size: 11pt !important; margin-bottom: 1px !important; }
+  body.print-size-xxs .print-subtitle { font-size: 8pt !important; margin-bottom: 2px !important; }
+  body.print-size-xxs .print-summary-table { font-size: 7pt !important; max-width: 340px !important; }
+  body.print-size-xxs .print-summary-table td { padding: 2px 5px !important; }
+  body.print-size-xxs .print-note { font-size: 6.5pt !important; margin-top: 4px !important; }
+  body.print-size-xxs .print-footer { margin-top: 6px !important; }
+  body.print-size-xxs .container { padding: 4px !important; }
+}
+
+body.pdf-export.print-size-sm #reportTable { font-size: 11px !important; }
+body.pdf-export.print-size-sm #reportTable th,
+body.pdf-export.print-size-sm #reportTable td { padding: 3px 3px !important; }
+body.pdf-export.print-size-sm .header-info { font-size: 12px !important; padding: 5px 8px !important; }
+body.pdf-export.print-size-sm h1 { font-size: 16px !important; }
+
+body.pdf-export.print-size-xs #reportTable { font-size: 10px !important; }
+body.pdf-export.print-size-xs #reportTable th,
+body.pdf-export.print-size-xs #reportTable td { padding: 2px 2px !important; line-height: 1.2 !important; }
+body.pdf-export.print-size-xs .header-info { font-size: 11px !important; padding: 4px 6px !important; }
+body.pdf-export.print-size-xs h1 { font-size: 14px !important; }
+body.pdf-export.print-size-xs .print-summary-table { font-size: 11px !important; }
+body.pdf-export.print-size-xs .print-note { font-size: 9px !important; }
+
+body.pdf-export.print-size-xxs #reportTable { font-size: 9px !important; }
+body.pdf-export.print-size-xxs #reportTable th,
+body.pdf-export.print-size-xxs #reportTable td { padding: 1px 2px !important; line-height: 1.15 !important; }
+body.pdf-export.print-size-xxs .header-info { font-size: 10px !important; padding: 3px 5px !important; }
+body.pdf-export.print-size-xxs h1 { font-size: 13px !important; }
+body.pdf-export.print-size-xxs .print-summary-table { font-size: 10px !important; }
+body.pdf-export.print-size-xxs .print-note { font-size: 8px !important; }
+body.pdf-export.print-size-xxs .container { padding: 6px !important; }
