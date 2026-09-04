@@ -22,8 +22,7 @@
 
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- xlsx + html2pdf: load on demand when export (see main.js loadExportLibs) -->
 </head>
 <body>
     <div class="container">
@@ -216,7 +215,7 @@
                 <input type="file" id="importDataInput" accept=".json" style="display:none;">
             </label>
         </div>
-        <p class="no-print version-badge">RezaOT v27</p>
+        <p class="no-print version-badge">RezaOT v30</p>
     </div>
 
     <button type="button" id="fabAddTrip" class="fab no-print" title="Tambah trip hari ini">＋</button>
