@@ -31,6 +31,7 @@ function handleMonthChange() {
   if (currentMonthEl) currentMonthEl.textContent = currentMonthKey;
   stopFirebaseListener();
   loadFromLocalStorage();
+  if (typeof lastLocalSaveAt !== "undefined") lastLocalSaveAt = 0;
   updateReport();
   loadTrips();
   startFirebaseListener();
@@ -93,10 +94,10 @@ function handleClockFormSubmit(e) {
   if (!dailyRecords[date]) dailyRecords[date] = { clock_in: clockIn, clock_out: clockOut, trips: [] };
   else { dailyRecords[date].clock_in = clockIn; dailyRecords[date].clock_out = clockOut; }
   const upl = document.getElementById("unpaidLeaveCheck");
-  if (upl) dailyRecords[date].unpaid = !!upl.checked;
+  dailyRecords[date].unpaid = !!(upl && upl.checked);
   saveToLocalStorage();
   updateReport();
-  showToast("Kehadiran berjaya disimpan!");
+  showToast(dailyRecords[date].unpaid ? "Kehadiran UPL disimpan (OT = 0)" : "Kehadiran berjaya disimpan!");
 }
 
 function handleTripFormSubmit(e) {
@@ -154,9 +155,11 @@ function editRecord(date) {
   const dateInput = document.getElementById("date");
   const clockIn = document.getElementById("clockIn");
   const clockOut = document.getElementById("clockOut");
+  const uplEl = document.getElementById("unpaidLeaveCheck");
   if (dateInput) dateInput.value = date;
   if (clockIn) clockIn.value = rec.clock_in || "08:00";
   if (clockOut) clockOut.value = rec.clock_out || "17:00";
+  if (uplEl) uplEl.checked = !!rec.unpaid;
   updateHolidayBadge();
   showToast("Rekod dimuat ke form — simpan untuk kemaskini");
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -205,7 +208,8 @@ function updateReport() {
   dates.forEach((date) => {
     const rec = dailyRecords[date];
     if (!rec) return;
-    const ot = calculateOT(rec.clock_in, rec.clock_out, date, rec.trips || []);
+    let ot = calculateOT(rec.clock_in, rec.clock_out, date, rec.trips || []);
+    if (rec.unpaid) ot = 0;
     totalOT += ot;
     const day = new Date(date + "T00:00:00").getDay();
     const holiday = isPublicHoliday(date);
@@ -213,13 +217,23 @@ function updateReport() {
     if (day === 0) tr.classList.add("sunday");
     else if (day === 6) tr.classList.add("saturday");
     if (holiday) tr.classList.add("holiday");
+    if (rec.unpaid) tr.classList.add("upl-row");
     const tdDate = document.createElement("td");
     tdDate.className = "tarikh";
     tdDate.textContent = formatDateForPDF(date);
     const tdDay = document.createElement("td");
     tdDay.className = "hari";
-    tdDay.textContent = holiday ? dayNamesMs[day] + " (Cuti)" : dayNamesMs[day];
+    let dayLabel = holiday ? dayNamesMs[day] + " (Cuti)" : dayNamesMs[day];
+    tdDay.textContent = dayLabel;
     if (holiday) tdDay.title = getHolidayName(date);
+    if (rec.unpaid) {
+      const badge = document.createElement("span");
+      badge.className = "upl-badge no-print";
+      badge.textContent = "UPL";
+      badge.title = "Cuti tanpa gaji";
+      tdDay.appendChild(document.createTextNode(" "));
+      tdDay.appendChild(badge);
+    }
     const tdTrips = document.createElement("td");
     const tripList = rec.trips || [];
     if (tripList.length === 0) tdTrips.textContent = "—";
@@ -270,8 +284,11 @@ function exportToExcel() {
   Object.keys(dailyRecords).sort().forEach((date) => {
     const rec = dailyRecords[date];
     const day = new Date(date + "T00:00:00").getDay();
-    const dayName = dayNamesMs[day] + (isPublicHoliday(date) ? " (Cuti)" : "");
-    const ot = calculateOT(rec.clock_in, rec.clock_out, date, rec.trips || []);
+    const dayName = dayNamesMs[day]
+      + (isPublicHoliday(date) ? " (Cuti)" : "")
+      + (rec.unpaid ? " (UPL)" : "");
+    let ot = calculateOT(rec.clock_in, rec.clock_out, date, rec.trips || []);
+    if (rec.unpaid) ot = 0;
     totalOT += ot;
     let hasKlia = false;
     (rec.trips || []).forEach((t) => { if (String(t).toLowerCase().includes("klia cargo")) hasKlia = true; });
@@ -354,6 +371,7 @@ function rezaotInitApp() {
   const supervisorEl = document.getElementById("supervisorName");
   if (supervisorEl) supervisorEl.textContent = localStorage.getItem("supervisorName") || "Talib";
   loadFromLocalStorage();
+  if (typeof lastLocalSaveAt !== "undefined") lastLocalSaveAt = 0;
   updateReport();
   loadTrips();
   setupEventListeners();
@@ -362,5 +380,4 @@ function rezaotInitApp() {
   if (!navigator.onLine) setSyncStatus("offline");
 }
 
-// main.js will fire "rezaot-ready" after all app scripts load (not DOMContentLoaded — elak loop)
 document.addEventListener("rezaot-ready", rezaotInitApp);
