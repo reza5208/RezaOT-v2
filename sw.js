@@ -1,4 +1,4 @@
-// sw.js - RezaOT v31 (cache-first assets = faster PC reload)
+// sw.js - RezaOT v31
 const CACHE_NAME = "rezaot-v31";
 
 const urlsToCache = [
@@ -12,6 +12,7 @@ const urlsToCache = [
   "./main-app-1.js",
   "./main-app-2.js",
   "./app-p1.js",
+  "./sync-fix.js",
   "./i18n.js",
   "./salary-estimator.js",
   "./utils.js",
@@ -58,7 +59,6 @@ self.addEventListener("fetch", (event) => {
     url.pathname.endsWith(".html") ||
     url.pathname.endsWith("/");
 
-  // HTML: network-first (supaya update main cepat sampai)
   if (isHTML) {
     event.respondWith(
       fetch(request)
@@ -76,7 +76,6 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // JS/CSS/icons: cache-first (PC reload laju), background refresh
   event.respondWith(
     caches.match(request).then((cached) => {
       const networkFetch = fetch(request)
