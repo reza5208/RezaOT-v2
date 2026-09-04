@@ -292,39 +292,93 @@ function updateReport() {
 }
 
 function exportToExcel() {
-  const data = [["Tarikh", "Hari", "Destinasi", "AWB", "Clock-In", "Clock-Out", "OT (Jam)", "T/T Pekerja", "T/T Ketua"]];
   const dayNamesMs = ["Ahad", "Isnin", "Selasa", "Rabu", "Khamis", "Jumaat", "Sabtu"];
-  let totalOT = 0, kliaCargoDays = 0, totalAWB = 0;
+  const empName = "Khairul Reza";
+  const empNo = "M-264";
+  const dept = "WH3 Transport";
+  const supervisor = (document.getElementById("supervisorName") && document.getElementById("supervisorName").textContent.trim()) || "Talib";
+
+  const data = [];
+  data.push(["RezaOT — Laporan Trips & OT"]);
+  data.push(["Bulan", currentMonthKey || ""]);
+  data.push(["Nama", empName, "No. pekerja", empNo]);
+  data.push(["Jabatan", dept, "Ketua", supervisor]);
+  data.push([]);
+  data.push(["Tarikh", "Hari", "Destinasi", "AWB", "Trip", "Clock-In", "Clock-Out", "OT (Jam)"]);
+
+  let totalOT = 0, workDays = 0, kliaCargoDays = 0, totalAWB = 0, totalTrips = 0;
+
   Object.keys(dailyRecords).sort().forEach((date) => {
     const rec = dailyRecords[date];
+    if (!rec) return;
     const day = new Date(date + "T00:00:00").getDay();
-    const dayName = dayNamesMs[day]
-      + (isPublicHoliday(date) ? " (Cuti)" : "")
-      + (rec.unpaid ? " (UPL)" : "");
+    let dayName = dayNamesMs[day];
+    if (typeof isPublicHoliday === "function" && isPublicHoliday(date)) dayName += " (Cuti)";
+    if (rec.unpaid) dayName += " (UPL)";
+
     let ot = calculateOT(rec.clock_in, rec.clock_out, date, rec.trips || []);
     if (rec.unpaid) ot = 0;
     totalOT += ot;
+
+    const tripsArr = Array.isArray(rec.trips) ? rec.trips : [];
+    totalTrips += tripsArr.length;
+    if (rec.clock_in || rec.clock_out || tripsArr.length) workDays++;
+
+    const destNames = [];
+    const awbs = [];
     let hasKlia = false;
-    (rec.trips || []).forEach((t) => { if (String(t).toLowerCase().includes("klia cargo")) hasKlia = true; });
-    if (hasKlia) kliaCargoDays++;
-    if (rec.trips && rec.trips.length > 0) {
-      rec.trips.forEach((trip, index) => {
-        let dest = trip, awb = "-";
-        if (String(trip).toLowerCase().includes("klia cargo")) {
-          const match = String(trip).match(/\((.+?)\)/);
-          if (match) { awb = match[1]; totalAWB++; }
+    tripsArr.forEach((t) => {
+      const s = String(t);
+      if (s.toLowerCase().indexOf("klia cargo") >= 0) {
+        hasKlia = true;
+        const m = s.match(/\((.+?)\)/);
+        if (m) {
+          awbs.push(m[1].trim());
+          totalAWB++;
+          destNames.push("KLIA Cargo");
+        } else {
+          destNames.push(s);
         }
-        data.push([formatDateForPDF(date), dayName, dest, awb, rec.clock_in || "-", rec.clock_out || "-", index === 0 ? ot.toFixed(2) : "", "", ""]);
-      });
-    } else {
-      data.push([formatDateForPDF(date), dayName, "—", "-", rec.clock_in || "-", rec.clock_out || "-", ot.toFixed(2), "", ""]);
-    }
+      } else {
+        destNames.push(s);
+      }
+    });
+    if (hasKlia) kliaCargoDays++;
+
+    data.push([
+      formatDateForPDF(date),
+      dayName,
+      destNames.length ? destNames.join(" · ") : "—",
+      awbs.length ? awbs.join(", ") : "—",
+      tripsArr.length,
+      rec.clock_in || "—",
+      rec.clock_out || "—",
+      ot.toFixed(2)
+    ]);
   });
+
+  data.push([]);
+  data.push(["Ringkasan"]);
+  data.push(["Hari berkerja", workDays]);
+  data.push(["Total trip", totalTrips]);
+  data.push(["Hari KLIA Cargo", kliaCargoDays]);
+  data.push(["Total AWB", totalAWB]);
+  data.push(["Jumlah OT (jam)", totalOT.toFixed(2)]);
+
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.aoa_to_sheet(data);
-  XLSX.utils.sheet_add_aoa(ws, [["Ringkasan Bulan", ""], ["Total OT", totalOT.toFixed(2) + " jam"], ["Hari KLIA", kliaCargoDays], ["Total AWB", totalAWB]], { origin: data.length + 2 });
-  XLSX.utils.book_append_sheet(wb, ws, "Laporan OT Bulanan");
-  XLSX.writeFile(wb, `RezaOT_${currentMonthKey.replace(/\s+/g, "_")}.xlsx`);
+  ws["!cols"] = [
+    { wch: 12 },
+    { wch: 16 },
+    { wch: 42 },
+    { wch: 16 },
+    { wch: 6 },
+    { wch: 10 },
+    { wch: 10 },
+    { wch: 10 }
+  ];
+  XLSX.utils.book_append_sheet(wb, ws, "Laporan OT");
+  XLSX.writeFile(wb, "RezaOT_" + String(currentMonthKey || "report").replace(/\s+/g, "_") + ".xlsx");
   showToast("Excel dieksport");
 }
 
