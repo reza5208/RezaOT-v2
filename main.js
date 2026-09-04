@@ -37,7 +37,8 @@
         return Promise.all([
           loadScript("salary-estimator.js?v=35"),
           loadScript("app-p1.js?v=35"),
-          loadScript("sync-fix.js?v=35")
+          loadScript("sync-fix.js?v=35"),
+          loadScript("month-fix.js?v=35")
         ]);
       })
       .then(function () {
