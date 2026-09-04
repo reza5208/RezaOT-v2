@@ -1,4 +1,4 @@
-// main.js - RezaOT v35
+// main.js - RezaOT v35 (single feature layer: app-p1)
 (function () {
   if (window.__rezaotMainBooting) return;
   window.__rezaotMainBooting = true;
@@ -36,9 +36,7 @@
       .then(function () {
         return Promise.all([
           loadScript("salary-estimator.js?v=35"),
-          loadScript("app-p1.js?v=35"),
-          loadScript("sync-fix.js?v=35"),
-          loadScript("month-fix.js?v=35")
+          loadScript("app-p1.js?v=35")
         ]);
       })
       .then(function () {

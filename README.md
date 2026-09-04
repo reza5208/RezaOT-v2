@@ -1,4 +1,4 @@
-# RezaOT v27 — Rekod OT & Trips
+# RezaOT v35 — Rekod OT & Trips
 
 Web app rekod kehadiran & overtime untuk kerja transport (**WH3 / MBG Fruits**).
 Clock-in/out, trip, OT automatik, cuti umum, export, PWA, anggaran gaji, PIN.
@@ -20,7 +20,7 @@ Clock-in/out, trip, OT automatik, cuti umum, export, PWA, anggaran gaji, PIN.
 
 ### OT & cuti
 - OT automatik (Isnin–Jumaat / Sabtu / Ahad / cuti)
-- Katalog cuti umum MY + picker company
+- Katalog cuti umum MY + picker company (sync multi-device)
 - Settings OT (masa mula)
 
 ### Laporan
@@ -28,15 +28,16 @@ Clock-in/out, trip, OT automatik, cuti umum, export, PWA, anggaran gaji, PIN.
 - Export PDF / Excel / JSON backup
 - Ringkasan KLIA, AWB, trip
 
-### Anggaran gaji (app sahaja)
+### Anggaran gaji (app sahaja, tak keluar print)
 - Gaji pokok, OT (pecahan jam × rate), KLIA **RM70/hari trip**
 - EPF 11%, SOCSO, EIS, SKIM SKBBK
 - Banding OT app vs payslip
 
 ### App
 - BM / EN, dark mode, PWA
-- Firebase realtime + offline queue
-- **PIN lock** (🔑), kunci nama ketua (🔓/🔒)
+- Firebase realtime + offline queue (delete ikut multi-device)
+- **PIN lock** — auto buka bila PIN betul penuh (tak perlu tekan Buka)
+- Kunci nama ketua (🔓/🔒)
 - FAB + trip (mobile), sejarah bulan cepat
 - Skeleton loading semasa sync
 
@@ -56,10 +57,20 @@ Base rate: `pokok ÷ 208` (contoh 2905.76 → RM13.97/jam)
 
 ---
 
+## Multi-device
+
+- Save / delete / trip sync realtime (last-write-wins per bulan)
+- Setting cuti company + OT rules di `users/default/settings`
+- Offline queue tidak overwrite cloud yang lebih baru
+
+**Tip:** Elak edit tarikh sama pada 2 device serentak.
+
+---
+
 ## Firebase (penting)
 
 API key dalam client adalah normal untuk Firebase web.
-**Keselamatan bergantung pada Realtime Database Rules**, bukan menyembunyikan key.
+**Keselamatan bergantung pada Realtime Database Rules.**
 
 Cadangan rules (peribadi multi-device):
 
@@ -81,24 +92,20 @@ Jangan commit service account / private keys.
 
 ---
 
-## Fail utama
+## Struktur fail (v35)
 
-```
-index.html, styles*.css
-main.js → main-app-1/2 + print-lang-fix + salary-estimator + extras-v27
-i18n.js, constants.js, utils.js, holiday-picker.js
-sw.js, manifest.json, assets/icons/
-```
-
----
-
-## Install PWA
-
-Android Chrome → Add to Home screen.
-Jika UI lama: Unregister Service Worker → hard refresh.
+| Fail | Peranan |
+|------|--------|
+| `index.html` | UI shell |
+| `main.js` | Bootstrap (load app scripts) |
+| `main-app-1.js` / `main-app-2.js` | Core logic |
+| `app-p1.js` | Feature layer: PIN, print mobile, FAB, sync full-replace, settings |
+| `salary-estimator.js` | Anggaran gaji |
+| `holiday-picker.js` | Pilih cuti company |
+| `sw.js` | Service worker v35 |
 
 ---
 
 ## Versi
 
-**v27** — AWB dupe, UPL, month history, skeleton, FAB, supervisor lock, PIN, salary breakdown + payslip compare, README.
+**v35** — PIN auto-unlock, overlay digabung ke `app-p1`, multi-device delete sync, header desktop fix, cuti settings sync.
