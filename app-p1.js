@@ -1,4 +1,4 @@
-// app-p1.js — feature layer v35 (PIN auto, print, FAB, lock, sync full-replace, settings)
+// app-p1.js — feature layer v39 (PIN, print/PDF once, FAB, sync)
 (function () {
   "use strict";
 
@@ -11,6 +11,8 @@
 
   window.handlePrint = function () {
     if (isMobileOrPwa()) { window.handleExportPdf(); return; }
+    if (window.__printBusy) return;
+    window.__printBusy = true;
     if (typeof applyPrintAutoSize === "function") applyPrintAutoSize();
     document.body.classList.add("pdf-export");
     requestAnimationFrame(function () {
@@ -19,12 +21,15 @@
         setTimeout(function () {
           document.body.classList.remove("pdf-export");
           if (typeof clearPrintAutoSize === "function") clearPrintAutoSize();
+          window.__printBusy = false;
         }, 500);
       }, 250);
     });
   };
 
   window.handleExportPdf = function () {
+    if (window.__pdfBusy) return;
+    window.__pdfBusy = true;
     showToast("Sediakan PDF…");
     var ready = (typeof window.loadExportLibs === "function")
       ? window.loadExportLibs()
@@ -32,10 +37,11 @@
     ready.then(function () {
       if (typeof html2pdf === "undefined") {
         showToast("html2pdf tidak load");
+        window.__pdfBusy = false;
         return;
       }
       var el = document.querySelector(".container");
-      if (!el) return;
+      if (!el) { window.__pdfBusy = false; return; }
       if (typeof applyPrintAutoSize === "function") applyPrintAutoSize();
       document.body.classList.add("pdf-export");
       var opt = {
@@ -52,10 +58,12 @@
           .finally(function () {
             document.body.classList.remove("pdf-export");
             if (typeof clearPrintAutoSize === "function") clearPrintAutoSize();
+            setTimeout(function () { window.__pdfBusy = false; }, 800);
           });
       }, 250);
     }).catch(function () {
       showToast("Gagal load library PDF");
+      window.__pdfBusy = false;
     });
   };
 
@@ -112,6 +120,7 @@
   }
 
   function wireExtras() {
+    // Wire print/PDF AFTER init — and only once (clone clears other listeners)
     rebind("printButton", function () { window.handlePrint(); });
     rebind("exportPdfBtn", function () { window.handleExportPdf(); });
 
@@ -219,7 +228,6 @@
         }
       }
 
-      // Auto unlock bila digit PIN betul penuh — tak perlu tekan Buka / Enter
       document.getElementById("pinInput").addEventListener("input", function () {
         var input = document.getElementById("pinInput");
         var err = document.getElementById("pinError");
@@ -501,5 +509,14 @@
     if (boot()) return;
     if (n < 15) setTimeout(function () { tryBoot(n + 1); }, 250);
   }
+
+  // Rebind print AFTER rezaot-ready so setupEventListeners tidak tambah listener kedua
+  document.addEventListener("rezaot-ready", function () {
+    setTimeout(function () {
+      rebind("printButton", function () { window.handlePrint(); });
+      rebind("exportPdfBtn", function () { window.handleExportPdf(); });
+    }, 0);
+  });
+
   tryBoot(0);
 })();
