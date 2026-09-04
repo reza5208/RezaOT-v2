@@ -26,30 +26,38 @@
   };
 
   window.handleExportPdf = function () {
-    if (typeof html2pdf === "undefined") {
-      showToast("html2pdf tidak load");
-      return;
-    }
-    var el = document.querySelector(".container");
-    if (!el) return;
-    if (typeof applyPrintAutoSize === "function") applyPrintAutoSize();
-    document.body.classList.add("pdf-export");
-    var opt = {
-      margin: [8, 8, 8, 8],
-      filename: "RezaOT_" + (currentMonthKey || "report").replace(/\s+/g, "_") + ".pdf",
-      image: { type: "jpeg", quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true },
-      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
-    };
-    setTimeout(function () {
-      html2pdf().set(opt).from(el).save()
-        .then(function () { showToast("PDF dimuat turun"); })
-        .catch(function () { showToast("Gagal jana PDF"); })
-        .finally(function () {
-          document.body.classList.remove("pdf-export");
-          if (typeof clearPrintAutoSize === "function") clearPrintAutoSize();
-        });
-    }, 250);
+    showToast("Sediakan PDF…");
+    var ready = (typeof window.loadExportLibs === "function")
+      ? window.loadExportLibs()
+      : Promise.resolve();
+    ready.then(function () {
+      if (typeof html2pdf === "undefined") {
+        showToast("html2pdf tidak load");
+        return;
+      }
+      var el = document.querySelector(".container");
+      if (!el) return;
+      if (typeof applyPrintAutoSize === "function") applyPrintAutoSize();
+      document.body.classList.add("pdf-export");
+      var opt = {
+        margin: [8, 8, 8, 8],
+        filename: "RezaOT_" + (currentMonthKey || "report").replace(/\s+/g, "_") + ".pdf",
+        image: { type: "jpeg", quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
+      };
+      setTimeout(function () {
+        html2pdf().set(opt).from(el).save()
+          .then(function () { showToast("PDF dimuat turun"); })
+          .catch(function () { showToast("Gagal jana PDF"); })
+          .finally(function () {
+            document.body.classList.remove("pdf-export");
+            if (typeof clearPrintAutoSize === "function") clearPrintAutoSize();
+          });
+      }, 250);
+    }).catch(function () {
+      showToast("Gagal load library PDF");
+    });
   };
 
   function rebind(id, fn) {
@@ -272,12 +280,34 @@
     }
   }
 
+  function wrapExcel() {
+    if (typeof exportToExcel !== "function" || exportToExcel._p1fast) return;
+    var orig = exportToExcel;
+    window.exportToExcel = function () {
+      showToast("Sediakan Excel…");
+      var ready = (typeof window.loadExportLibs === "function")
+        ? window.loadExportLibs()
+        : Promise.resolve();
+      ready.then(function () {
+        if (typeof XLSX === "undefined") {
+          showToast("Library Excel tidak load");
+          return;
+        }
+        orig.apply(this, arguments);
+      }).catch(function () {
+        showToast("Gagal load library Excel");
+      });
+    };
+    window.exportToExcel._p1fast = true;
+  }
+
   function boot() {
     if (typeof handleClockFormSubmit !== "function") return false;
     if (window.__appP1) return true;
     window.__appP1 = true;
     wireSyncSkeleton();
     wireExtras();
+    wrapExcel();
     return true;
   }
 
