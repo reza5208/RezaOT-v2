@@ -1,4 +1,4 @@
-/* v27 extras */
+/* v27 extras + v37 UPL */
 .month-history {
   padding: 8px 10px;
   border-radius: 8px;
@@ -9,11 +9,40 @@
 .upl-check {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 0.9rem;
-  margin: 8px 0;
+  gap: 10px;
+  font-size: 0.95rem;
+  margin: 4px 0 8px;
   grid-column: 1 / -1;
+  cursor: pointer;
+  user-select: none;
 }
+.upl-check input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #c82333;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.upl-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #fff;
+  background: #c82333;
+  border-radius: 4px;
+  vertical-align: middle;
+}
+body.dark .upl-badge { background: #e35d6a; }
+.upl-auto-hint {
+  font-size: 0.85rem;
+  color: #666;
+  margin-left: 8px;
+}
+body.dark .upl-auto-hint { color: #aaa; }
+tr.upl-row td { background: #fdecea !important; }
+body.dark tr.upl-row td { background: #3a2224 !important; }
 .lock-btn {
   background: transparent;
   border: none;
@@ -116,12 +145,4 @@ body.pin-locked .container { filter: blur(6px); pointer-events: none; }
   border-radius: 8px;
   font-size: 0.85rem;
 }
-body.dark .salary-compare { background: #252a32; }
-.salary-compare input {
-  width: 100px;
-  margin-left: 6px;
-  padding: 4px 6px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-}
-.salary-diff { margin: 6px 0 0; font-weight: 600; }
+body.dark .salary-compare { background: #2a2e35; }
