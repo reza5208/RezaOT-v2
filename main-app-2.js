@@ -369,18 +369,23 @@ function exportToExcel() {
 
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.aoa_to_sheet(data);
-  ws["!cols"] = [
-    { wch: 12 },
-    { wch: 16 },
-    { wch: 42 },
-    { wch: 16 },
-    { wch: 6 },
-    { wch: 10 },
-    { wch: 10 },
-    { wch: 10 },
-    { wch: 12 },
-    { wch: 12 }
-  ];
+
+  // Auto-fit column width ikut teks (min/max supaya tak ekstrem)
+  const colCount = Math.max.apply(null, data.map(function (row) { return row.length; }));
+  const cols = [];
+  for (var c = 0; c < colCount; c++) {
+    var maxLen = 8;
+    for (var r = 0; r < data.length; r++) {
+      var cell = data[r][c];
+      if (cell == null || cell === "") continue;
+      var len = String(cell).length;
+      if (len > maxLen) maxLen = len;
+    }
+    var wch = Math.min(48, Math.max(6, maxLen + 2));
+    cols.push({ wch: wch });
+  }
+  ws["!cols"] = cols;
+
   XLSX.utils.book_append_sheet(wb, ws, "Laporan OT");
   XLSX.writeFile(wb, "RezaOT_" + String(currentMonthKey || "report").replace(/\s+/g, "_") + ".xlsx");
   showToast("Excel dieksport");
