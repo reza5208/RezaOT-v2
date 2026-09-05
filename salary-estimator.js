@@ -1,4 +1,4 @@
-// salary-estimator.js — RezaOT v37 (UPL auto from daily records)
+// salary-estimator.js — RezaOT v43 (Sabtu OT = weekday, bukan Ahad)
 (function () {
   "use strict";
 
@@ -46,10 +46,11 @@
       if (rec.unpaid) ot = 0;
       var day = new Date(date + "T00:00:00").getDay();
       var hol = typeof isPublicHoliday === "function" && isPublicHoliday(date);
+      // Ahad (0) = rest day ×2; Sabtu (6) = working day OT ×1.5 (lepas 14:00);
+      // cuti umum = PH ×3
       if (hol) otPh += ot;
       else if (day === 0) otRest += ot;
-      else if (day === 6) otRest += ot;
-      else otWeekday += ot;
+      else otWeekday += ot; // Isnin–Sabtu
       trips.forEach(function (t) {
         if (String(t).toLowerCase().indexOf("klia cargo") >= 0) kliaDays.add(date);
       });
@@ -88,11 +89,12 @@
     var summary = summarizeRecords(records || {});
     var rates = otMoney(summary, s);
     var autoUpl = countUnpaidDays(records || {});
-    var extraUpl = Number(extra.unpaidDays || 0);
+    var extraUpl = Number(extra.unpaidDays) || 0;
     var unpaidDays = autoUpl + extraUpl;
-    var unpaidDeduction = unpaidDays > 0 ? (s.basicSalary / 26) * unpaidDays : 0;
+    var dailyRate = s.basicSalary / 26;
+    var unpaidDeduction = unpaidDays * dailyRate;
 
-    var kliaAllow = summary.kliaDays * (s.kliaPerDay || 70);
+    var kliaAllow = summary.kliaDays * s.kliaPerDay;
     var otPay = rates.weekday + rates.rest + rates.ph;
     var gross = s.basicSalary + otPay + kliaAllow;
 
@@ -122,132 +124,135 @@
       eis: eis,
       skim: skim
     };
-    deductions.total = Math.round((deductions.unpaid + deductions.epf + deductions.socso + deductions.eis + deductions.skim) * 100) / 100;
-
-    var net = Math.round((gross - deductions.total) * 100) / 100;
+    var totalDeduct = deductions.unpaid + deductions.epf + deductions.socso + deductions.eis + deductions.skim;
+    var net = gross - totalDeduct;
 
     return {
       settings: s,
       summary: summary,
       rates: rates,
-      kliaAllow: kliaAllow,
       otPay: Math.round(otPay * 100) / 100,
+      kliaAllow: kliaAllow,
       gross: Math.round(gross * 100) / 100,
       deductions: deductions,
-      unpaidDays: unpaidDays,
-      autoUplDays: autoUpl,
-      extraUplDays: extraUpl,
-      net: net,
-      baseRate: Math.round(rates.rate * 100) / 100
+      totalDeduct: Math.round(totalDeduct * 100) / 100,
+      net: Math.round(net * 100) / 100,
+      hourlyRate: Math.round(rates.rate * 10000) / 10000
     };
   }
 
-  function row(label, value, bold) {
+  function row(label, value, cls) {
     var tr = document.createElement("tr");
+    if (cls) tr.className = cls;
     var td1 = document.createElement("td");
     td1.textContent = label;
     var td2 = document.createElement("td");
-    td2.textContent = typeof value === "number" ? ("RM " + value.toFixed(2)) : String(value);
+    td2.textContent = typeof value === "number"
+      ? (value < 0 ? "-RM " : "RM ") + Math.abs(value).toFixed(2)
+      : String(value);
     td2.style.textAlign = "right";
-    if (bold) {
-      td1.style.fontWeight = "700";
-      td2.style.fontWeight = "700";
-    }
     tr.appendChild(td1);
     tr.appendChild(td2);
     return tr;
   }
 
-  function render() {
-    var body = document.getElementById("salaryPanelBody");
-    if (!body) return;
-    var unpaidInput = document.getElementById("salaryUnpaidDays");
-    var extraUpl = unpaidInput ? Number(unpaidInput.value) || 0 : 0;
-    var est = estimate(typeof dailyRecords !== "undefined" ? dailyRecords : {}, { unpaidDays: extraUpl });
-    var hint = document.getElementById("salaryUplAutoHint");
-    if (hint) {
-      var a = est.autoUplDays || 0;
-      hint.textContent = a > 0
-        ? ("Rekod UPL: " + a + " hari (auto)")
-        : "Rekod UPL: 0 hari";
-    }
+  function render(container, records, extra) {
+    if (!container) return;
+    var est = estimate(records, extra);
+    container.innerHTML = "";
 
-    body.innerHTML = "";
-    var tb = document.createElement("table");
-    tb.className = "salary-table";
+    var table = document.createElement("table");
+    table.className = "salary-table";
+    var tb = document.createElement("tbody");
+
     tb.appendChild(row("Gaji pokok", est.settings.basicSalary));
-    tb.appendChild(row("Base rate / jam", est.baseRate));
-    tb.appendChild(row("OT weekday (" + est.summary.otWeekday.toFixed(2) + " j × " + est.settings.weekdayMult + ")",
+    tb.appendChild(row("Kadar sejam", est.hourlyRate));
+    tb.appendChild(row("OT Isnin–Sabtu (" + est.summary.otWeekday.toFixed(2) + " j × " + est.settings.weekdayMult + ")",
       Math.round(est.rates.weekday * 100) / 100));
-    tb.appendChild(row("OT rest/Ahad (" + est.summary.otRest.toFixed(2) + " j × " + est.settings.restMult + ")",
+    tb.appendChild(row("OT Ahad (" + est.summary.otRest.toFixed(2) + " j × " + est.settings.restMult + ")",
       Math.round(est.rates.rest * 100) / 100));
     tb.appendChild(row("OT cuti (" + est.summary.otPh.toFixed(2) + " j × " + est.settings.phMult + ")",
       Math.round(est.rates.ph * 100) / 100));
     tb.appendChild(row("Jumlah OT pay", est.otPay));
-    tb.appendChild(row("Allowance KLIA (" + est.summary.kliaDays + " hari × RM" + (est.settings.kliaPerDay || 70) + ")", est.kliaAllow));
-    tb.appendChild(row("Gross", est.gross, true));
-    tb.appendChild(row("Cuti tanpa gaji (UPL " + (est.unpaidDays || 0) + " hari)", est.deductions.unpaid));
-    tb.appendChild(row("EPF pekerja 11%", est.deductions.epf));
-    tb.appendChild(row("SOCSO", est.deductions.socso));
-    tb.appendChild(row("EIS", est.deductions.eis));
-    if (est.deductions.skim) tb.appendChild(row("SKIM", est.deductions.skim));
-    tb.appendChild(row("Jumlah potongan", est.deductions.total));
-    tb.appendChild(row("Anggaran net", est.net, true));
-    body.appendChild(tb);
+    tb.appendChild(row("Allowance KLIA (" + est.summary.kliaDays + " hari × RM" + est.settings.kliaPerDay + ")",
+      est.kliaAllow));
+    tb.appendChild(row("Gross", est.gross, "salary-total"));
+
+    if (est.deductions.unpaidDays > 0) {
+      tb.appendChild(row("UPL (" + est.deductions.unpaidDays + " hari)", -est.deductions.unpaid));
+    }
+    tb.appendChild(row("EPF pekerja (" + (est.settings.epfEmployeeRate * 100) + "%)", -est.deductions.epf));
+    tb.appendChild(row("SOCSO", -est.deductions.socso));
+    tb.appendChild(row("EIS", -est.deductions.eis));
+    if (est.deductions.skim) tb.appendChild(row("Skim", -est.deductions.skim));
+    tb.appendChild(row("Jumlah potongan", -est.totalDeduct));
+    tb.appendChild(row("Anggaran bersih", est.net, "salary-net"));
+
+    table.appendChild(tb);
+    container.appendChild(table);
+
+    var note = document.createElement("p");
+    note.className = "salary-note";
+    note.textContent = "Anggaran sahaja. Saturday OT = ×1.5 (selepas jam mula OT Sabtu). Ahad = ×2. Cuti umum = ×3.";
+    container.appendChild(note);
   }
 
   function openSettings() {
     var s = loadSettings();
     var b = prompt("Gaji pokok (RM):", s.basicSalary);
     if (b === null) return;
-    var k = prompt("KLIA allowance per hari (RM):", s.kliaPerDay);
+    var h = prompt("Jam sebulan (untuk kadar OT):", s.hoursPerMonth);
+    if (h === null) return;
+    var k = prompt("Allowance KLIA per hari (RM):", s.kliaPerDay);
     if (k === null) return;
-    s.basicSalary = Number(b) || s.basicSalary;
-    s.kliaPerDay = Number(k) || s.kliaPerDay;
+    s.basicSalary = parseFloat(b) || s.basicSalary;
+    s.hoursPerMonth = parseFloat(h) || s.hoursPerMonth;
+    s.kliaPerDay = parseFloat(k) || s.kliaPerDay;
     saveSettings(s);
-    render();
-    showToast("Tetapan gaji disimpan");
+    if (typeof showToast === "function") showToast("Tetapan gaji disimpan");
+    var panel = document.getElementById("salaryPanelBody");
+    var extraEl = document.getElementById("salaryUnpaidDays");
+    if (panel) render(panel, typeof dailyRecords !== "undefined" ? dailyRecords : {}, {
+      unpaidDays: extraEl ? parseFloat(extraEl.value) || 0 : 0
+    });
   }
 
-  function wire() {
-    var btn = document.getElementById("salaryToggleBtn");
-    var panel = document.getElementById("salaryPanel");
-    if (btn && panel && !btn._sal) {
-      btn._sal = true;
-      btn.addEventListener("click", function () {
-        var open = panel.style.display !== "none";
-        panel.style.display = open ? "none" : "block";
-        if (!open) render();
+  function refresh() {
+    var panel = document.getElementById("salaryPanelBody");
+    var extraEl = document.getElementById("salaryUnpaidDays");
+    var hint = document.getElementById("salaryUplAutoHint");
+    var auto = countUnpaidDays(typeof dailyRecords !== "undefined" ? dailyRecords : {});
+    if (hint) hint.textContent = "Rekod UPL: " + auto + " hari";
+    if (panel && panel.offsetParent !== null) {
+      render(panel, typeof dailyRecords !== "undefined" ? dailyRecords : {}, {
+        unpaidDays: extraEl ? parseFloat(extraEl.value) || 0 : 0
       });
     }
+  }
+
+  document.addEventListener("rezaot-ready", function () {
+    var toggle = document.getElementById("salaryToggleBtn");
+    var panel = document.getElementById("salaryPanel");
+    var body = document.getElementById("salaryPanelBody");
     var settingsBtn = document.getElementById("salarySettingsBtn");
-    if (settingsBtn && !settingsBtn._sal) {
-      settingsBtn._sal = true;
-      settingsBtn.addEventListener("click", openSettings);
+    var extraEl = document.getElementById("salaryUnpaidDays");
+    if (toggle && panel) {
+      toggle.addEventListener("click", function () {
+        var open = panel.style.display !== "none";
+        panel.style.display = open ? "none" : "block";
+        if (!open) refresh();
+      });
     }
-    var unpaid = document.getElementById("salaryUnpaidDays");
-    if (unpaid && !unpaid._wired) {
-      unpaid._wired = true;
-      unpaid.addEventListener("change", render);
-      unpaid.addEventListener("input", render);
-    }
-    if (typeof updateReport === "function" && !updateReport._sal) {
-      var orig = updateReport;
+    if (settingsBtn) settingsBtn.addEventListener("click", openSettings);
+    if (extraEl) extraEl.addEventListener("change", refresh);
+    var orig = window.updateReport;
+    if (typeof orig === "function") {
       window.updateReport = function () {
         orig.apply(this, arguments);
-        var panel = document.getElementById("salaryPanel");
-        if (panel && panel.style.display !== "none") render();
+        refresh();
       };
-      window.updateReport._sal = true;
     }
-  }
+  });
 
-  window.RezaOT_salary = { estimate: estimate, render: render, loadSettings: loadSettings };
-
-  function tryWire(n) {
-    wire();
-    if (n < 20) setTimeout(function () { tryWire(n + 1); }, 300);
-  }
-  document.addEventListener("rezaot-ready", function () { tryWire(0); });
-  tryWire(0);
+  window.RezaOT_salary = { estimate: estimate, render: render, loadSettings: loadSettings, refresh: refresh };
 })();
