@@ -1,4 +1,4 @@
-// salary-estimator.js — RezaOT v43 (Sabtu OT = weekday, bukan Ahad)
+// salary-estimator.js — RezaOT v44 (side income Susun/Pallets)
 (function () {
   "use strict";
 
@@ -36,6 +36,7 @@
     var workDays = 0;
     var otWeekday = 0, otRest = 0, otPh = 0;
     var kliaDays = new Set();
+    var susunCount = 0, palletsCount = 0;
     Object.keys(records || {}).forEach(function (date) {
       var rec = records[date];
       if (!rec) return;
@@ -46,13 +47,14 @@
       if (rec.unpaid) ot = 0;
       var day = new Date(date + "T00:00:00").getDay();
       var hol = typeof isPublicHoliday === "function" && isPublicHoliday(date);
-      // Ahad (0) = rest day ×2; Sabtu (6) = working day OT ×1.5 (lepas 14:00);
-      // cuti umum = PH ×3
       if (hol) otPh += ot;
       else if (day === 0) otRest += ot;
-      else otWeekday += ot; // Isnin–Sabtu
+      else otWeekday += ot;
       trips.forEach(function (t) {
-        if (String(t).toLowerCase().indexOf("klia cargo") >= 0) kliaDays.add(date);
+        var s = String(t);
+        if (s.toLowerCase().indexOf("klia cargo") >= 0) kliaDays.add(date);
+        if (/·\s*Susun/i.test(s) || /\[Susun\]/i.test(s)) susunCount++;
+        else if (/·\s*Pallets/i.test(s) || /\[Pallets\]/i.test(s)) palletsCount++;
       });
     });
     return {
@@ -61,7 +63,12 @@
       otRest: otRest,
       otPh: otPh,
       otTotal: otWeekday + otRest + otPh,
-      kliaDays: kliaDays.size
+      kliaDays: kliaDays.size,
+      susunCount: susunCount,
+      palletsCount: palletsCount,
+      sideSusun: susunCount * 60,
+      sidePallets: palletsCount * 100,
+      sideTotal: susunCount * 60 + palletsCount * 100
     };
   }
 
@@ -133,6 +140,13 @@
       rates: rates,
       otPay: Math.round(otPay * 100) / 100,
       kliaAllow: kliaAllow,
+      sideIncome: {
+        susun: summary.susunCount || 0,
+        pallets: summary.palletsCount || 0,
+        susunRm: summary.sideSusun || 0,
+        palletsRm: summary.sidePallets || 0,
+        total: summary.sideTotal || 0
+      },
       gross: Math.round(gross * 100) / 100,
       deductions: deductions,
       totalDeduct: Math.round(totalDeduct * 100) / 100,
@@ -191,9 +205,28 @@
     table.appendChild(tb);
     container.appendChild(table);
 
+    var side = est.sideIncome || { susun: 0, pallets: 0, susunRm: 0, palletsRm: 0, total: 0 };
+    var sideTable = document.createElement("table");
+    sideTable.className = "salary-table salary-side";
+    var stb = document.createElement("tbody");
+    var h = document.createElement("tr");
+    h.className = "salary-side-head";
+    var hd = document.createElement("td");
+    hd.colSpan = 2;
+    var strong = document.createElement("strong");
+    strong.textContent = "Side income (bukan gaji)";
+    hd.appendChild(strong);
+    h.appendChild(hd);
+    stb.appendChild(h);
+    stb.appendChild(row("Susun (" + side.susun + " AWB × RM60)", side.susunRm));
+    stb.appendChild(row("Pallets (" + side.pallets + " AWB × RM100)", side.palletsRm));
+    stb.appendChild(row("Jumlah side income", side.total, "salary-side-total"));
+    sideTable.appendChild(stb);
+    container.appendChild(sideTable);
+
     var note = document.createElement("p");
     note.className = "salary-note";
-    note.textContent = "Anggaran sahaja. Saturday OT = ×1.5 (selepas jam mula OT Sabtu). Ahad = ×2. Cuti umum = ×3.";
+    note.textContent = "Anggaran sahaja. OT Sabtu ×1.5 · Ahad ×2 · Cuti ×3. Side income (Susun/Pallets) tidak dimasukkan dalam gaji.";
     container.appendChild(note);
   }
 
