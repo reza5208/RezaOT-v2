@@ -1,4 +1,4 @@
-/* styles-app-v42.css — modal + sticky thead + side job */
+/* styles-app-v42.css — modal + sticky thead + side job chips */
 .rezaot-modal {
   position: fixed;
   inset: 0;
@@ -103,22 +103,52 @@ body.dark #reportTable thead th {
 .toast.toast-err { background: #a11; }
 .toast.toast-warn { background: #9a6b00; }
 
-/* Side job AWB options */
+/* Side job — chip row */
 .side-job-opts {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px 12px;
+  gap: 8px;
   align-items: center;
-  margin-top: 8px;
-  font-size: 0.9rem;
+  margin-top: 10px;
 }
-.side-job-label { font-weight: 600; margin-right: 4px; }
+.side-job-label {
+  font-weight: 600;
+  font-size: 0.88rem;
+  width: 100%;
+  margin: 0 0 2px;
+}
 .side-job-opt {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   cursor: pointer;
-  min-height: 36px;
+  min-height: 40px;
+  padding: 6px 12px;
+  border: 1px solid #c8c8c8;
+  border-radius: 999px;
+  background: #f7f7f7;
+  font-size: 0.85rem;
+  user-select: none;
+}
+.side-job-opt:has(input:checked) {
+  border-color: #007bff;
+  background: #e8f1ff;
+  color: #0056b3;
+  font-weight: 600;
+}
+body.dark .side-job-opt {
+  background: #2a3038;
+  border-color: #555;
+  color: #ddd;
+}
+body.dark .side-job-opt:has(input:checked) {
+  border-color: #3b82f6;
+  background: #1e3a5f;
+  color: #93c5fd;
+}
+.side-job-opt input {
+  margin: 0;
+  accent-color: #007bff;
 }
 .salary-side { margin-top: 12px; border-top: 2px dashed #888; padding-top: 4px; }
 .salary-side-head td { padding-top: 10px; color: #555; }
