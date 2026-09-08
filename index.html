@@ -54,7 +54,7 @@
 
         <div id="holidayPickerPanel" class="no-print holiday-picker-panel" style="display: none;">
             <h3 data-i18n="holidayTitle">Cuti umum — pilih yang company ambil</h3>
-            <p class="holiday-picker-hint" data-i18n="holidayHint">Data katalog kekal. Hanya cuti yang ditanda ✓ dikira OT penuh & highlight biru.</p>
+            <p class="holiday-picker-hint" data-i18n="holidayHint">Data katalog kekal. Hanya cuti yang ditanda ✓ dikira OT penuh &amp; highlight biru.</p>
             <div class="holiday-picker-toolbar">
                 <label>Tahun:
                     <select id="holidayPickerYear"></select>
@@ -112,6 +112,12 @@
             <div id="airwayBillField" style="display: none;">
                 <label for="airwayBill" data-i18n="awb">Airway Bill (KLIA Cargo):</label>
                 <input type="text" id="airwayBill" placeholder="Contoh: ABC12345">
+                <div id="sideJobField" class="side-job-opts">
+                    <span class="side-job-label">Side job (optional):</span>
+                    <label class="side-job-opt"><input type="radio" name="sideJob" value="" checked> Tiada</label>
+                    <label class="side-job-opt"><input type="radio" name="sideJob" value="susun"> Susun (RM60)</label>
+                    <label class="side-job-opt"><input type="radio" name="sideJob" value="pallets"> Pallets (RM100)</label>
+                </div>
             </div>
             <button type="submit" data-i18n="addTrip">➕ Tambah Trip</button>
         </form>
@@ -228,7 +234,7 @@
                 </label>
             </div>
         </div>
-        <p class="no-print version-badge">RezaOT v43</p>
+        <p class="no-print version-badge">RezaOT v44</p>
     </div>
 
     <button type="button" id="fabAddTrip" class="fab no-print" title="Tambah trip hari ini">＋</button>
