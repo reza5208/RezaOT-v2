@@ -1,4 +1,4 @@
-// salary-estimator.js — RezaOT v44 (side income Susun/Pallets)
+// salary-estimator.js — RezaOT v45 (Susun RM100, Pallets RM50)
 (function () {
   "use strict";
 
@@ -66,9 +66,9 @@
       kliaDays: kliaDays.size,
       susunCount: susunCount,
       palletsCount: palletsCount,
-      sideSusun: susunCount * 60,
-      sidePallets: palletsCount * 100,
-      sideTotal: susunCount * 60 + palletsCount * 100
+      sideSusun: susunCount * 100,
+      sidePallets: palletsCount * 50,
+      sideTotal: susunCount * 100 + palletsCount * 50
     };
   }
 
@@ -218,15 +218,15 @@
     hd.appendChild(strong);
     h.appendChild(hd);
     stb.appendChild(h);
-    stb.appendChild(row("Susun (" + side.susun + " AWB × RM60)", side.susunRm));
-    stb.appendChild(row("Pallets (" + side.pallets + " AWB × RM100)", side.palletsRm));
+    stb.appendChild(row("Susun (" + side.susun + " AWB × RM100)", side.susunRm));
+    stb.appendChild(row("Pallets (" + side.pallets + " AWB × RM50)", side.palletsRm));
     stb.appendChild(row("Jumlah side income", side.total, "salary-side-total"));
     sideTable.appendChild(stb);
     container.appendChild(sideTable);
 
     var note = document.createElement("p");
     note.className = "salary-note";
-    note.textContent = "Anggaran sahaja. OT Sabtu ×1.5 · Ahad ×2 · Cuti ×3. Side income (Susun/Pallets) tidak dimasukkan dalam gaji.";
+    note.textContent = "Anggaran sahaja. OT Sabtu ×1.5 · Ahad ×2 · Cuti ×3. Side income: Susun RM100 / Pallets RM50 — tidak dimasukkan dalam gaji.";
     container.appendChild(note);
   }
 
