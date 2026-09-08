@@ -1,4 +1,4 @@
-// salary-estimator.js — RezaOT v45 (Susun RM100, Pallets RM50)
+// salary-estimator.js — RezaOT v46 (sideJobs array)
 (function () {
   "use strict";
 
@@ -56,6 +56,13 @@
         if (/·\s*Susun/i.test(s) || /\[Susun\]/i.test(s)) susunCount++;
         else if (/·\s*Pallets/i.test(s) || /\[Pallets\]/i.test(s)) palletsCount++;
       });
+      if (Array.isArray(rec.sideJobs)) {
+        rec.sideJobs.forEach(function (sj) {
+          var ty = String((sj && sj.type) || "").toLowerCase();
+          if (ty === "susun") susunCount++;
+          else if (ty === "pallets") palletsCount++;
+        });
+      }
     });
     return {
       workDays: workDays,
