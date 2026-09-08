@@ -1,4 +1,4 @@
-/* styles-app-v42.css — modal + sticky thead */
+/* styles-app-v42.css — modal + sticky thead + side job */
 .rezaot-modal {
   position: fixed;
   inset: 0;
@@ -102,3 +102,25 @@ body.dark #reportTable thead th {
 .toast.toast-ok { background: #1b7a3d; }
 .toast.toast-err { background: #a11; }
 .toast.toast-warn { background: #9a6b00; }
+
+/* Side job AWB options */
+.side-job-opts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+  margin-top: 8px;
+  font-size: 0.9rem;
+}
+.side-job-label { font-weight: 600; margin-right: 4px; }
+.side-job-opt {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  min-height: 36px;
+}
+.salary-side { margin-top: 12px; border-top: 2px dashed #888; padding-top: 4px; }
+.salary-side-head td { padding-top: 10px; color: #555; }
+body.dark .salary-side-head td { color: #bbb; }
+.salary-side-total td { font-weight: 700; }
