@@ -65,46 +65,33 @@ const publicHolidays = {
   "2027-02-06": "Tahun Baru Cina",
   "2027-02-07": "Tahun Baru Cina (Hari 2)",
   "2027-02-08": "Cuti Ganti Tahun Baru Cina",
-  "2027-02-20": "Thaipusam",
+  "2027-03-01": "Nuzul Al-Quran (anggaran)",
   "2027-03-10": "Hari Raya Aidilfitri (anggaran)",
-  "2027-03-11": "Hari Raya Aidilfitri (Hari 2)",
+  "2027-03-11": "Hari Raya Aidilfitri Hari 2 (anggaran)",
   "2027-05-01": "Hari Pekerja",
   "2027-05-16": "Hari Raya Aidiladha (anggaran)",
   "2027-05-20": "Hari Wesak (anggaran)",
-  "2027-06-05": "Keputeraan YDPA",
-  "2027-06-06": "Awal Muharram (anggaran)",
-  "2027-08-15": "Maulidur Rasul (anggaran)",
+  "2027-06-05": "Awal Muharram (anggaran)",
+  "2027-06-07": "Keputeraan YDPA",
+  "2027-08-14": "Maulidur Rasul (anggaran)",
   "2027-08-31": "Hari Kebangsaan",
+  "2027-09-01": "Cuti Negeri Selangor",
   "2027-09-16": "Hari Malaysia",
   "2027-10-28": "Deepavali (anggaran)",
   "2027-12-11": "Keputeraan Sultan Selangor",
   "2027-12-25": "Hari Krismas"
 };
 
-// Katalog penuh sentiasa ada dalam publicHolidays.
-// Company pilih mana yang diambil → observedHolidays di localStorage.
-const OBSERVED_HOLIDAYS_KEY = "observedHolidays";
-
-function getAllHolidayDates() {
-  return Object.keys(publicHolidays).sort();
-}
-
 function getObservedHolidaysMap() {
   try {
-    const raw = localStorage.getItem(OBSERVED_HOLIDAYS_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (parsed && typeof parsed === "object") return parsed;
-    }
-  } catch (e) { /* ignore */ }
-  // Default: semua cuti dalam katalog = diambil (tingkah laku lama)
-  const map = {};
-  getAllHolidayDates().forEach(function (d) { map[d] = true; });
-  return map;
+    const raw = localStorage.getItem("observedHolidays");
+    if (raw) return JSON.parse(raw) || {};
+  } catch (e) {}
+  return {};
 }
 
 function saveObservedHolidaysMap(map) {
-  localStorage.setItem(OBSERVED_HOLIDAYS_KEY, JSON.stringify(map));
+  localStorage.setItem("observedHolidays", JSON.stringify(map || {}));
 }
 
 function isCatalogHoliday(dateStr) {
@@ -141,13 +128,22 @@ function getOtSettings() {
     const raw = localStorage.getItem("otSettings");
     if (raw) {
       const parsed = JSON.parse(raw);
+      var w = parsed.weekdayAfter || parsed.weekdayStart || defaultOtSettings.weekdayAfter;
+      var s = parsed.saturdayAfter || parsed.saturdayStart || defaultOtSettings.saturdayAfter;
       return {
-        weekdayAfter: parsed.weekdayAfter || defaultOtSettings.weekdayAfter,
-        saturdayAfter: parsed.saturdayAfter || defaultOtSettings.saturdayAfter
+        weekdayAfter: w,
+        saturdayAfter: s,
+        weekdayStart: w,
+        saturdayStart: s
       };
     }
   } catch (e) { /* ignore */ }
-  return { ...defaultOtSettings };
+  return {
+    weekdayAfter: defaultOtSettings.weekdayAfter,
+    saturdayAfter: defaultOtSettings.saturdayAfter,
+    weekdayStart: defaultOtSettings.weekdayAfter,
+    saturdayStart: defaultOtSettings.saturdayAfter
+  };
 }
 
 function saveOtSettings(settings) {
