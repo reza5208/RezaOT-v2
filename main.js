@@ -39,6 +39,7 @@
           loadScript("app-p1.js?v=49")
         ]);
       })
+      .then(function () { return loadScript("app-p1-extra.js?v=49"); })
       .then(function () {
         document.dispatchEvent(new Event("rezaot-ready"));
       })

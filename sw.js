@@ -2,8 +2,10 @@
 const CACHE_NAME = "rezaot-v49";
 const urlsToCache = [
   "./", "./index.html",
-  "./styles.css", "./styles-print.css",
-  "./main.js", "./main-app-1.js", "./main-app-2.js", "./app-p1.js",
+  "./styles.css", "./styles-base.css", "./styles-print.css",
+  "./styles-v18-extra.css", "./styles-salary.css", "./styles-v27.css",
+  "./styles-header-fix.css", "./styles-ux-v38.css", "./styles-app-v42.css",
+  "./main.js", "./main-app-1.js", "./main-app-2.js", "./app-p1.js", "./app-p1-extra.js",
   "./i18n.js", "./modal.js", "./salary-estimator.js", "./utils.js", "./constants.js", "./holiday-picker.js",
   "./manifest.json",
   "./assets/icons/favicon-32x32.png", "./assets/icons/android-icon-192x192.png"
