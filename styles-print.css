@@ -1,2 +1,38 @@
-/* styles-print.css — v52: A4 portrait (restored, no landscape) */
+/* styles-print.css — v53: A4 portrait + compact summary note */
 @import url("styles-print-v39.css");
+
+/* Ringkasan kecil — bukan table */
+.print-summary-note {
+  display: none;
+  margin: 6px 0 2px;
+  padding: 0;
+  font-size: 8pt;
+  color: #333;
+  line-height: 1.35;
+  border: none;
+  background: none;
+}
+@media print {
+  .print-summary-note {
+    display: block !important;
+    font-size: 7.5pt !important;
+    color: #000 !important;
+    margin-top: 8px !important;
+  }
+  .print-summary-table {
+    display: none !important;
+  }
+  .print-note {
+    font-size: 7pt !important;
+    margin-top: 4px !important;
+  }
+}
+body.pdf-export .print-summary-note {
+  display: block !important;
+  font-size: 10px !important;
+  color: #000 !important;
+  margin-top: 8px !important;
+}
+body.pdf-export .print-summary-table {
+  display: none !important;
+}
