@@ -1,22 +1,22 @@
-// print-fix-v51.js — landscape PDF + denser auto-size
+// print-fix-v52.js — restore A4 portrait (undo landscape v51)
 (function () {
   "use strict";
 
-  function denserAutoSize() {
+  function normalAutoSize() {
     var tbody = document.querySelector("#reportTable tbody");
     if (!tbody) return;
     var rows = tbody.querySelectorAll("tr").length;
     document.body.classList.remove("print-size-sm", "print-size-xs", "print-size-xxs");
-    if (rows > 18) document.body.classList.add("print-size-xxs");
-    else if (rows > 10) document.body.classList.add("print-size-xs");
-    else document.body.classList.add("print-size-sm");
+    if (rows > 26) document.body.classList.add("print-size-xxs");
+    else if (rows > 18) document.body.classList.add("print-size-xs");
+    else if (rows > 12) document.body.classList.add("print-size-sm");
   }
 
-  window.applyPrintAutoSize = denserAutoSize;
+  window.applyPrintAutoSize = normalAutoSize;
 
   function patchPdf() {
-    if (window.__printFix51) return;
-    window.__printFix51 = true;
+    if (window.__printFix52) return;
+    window.__printFix52 = true;
 
     window.handleExportPdf = function () {
       if (window.__pdfBusy) return;
@@ -33,23 +33,23 @@
         }
         var el = document.querySelector(".container");
         if (!el) { window.__pdfBusy = false; return; }
-        denserAutoSize();
+        normalAutoSize();
         document.body.classList.add("pdf-export");
         var opt = {
-          margin: [4, 4, 4, 4],
+          margin: [8, 8, 10, 8],
           filename: "RezaOT_" + (typeof currentMonthKey !== "undefined" ? currentMonthKey : "report").replace(/\s+/g, "_") + ".pdf",
-          image: { type: "jpeg", quality: 0.95 },
+          image: { type: "jpeg", quality: 0.98 },
           html2canvas: {
             scale: 2,
             useCORS: true,
             scrollY: 0,
             scrollX: 0,
             windowWidth: el.scrollWidth,
-            windowHeight: el.scrollHeight + 20,
+            windowHeight: el.scrollHeight + 40,
             logging: false
           },
-          jsPDF: { unit: "mm", format: "a4", orientation: "landscape" },
-          pagebreak: { mode: ["avoid-all"] }
+          jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+          pagebreak: { mode: ["css", "legacy"] }
         };
         setTimeout(function () {
           html2pdf().set(opt).from(el).save()
@@ -60,7 +60,7 @@
               if (typeof clearPrintAutoSize === "function") clearPrintAutoSize();
               setTimeout(function () { window.__pdfBusy = false; }, 800);
             });
-        }, 200);
+        }, 250);
       }).catch(function () {
         showToast("Gagal load library PDF");
         window.__pdfBusy = false;
@@ -69,7 +69,7 @@
 
     var prevPrint = window.handlePrint;
     window.handlePrint = function () {
-      denserAutoSize();
+      normalAutoSize();
       if (typeof prevPrint === "function") return prevPrint.apply(this, arguments);
       window.print();
     };

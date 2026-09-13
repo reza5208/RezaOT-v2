@@ -1,4 +1,4 @@
-// app-p1-extra.js — v51: load feature patches + print landscape dense
+// app-p1-extra.js — v52: patches + print portrait restore
 (function () {
   "use strict";
   function load(src) {
@@ -12,11 +12,11 @@
     });
   }
   window.__rezaotExtraReady = [
-    "app-v42-overlay.js?v=51",
-    "side-job-patch.js?v=51",
-    "sync-fix-v48.js?v=51",
-    "month-fix.js?v=51",
-    "print-fix-v51.js?v=51"
+    "app-v42-overlay.js?v=52",
+    "side-job-patch.js?v=52",
+    "sync-fix-v48.js?v=52",
+    "month-fix.js?v=52",
+    "print-fix-v51.js?v=52"
   ].reduce(function (p, src) {
     return p.then(function () { return load(src); });
   }, Promise.resolve());
