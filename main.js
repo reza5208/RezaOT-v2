@@ -41,6 +41,9 @@
       })
       .then(function () { return loadScript("app-p1-extra.js?v=49"); })
       .then(function () {
+        return window.__rezaotExtraReady || Promise.resolve();
+      })
+      .then(function () {
         document.dispatchEvent(new Event("rezaot-ready"));
       })
       .catch(function (err) {
