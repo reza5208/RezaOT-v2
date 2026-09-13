@@ -1,45 +1,42 @@
-# RezaOT v35 — Rekod OT & Trips
+# RezaOT v49
 
-Web app rekod kehadiran & overtime untuk kerja transport (**WH3 / MBG Fruits**).
-Clock-in/out, trip, OT automatik, cuti umum, export, PWA, anggaran gaji, PIN.
+PWA peribadi untuk rekod **Clock-In/Out**, **Trip**, **OT**, dan **anggaran gaji** (WH3 Transport — Khairul Reza, M-264).
 
-**Live:** [https://reza5208.github.io/RezaOT-v2/](https://reza5208.github.io/RezaOT-v2/)
-
-**No. pekerja:** M-264 · **Nama:** Khairul Reza · **Dept:** WH3 Transport
+**Live:** gunakan GitHub Pages / hosting yang sama dengan repo ini.
 
 ---
 
-## Ciri-ciri
+## Ciri utama
 
-### Rekod harian
+### Kehadiran & trip
 - Clock-in/out (default 08:00–17:00) + butang **Sekarang**
 - **Simpan Hari Ini (8–5)** — satu klik
 - Trip + **KLIA Cargo + AWB** (amaran jika AWB duplicate)
-- Flag **Cuti tanpa gaji (UPL)**
-- Edit / padam rekod & trip (confirm jelas)
+- **Side job** selepas AWB: *Susun (RM100)* / *Pallets (RM50)* — disimpan berasingan, **tidak** keluar dalam destinasi
+- Flag **UPL** (cuti tanpa gaji)
+- Edit / padam rekod & trip (modal confirm)
 
 ### OT & cuti
-- OT automatik (Isnin–Jumaat / Sabtu / Ahad / cuti)
+- OT automatik (Isnin–Sabtu ×1.5, Ahad ×2, cuti ×3)
 - Katalog cuti umum MY + picker company (sync multi-device)
-- Settings OT (masa mula)
+- Settings OT (masa mula weekday / Sabtu)
 
 ### Laporan
-- Print A4 formal hitam-putih + T/T
+- Print A4 formal hitam-putih + kolum T/T pekerja & ketua
 - Export PDF / Excel / JSON backup
-- Ringkasan KLIA, AWB, trip
+- Ringkasan OT, trip, KLIA, AWB
+- Auto-fit sebulan penuh ke 1 muka A4
 
-### Anggaran gaji (app sahaja, tak keluar print)
-- Gaji pokok, OT (pecahan jam × rate), KLIA **RM70/hari trip**
-- EPF 11%, SOCSO, EIS, SKIM SKBBK
-- Banding OT app vs payslip
+### Anggaran gaji *(app sahaja — tidak keluar print)*
+- Gaji pokok, OT (pecahan), allowance KLIA **RM70/hari**
+- EPF 11%, SOCSO, EIS
+- **Side income** berasingan: Susun RM100/AWB, Pallets RM50/AWB (bukan gaji)
 
 ### App
-- BM / EN, dark mode, PWA
-- Firebase realtime + offline queue (delete ikut multi-device)
-- **PIN lock** — auto buka bila PIN betul penuh (tak perlu tekan Buka)
-- Kunci nama ketua (🔓/🔒)
-- FAB + trip (mobile), sejarah bulan cepat
-- Skeleton loading semasa sync
+- BM / EN, dark mode, PWA (installable)
+- Firebase realtime + offline queue
+- **PIN lock** — auto unlock bila PIN betul
+- Sejarah bulan cepat, FAB tambah trip (mobile)
 
 ---
 
@@ -48,31 +45,31 @@ Clock-in/out, trip, OT automatik, cuti umum, export, PWA, anggaran gaji, PIN.
 | Hari | Peraturan |
 |------|-----------|
 | Isnin–Jumaat | OT selepas 17:00 |
-| Sabtu | OT selepas 14:00 |
-| Ahad / Cuti | Semua jam = OT |
+| Sabtu | OT selepas 14:00 (kadar ×1.5 seperti weekday) |
+| Ahad / Cuti | Semua jam = OT (×2 / ×3) |
 | KLIA Cargo | Tiada OT hari biasa/Sabtu |
-| Allowance KLIA | **RM70 × bilangan hari** ada trip KLIA Cargo |
+| Allowance KLIA | **RM70 × bilangan hari** ada trip KLIA |
+| Side job | Susun **RM100**/AWB · Pallets **RM50**/AWB (bukan gaji) |
 
-Base rate: `pokok ÷ 208` (contoh 2905.76 → RM13.97/jam)
+Base rate: `pokok ÷ 208`
 
 ---
 
 ## Multi-device
 
-- Save / delete / trip sync realtime (last-write-wins per bulan)
-- Setting cuti company + OT rules di `users/default/settings`
-- Offline queue tidak overwrite cloud yang lebih baru
-
-**Tip:** Elak edit tarikh sama pada 2 device serentak.
+- Path Firebase: `users/default/{Bulan Tahun}` contoh `Ogos 2026`
+- Last-write-wins per bulan — elak edit tarikh sama pada 2 device serentak
+- Jika cloud kosong, **local tidak dipadam** — data local di-push naik
+- Backup: **Export Data (JSON)** secara berkala
 
 ---
 
 ## Firebase (penting)
 
-API key dalam client adalah normal untuk Firebase web.
+API key client adalah normal untuk Firebase web.  
 **Keselamatan bergantung pada Realtime Database Rules.**
 
-Cadangan rules (peribadi multi-device):
+Untuk peribadi:
 
 ```json
 {
@@ -87,25 +84,30 @@ Cadangan rules (peribadi multi-device):
 }
 ```
 
-Jika URL dikongsi awam, guna Firebase Auth + `auth != null`.
-Jangan commit service account / private keys.
+Jangan kongsi URL awam tanpa Auth.
 
 ---
 
-## Struktur fail (v35)
+## Struktur fail (v49)
 
 | Fail | Peranan |
-|------|--------|
+|------|---------|
 | `index.html` | UI shell |
-| `main.js` | Bootstrap (load app scripts) |
-| `main-app-1.js` / `main-app-2.js` | Core logic |
-| `app-p1.js` | Feature layer: PIN, print mobile, FAB, sync full-replace, settings |
-| `salary-estimator.js` | Anggaran gaji |
+| `main.js` | Bootstrap loader |
+| `main-app-1.js` / `main-app-2.js` | Core (storage, report, forms) |
+| `app-p1.js` | Feature layer: PIN, print/PDF, FAB, sync, modal, side-job, month-fix |
+| `salary-estimator.js` | Anggaran gaji + side income |
 | `holiday-picker.js` | Pilih cuti company |
-| `sw.js` | Service worker v35 |
+| `modal.js` / `i18n.js` / `utils.js` / `constants.js` | Sokongan |
+| `styles.css` | Semua gaya skrin (gabungan) |
+| `styles-print.css` | Print / PDF sahaja |
+| `sw.js` | Service worker v49 |
+| `manifest.json` | PWA manifest |
+
+Fail legacy (patch berasingan) telah digabung ke `app-p1.js` / CSS utama.
 
 ---
 
 ## Versi
 
-**v35** — PIN auto-unlock, overlay digabung ke `app-p1`, multi-device delete sync, header desktop fix, cuti settings sync.
+**v49** — Konsolidasi JS (patch → `app-p1`), CSS (2 fail), README dikemas kini.

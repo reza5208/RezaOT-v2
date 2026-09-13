@@ -1,9 +1,9 @@
-// sw.js - RezaOT v48
-const CACHE_NAME = "rezaot-v48";
+// sw.js - RezaOT v49
+const CACHE_NAME = "rezaot-v49";
 const urlsToCache = [
   "./", "./index.html",
-  "./styles.css", "./styles-v18-extra.css", "./styles-salary.css", "./styles-v27.css", "./styles-header-fix.css", "./styles-ux-v38.css", "./styles-print-v39.css", "./styles-app-v42.css",
-  "./main.js", "./main-app-1.js", "./main-app-2.js", "./app-p1.js", "./app-v42-overlay.js", "./side-job-patch.js", "./sync-fix-v48.js",
+  "./styles.css", "./styles-print.css",
+  "./main.js", "./main-app-1.js", "./main-app-2.js", "./app-p1.js",
   "./i18n.js", "./modal.js", "./salary-estimator.js", "./utils.js", "./constants.js", "./holiday-picker.js",
   "./manifest.json",
   "./assets/icons/favicon-32x32.png", "./assets/icons/android-icon-192x192.png"
