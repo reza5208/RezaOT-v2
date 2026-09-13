@@ -1,2 +1,3 @@
-/* styles-print.css — v49: re-export print rules */
+/* styles-print.css — v51 landscape dense */
 @import url("styles-print-v39.css");
+@import url("print-dense-v51.css");

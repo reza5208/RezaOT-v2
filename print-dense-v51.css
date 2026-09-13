@@ -1,0 +1,47 @@
+/* print-dense-v51.css — A4 landscape + font lebih kecil (1 page) */
+@page {
+  size: A4 landscape;
+  margin: 5mm;
+}
+
+@media print {
+  #reportTable { font-size: 6.5pt !important; }
+  #reportTable th,
+  #reportTable td {
+    padding: 1.5px 2px !important;
+    line-height: 1.15 !important;
+    font-size: inherit !important;
+  }
+  h1 { font-size: 11pt !important; margin: 1px 0 2px !important; }
+  .header-info { font-size: 7.5pt !important; padding: 3px 5px !important; margin-bottom: 3px !important; }
+  .print-subtitle { font-size: 8pt !important; margin-bottom: 2px !important; }
+  .container { padding: 3px !important; }
+  .print-footer { margin-top: 4px !important; }
+  .print-summary-table { font-size: 7pt !important; max-width: 280px !important; }
+  .print-summary-table td { padding: 2px 5px !important; }
+  .print-note { font-size: 6pt !important; margin-top: 3px !important; }
+
+  body.print-size-sm #reportTable { font-size: 6.5pt !important; }
+  body.print-size-xs #reportTable { font-size: 5.8pt !important; }
+  body.print-size-xxs #reportTable { font-size: 5.2pt !important; }
+  body.print-size-xxs #reportTable th,
+  body.print-size-xxs #reportTable td { padding: 1px 2px !important; line-height: 1.1 !important; }
+}
+
+body.pdf-export #reportTable { font-size: 8px !important; }
+body.pdf-export #reportTable th,
+body.pdf-export #reportTable td {
+  padding: 1.5px 2px !important;
+  line-height: 1.15 !important;
+}
+body.pdf-export h1 { font-size: 13px !important; margin: 1px 0 2px !important; }
+body.pdf-export .header-info { font-size: 10px !important; padding: 3px 5px !important; margin-bottom: 3px !important; }
+body.pdf-export .container { padding: 4px !important; }
+body.pdf-export .print-summary-table { font-size: 9px !important; }
+body.pdf-export .print-note { font-size: 8px !important; }
+
+body.pdf-export.print-size-sm #reportTable { font-size: 8px !important; }
+body.pdf-export.print-size-xs #reportTable { font-size: 7px !important; }
+body.pdf-export.print-size-xxs #reportTable { font-size: 6.5px !important; }
+body.pdf-export.print-size-xxs #reportTable th,
+body.pdf-export.print-size-xxs #reportTable td { padding: 1px 2px !important; }
