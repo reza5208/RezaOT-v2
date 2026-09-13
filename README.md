@@ -1,4 +1,4 @@
-# RezaOT v49
+# RezaOT v54
 
 PWA peribadi untuk rekod **Clock-In/Out**, **Trip**, **OT**, dan **anggaran gaji** (WH3 Transport — Khairul Reza, M-264).
 
@@ -12,7 +12,9 @@ PWA peribadi untuk rekod **Clock-In/Out**, **Trip**, **OT**, dan **anggaran gaji
 - Clock-in/out (default 08:00–17:00) + butang **Sekarang**
 - **Simpan Hari Ini (8–5)** — satu klik
 - Trip + **KLIA Cargo + AWB** (amaran jika AWB duplicate)
-- **Side job** selepas AWB: *Susun (RM100)* / *Pallets (RM50)* — disimpan berasingan, **tidak** keluar dalam destinasi
+- **Side job** selepas AWB:
+  - **Susun (RM100)** → tanda `*` pada trip (contoh: `KLIA Cargo (ABC123) *`)
+  - **Pallets (RM50)** → tanda `#` pada trip (contoh: `KLIA Cargo (ABC123) #`)
 - Flag **UPL** (cuti tanpa gaji)
 - Edit / padam rekod & trip (modal confirm)
 
@@ -20,12 +22,12 @@ PWA peribadi untuk rekod **Clock-In/Out**, **Trip**, **OT**, dan **anggaran gaji
 - OT automatik (Isnin–Sabtu ×1.5, Ahad ×2, cuti ×3)
 - Katalog cuti umum MY + picker company (sync multi-device)
 - Settings OT (masa mula weekday / Sabtu)
+- **Overnight** (cth. 08:00 → 02:00 keesokan hari) dikira dengan betul
 
 ### Laporan
-- Print A4 formal hitam-putih + kolum T/T pekerja & ketua
-- Export PDF / Excel / JSON backup
-- Ringkasan OT, trip, KLIA, AWB
-- Auto-fit sebulan penuh ke 1 muka A4
+- Print / PDF **A4 portrait** formal + kolum T/T pekerja & ketua
+- Footer ringkas: `OT · Trip · KLIA · AWB` (bukan table)
+- Export Excel / JSON backup
 
 ### Anggaran gaji *(app sahaja — tidak keluar print)*
 - Gaji pokok, OT (pecahan), allowance KLIA **RM70/hari**
@@ -49,7 +51,7 @@ PWA peribadi untuk rekod **Clock-In/Out**, **Trip**, **OT**, dan **anggaran gaji
 | Ahad / Cuti | Semua jam = OT (×2 / ×3) |
 | KLIA Cargo | Tiada OT hari biasa/Sabtu |
 | Allowance KLIA | **RM70 × bilangan hari** ada trip KLIA |
-| Side job | Susun **RM100**/AWB · Pallets **RM50**/AWB (bukan gaji) |
+| Side job | Susun **RM100** (`*`) · Pallets **RM50** (`#`) — bukan gaji |
 
 Base rate: `pokok ÷ 208`
 
@@ -88,26 +90,24 @@ Jangan kongsi URL awam tanpa Auth.
 
 ---
 
-## Struktur fail (v49)
+## Struktur fail (v54)
 
 | Fail | Peranan |
-|------|---------|
+|------|----------|
 | `index.html` | UI shell |
 | `main.js` | Bootstrap loader |
 | `main-app-1.js` / `main-app-2.js` | Core (storage, report, forms) |
-| `app-p1.js` | Feature layer: PIN, print/PDF, FAB, sync, modal, side-job, month-fix |
+| `app-p1.js` + `app-p1-extra.js` | PIN, print/PDF, FAB, sync, side-job |
+| `side-job-patch.js` | Susun `*` / Pallets `#` |
 | `salary-estimator.js` | Anggaran gaji + side income |
 | `holiday-picker.js` | Pilih cuti company |
 | `modal.js` / `i18n.js` / `utils.js` / `constants.js` | Sokongan |
-| `styles.css` | Semua gaya skrin (gabungan) |
-| `styles-print.css` | Print / PDF sahaja |
-| `sw.js` | Service worker v49 |
+| `styles.css` + `styles-print.css` | Skrin + print |
+| `sw.js` | Service worker v54 |
 | `manifest.json` | PWA manifest |
-
-Fail legacy (patch berasingan) telah digabung ke `app-p1.js` / CSS utama.
 
 ---
 
 ## Versi
 
-**v49** — Konsolidasi JS (patch → `app-p1`), CSS (2 fail), README dikemas kini.
+**v54** — Tanda side job pada trip: `*` Susun · `#` Pallets (table, print, Excel).
