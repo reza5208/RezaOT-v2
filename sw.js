@@ -1,5 +1,5 @@
-// sw.js - RezaOT v53
-const CACHE_NAME = "rezaot-v53";
+// sw.js - RezaOT v54
+const CACHE_NAME = "rezaot-v54";
 const urlsToCache = [
   "./", "./index.html",
   "./styles.css", "./styles-print.css", "./styles-print-v39.css",
