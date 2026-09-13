@@ -78,8 +78,9 @@ function calculateOT(clockIn, clockOut, date, recordTrips) {
   }
 
   const inM = toMinutes(clockIn);
-  const outM = toMinutes(clockOut);
-  if (outM <= inM) return 0;
+  var outM = toMinutes(clockOut);
+  // Overnight: clock-out keesokan hari (cth. 08:00 → 02:00)
+  if (outM <= inM) outM += 24 * 60;
 
   var hasKLIACargo = (recordTrips || []).some(function (t) {
     return String(t).toLowerCase().indexOf("klia cargo") >= 0;
@@ -87,17 +88,22 @@ function calculateOT(clockIn, clockOut, date, recordTrips) {
 
   const day = new Date(date + "T00:00:00").getDay();
   const isHol = typeof isPublicHoliday === "function" && isPublicHoliday(date);
-  const settings = typeof getOtSettings === "function" ? getOtSettings() : { weekdayStart: "17:00", saturdayStart: "14:00" };
+  const settings = typeof getOtSettings === "function"
+    ? getOtSettings()
+    : { weekdayAfter: "17:00", saturdayAfter: "14:00" };
 
+  // Ahad / cuti company: semua jam kerja = OT (termasuk overnight)
   if (day === 0 || isHol) {
     return Math.round(((outM - inM) / 60) * 100) / 100;
   }
 
+  // KLIA Cargo hari biasa/Sabtu: tiada OT
   if (hasKLIACargo) return 0;
 
-  let otStart;
-  if (day === 6) otStart = toMinutes(settings.saturdayStart || "14:00");
-  else otStart = toMinutes(settings.weekdayStart || "17:00");
+  // Baca weekdayAfter/saturdayAfter (settings UI) + fallback nama lama
+  var weekdayStr = settings.weekdayAfter || settings.weekdayStart || "17:00";
+  var saturdayStr = settings.saturdayAfter || settings.saturdayStart || "14:00";
+  var otStart = (day === 6) ? toMinutes(saturdayStr) : toMinutes(weekdayStr);
 
   if (outM <= otStart) return 0;
   const start = Math.max(inM, otStart);
