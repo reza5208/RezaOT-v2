@@ -1,5 +1,5 @@
-/* styles.css — v49 screen entry (imports modules in cascade order) */
-@import url("styles-base.css");
+/* styles.css — v49 entry: base from last known good commit + cascade modules */
+@import url("https://cdn.jsdelivr.net/gh/reza5208/RezaOT-v2@81d9af1125e1aadd9bd837abda445647ba318d3b/styles.css");
 @import url("styles-v18-extra.css");
 @import url("styles-salary.css");
 @import url("styles-v27.css");
