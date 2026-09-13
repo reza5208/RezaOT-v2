@@ -177,24 +177,12 @@
         </div>
 
         <div class="print-footer print-only-block" id="printFooter">
-            <table class="print-summary-table">
-                <tr>
-                    <td><strong data-i18n="printOT">Jumlah OT</strong></td>
-                    <td><span id="printTotalOT">0.00</span> jam</td>
-                </tr>
-                <tr>
-                    <td><strong data-i18n="printTrips">Jumlah Trip</strong></td>
-                    <td><span id="printTotalTrips">0</span></td>
-                </tr>
-                <tr>
-                    <td><strong data-i18n="printKlia">Hari / Trip KLIA Cargo</strong></td>
-                    <td><span id="printKliaDays">0</span> hari · <span id="printKliaTrips">0</span> trip</td>
-                </tr>
-                <tr>
-                    <td><strong data-i18n="sumAwb">Total AWB</strong></td>
-                    <td><span id="printAwb">0</span></td>
-                </tr>
-            </table>
+            <p class="print-summary-note">
+              OT: <span id="printTotalOT">0.00</span> j
+              · Trip: <span id="printTotalTrips">0</span>
+              · KLIA: <span id="printKliaDays">0</span> hari / <span id="printKliaTrips">0</span> trip
+              · AWB: <span id="printAwb">0</span>
+            </p>
             <p class="print-note" data-i18n="printNote">Nota: Kelabu = Sabtu · Lebih gelap = Ahad · Biru muda = Cuti umum (yang company ambil)</p>
         </div>
 
@@ -228,7 +216,7 @@
                 </label>
             </div>
         </div>
-        <p class="no-print version-badge">RezaOT v49</p>
+        <p class="no-print version-badge">RezaOT v53</p>
     </div>
 
     <button type="button" id="fabAddTrip" class="fab no-print" title="Tambah trip hari ini">＋</button>
