@@ -1,4 +1,4 @@
-// ot-total-patch.js — JUMLAH OT hanya print/PDF, bukan UI (v57)
+// ot-total-patch.js — JUMLAH OT print/PDF only, bold, nilai betul (v58)
 (function () {
   "use strict";
 
@@ -17,24 +17,49 @@
     document.head.appendChild(st);
   }
 
+  function totalLabel() {
+    var lang = (localStorage.getItem("rezaotLang") || "ms").toLowerCase();
+    if (window.RezaOT_i18n && typeof RezaOT_i18n.t === "function") {
+      var t = RezaOT_i18n.t("totalOTRow");
+      if (t && t !== "totalOTRow") return t;
+    }
+    return lang === "en" ? "TOTAL OT" : "JUMLAH OT";
+  }
+
+  function computeTotalOT() {
+    var el = document.getElementById("totalOT");
+    if (el) {
+      var v = parseFloat(String(el.textContent).replace(/,/g, ""));
+      if (!isNaN(v) && v > 0) return v;
+    }
+    var printEl = document.getElementById("printTotalOT");
+    if (printEl) {
+      var v2 = parseFloat(String(printEl.textContent).replace(/,/g, ""));
+      if (!isNaN(v2) && v2 > 0) return v2;
+    }
+    var total = 0;
+    if (window.dailyRecords && typeof calculateOT === "function") {
+      Object.keys(dailyRecords).forEach(function (date) {
+        var rec = dailyRecords[date];
+        if (!rec) return;
+        var ot = calculateOT(rec.clock_in, rec.clock_out, date, rec.trips || []);
+        if (rec.unpaid) ot = 0;
+        total += ot;
+      });
+    }
+    return total;
+  }
+
   function appendTotalRow() {
     var tbody = document.querySelector("#reportTable tbody");
     if (!tbody) return;
     var old = tbody.querySelector("tr.ot-total-row");
     if (old) old.remove();
 
-    var total = 0;
-    if (window.dailyRecords) {
-      Object.keys(dailyRecords).forEach(function (date) {
-        var rec = dailyRecords[date];
-        if (!rec) return;
-        var ot = typeof calculateOT === "function"
-          ? calculateOT(rec.clock_in, rec.clock_out, date, rec.trips || [])
-          : 0;
-        if (rec.unpaid) ot = 0;
-        total += ot;
-      });
-    }
+    var dataRows = tbody.querySelectorAll("tr:not(.ot-total-row)");
+    if (!dataRows.length) return;
+
+    var total = computeTotalOT();
 
     var tr = document.createElement("tr");
     tr.className = "ot-total-row";
@@ -42,7 +67,7 @@
     tdLabel.colSpan = 5;
     tdLabel.style.textAlign = "right";
     tdLabel.style.fontWeight = "700";
-    tdLabel.textContent = (window.RezaOT_i18n && RezaOT_i18n.t("totalOTRow")) || "JUMLAH OT";
+    tdLabel.textContent = totalLabel();
     var tdOT = document.createElement("td");
     tdOT.style.fontWeight = "700";
     var strong = document.createElement("strong");
@@ -59,9 +84,9 @@
   }
 
   function patch() {
-    if (window.__otTotal57) return;
+    if (window.__otTotal58) return;
     if (typeof updateReport !== "function") return;
-    window.__otTotal57 = true;
+    window.__otTotal58 = true;
     var orig = updateReport;
     window.updateReport = function () {
       orig.apply(this, arguments);
@@ -71,6 +96,6 @@
   }
 
   injectCss();
-  document.addEventListener("rezaot-ready", function () { setTimeout(patch, 250); });
-  if (document.readyState !== "loading") setTimeout(patch, 1400);
+  document.addEventListener("rezaot-ready", function () { setTimeout(patch, 300); });
+  if (document.readyState !== "loading") setTimeout(patch, 1500);
 })();
