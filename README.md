@@ -20,10 +20,11 @@ WH3 Transport — **Khairul Reza** (M-264)
 - Edit / padam rekod & trip (modal confirm)
 
 ### OT & cuti
+
 | Hari | Peraturan OT |
 |------|----------------|
-| Isnin–Jumaat | Selepas **17:00** (kadar ×1.5) |
-| Sabtu | Selepas **14:00** (kadar ×1.5) |
+| Isnin–Jumaat | Selepas **17:00** (×1.5) |
+| Sabtu | Selepas **14:00** (×1.5) |
 | Ahad | Semua jam (×2) |
 | Cuti company | Semua jam (×3) |
 | KLIA Cargo | Tiada OT (hari biasa / Sabtu) |
@@ -31,8 +32,7 @@ WH3 Transport — **Khairul Reza** (M-264)
 
 - Katalog cuti umum Malaysia (KL / Selangor) + **picker** cuti yang company ambil
 - Settings OT (masa mula weekday / Sabtu) boleh diubah
-
-Base rate anggaran: `gaji pokok ÷ 208`
+- Base rate anggaran: `gaji pokok ÷ 208`
 
 ### Laporan
 - Print / PDF **A4 portrait** formal hitam-putih
@@ -40,7 +40,7 @@ Base rate anggaran: `gaji pokok ÷ 208`
 - Baris **JUMLAH OT** (bold) — **print/PDF sahaja**, tak keluar di UI
 - Footer ringkas: `OT · Trip · KLIA · AWB`
 - Tarikh format **dd/mm/yy**
-- Export **Excel** (auto-fit kolum + T/T) / **JSON backup**
+- Export **Excel** (auto-fit + T/T) / **JSON backup**
 
 ### Anggaran gaji *(app sahaja — tidak keluar print)*
 - Gaji pokok, OT (pecahan weekday / Ahad / cuti)
@@ -49,10 +49,9 @@ Base rate anggaran: `gaji pokok ÷ 208`
 - **Side income** berasingan: Susun RM100/AWB · Pallets RM50/AWB (**bukan** digabung ke gaji bersih)
 
 ### App
-- Bahasa **BM / EN** (satu butang)
-- Dark mode, PWA (boleh install)
+- Bahasa **BM / EN**, dark mode, PWA (installable)
 - Firebase Realtime Database + offline queue
-- **PIN lock** — auto login bila PIN betul (tanpa tekan OK)
+- **PIN lock** — auto login bila PIN betul
 - Sejarah bulan cepat, FAB tambah trip (mobile)
 - Multi-device sync
 
@@ -61,11 +60,9 @@ Base rate anggaran: `gaji pokok ÷ 208`
 ## Multi-device / Firebase
 
 - Path: `users/default/{Bulan Tahun}` contoh `Ogos 2026`
-- Last-write-wins per bulan — elak edit tarikh sama pada 2 device serentak
+- Last-write-wins per bulan
 - Jika cloud kosong, **data local tidak dipadam** — di-push naik
-- Backup berkala: **Export Data (JSON)**
-
-### Rules (peribadi)
+- Backup: **Export Data (JSON)**
 
 ```json
 {
@@ -80,9 +77,6 @@ Base rate anggaran: `gaji pokok ÷ 208`
 }
 ```
 
-API key client adalah normal untuk Firebase web.  
-**Keselamatan bergantung pada Realtime Database Rules.** Jangan kongsi URL awam tanpa Auth.
-
 ---
 
 ## Struktur fail (v58)
@@ -90,7 +84,7 @@ API key client adalah normal untuk Firebase web.
 | Fail | Peranan |
 |------|----------|
 | `index.html` | UI shell |
-| `main.js` | Bootstrap loader (cache-bust `?v=58`) |
+| `main.js` | Bootstrap loader (`?v=58`) |
 | `main-app-1.js` / `main-app-2.js` | Core: storage, forms, report, Excel |
 | `app-p1.js` | PIN, print/PDF, FAB, sync |
 | `app-p1-extra.js` | Loader patch tambahan |
@@ -106,22 +100,59 @@ API key client adalah normal untuk Firebase web.
 
 ---
 
-## Versi terkini
+## AI / Grok context (for other agents)
 
-**v58**
-- Fix label **JUMLAH OT** (bukan `totalOTRow`) + nilai total betul pada print/PDF
-- Baris jumlah OT **print-only** (sembunyi di UI)
-- Side job `*` / `#` disimpan pada label trip
-- OT overnight (melebihi tengah malam)
-- Footer print ringkas (bukan table)
-- A4 portrait restored (bukan landscape)
+> **Purpose:** Ground any future Grok/coding agent so it can edit RezaOT without rediscovering rules from chat history.
 
----
+### What this app is
+- **Name:** RezaOT (ship target **v58**)
+- **Stack:** Personal **PWA** — static HTML/CSS/**vanilla JS** (not React/Vue)
+- **Owner:** Khairul Reza, emp **M-264**, dept **WH3 Transport**; supervisor default **Talib** (editable)
+- **Repo:** `reza5208/RezaOT-v2`, branch `main`, static host + service worker
+- **Chat language with owner:** mostly **Bahasa Malaysia**; UI has BM/EN toggle
 
-## Nota penggunaan
+### Domain rules (do not simplify away)
+1. **OT hours** (`calculateOT` in `utils.js`):
+   - Missing clock in/out → 0
+   - **Overnight:** if out-minutes ≤ in-minutes, add 24h to out
+   - **Sunday OR company-observed PH:** OT = full span (out − in)
+   - **KLIA Cargo** on Mon–Sat → OT hours **0** (allowance is separate money)
+   - Sat OT after **14:00**; weekday after **17:00** (from settings)
+2. **Pay multipliers** (salary estimator only): Mon–Sat ×1.5, Sun ×2, PH ×3; base = pokok ÷ 208
+3. **KLIA allowance:** **RM70 per day** with ≥1 KLIA Cargo trip (not per AWB)
+4. **Side jobs** (NOT added into net salary):
+   - Susun **RM100**/AWB → mark `*`
+   - Pallets **RM50**/AWB → mark `#`
+   - Persist in `sideJobs[]` **and** on trip label string
+5. **UPL:** forces OT = 0 that date
+6. **Public holidays:** catalog in `constants.js`; only **observed** (holiday picker) count for OT/highlight
 
-1. Install sebagai PWA (Add to Home Screen) untuk akses pantas.
-2. Tukar bulan melalui picker atau sejarah bulan.
-3. Untuk side job: pilih **Susun** atau **Pallets** selepas isi AWB, kemudian tambah trip.
-4. Trip lama tanpa side job tidak auto dapat `*`/`#` — tambah semula jika perlu.
-5. Cetak / Export PDF untuk laporan bulanan kepada ketua.
+### Data model (per month)
+- Month key: Malay name + year, e.g. `Ogos 2026`, `September 2026`
+- `dailyRecords[YYYY-MM-DD] = { clock_in, clock_out, trips: string[], sideJobs?: {awb, type}[], unpaid?: boolean }`
+- Local: `localStorage`; remote: Firebase RTDB `users/default/{monthKey}`
+- Sync: last-write-wins; **never clear local when remote empty** — push local up
+
+### UI / export constraints (user-enforced)
+- Print/PDF: **A4 portrait only** (landscape was tried and **rejected**)
+- Table row **JUMLAH OT**: **print/PDF only**, hidden in normal UI; label must be human (`JUMLAH OT` / `TOTAL OT`), never raw i18n key like `totalOTRow`
+- Print footer: **one-line** note (`OT · Trip · KLIA · AWB`), not a summary table
+- Report dates: **dd/mm/yy**
+- Sign columns: short **T/T pekerja**, **T/T ketua**
+- Salary panel: **app-only**, never on print/PDF
+- Avoid double PDF download / empty PDF (busy flags in print handlers)
+
+### Architecture
+- Boot: `main.js` → `main-app-1.js` + `main-app-2.js` → `salary-estimator.js` + `app-p1.js` → `app-p1-extra.js` (loads patches)
+- Prefer small **patches** for incremental fixes; bump `?v=NN` + `sw.js` `CACHE_NAME`
+- OT settings keys: UI stores `weekdayAfter` / `saturdayAfter`; `getOtSettings` must also expose `weekdayStart` / `saturdayStart` aliases for `calculateOT`
+- Firebase web API key in client is expected; hardening must not lock owner out without explicit request
+
+### When changing code
+- User says commit/push → **commit and push `main`**
+- After print CSS or OT logic change → bump SW cache
+- Retest: overnight OT, KLIA weekday (0 OT hours), Sunday full OT, UPL, side marks in table/print/Excel
+- **Do not** reintroduce: landscape print, emoji-heavy print headers, salary on printed report — unless user asks
+
+### Out of scope unless asked
+- Native apps, custom backend, real payroll filing, multi-user auth, company-wide rollout
