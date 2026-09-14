@@ -1,4 +1,4 @@
-// ot-total-patch.js — baris JUMLAH OT bold dalam table (v56)
+// ot-total-patch.js — JUMLAH OT hanya print/PDF, bukan UI (v57)
 (function () {
   "use strict";
 
@@ -7,11 +7,13 @@
     var st = document.createElement("style");
     st.id = "ot-total-css";
     st.textContent =
-      "#reportTable tr.ot-total-row td{font-weight:700!important;border-top:2px solid #333!important;background:#f0f0f0!important;padding-top:8px!important;padding-bottom:8px!important;}" +
-      "#reportTable tr.ot-total-row td strong{font-weight:800!important;font-size:1.05em;}" +
-      "body.dark-mode #reportTable tr.ot-total-row td{background:#2a2a2a!important;border-top-color:#888!important;}" +
-      "@media print{#reportTable tr.ot-total-row td{background:#eee!important;border-top:2px solid #000!important;font-weight:700!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}}" +
-      "body.pdf-export #reportTable tr.ot-total-row td{background:#eee!important;border-top:2px solid #000!important;font-weight:700!important;}";
+      "#reportTable tr.ot-total-row{display:none!important;}" +
+      "@media print{#reportTable tr.ot-total-row{display:table-row!important;}" +
+      "#reportTable tr.ot-total-row td{font-weight:700!important;border-top:2px solid #000!important;background:#eee!important;padding-top:6px!important;padding-bottom:6px!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}" +
+      "#reportTable tr.ot-total-row td strong{font-weight:800!important;}}" +
+      "body.pdf-export #reportTable tr.ot-total-row{display:table-row!important;}" +
+      "body.pdf-export #reportTable tr.ot-total-row td{font-weight:700!important;border-top:2px solid #000!important;background:#eee!important;padding-top:6px!important;padding-bottom:6px!important;}" +
+      "body.pdf-export #reportTable tr.ot-total-row td strong{font-weight:800!important;}";
     document.head.appendChild(st);
   }
 
@@ -57,9 +59,9 @@
   }
 
   function patch() {
-    if (window.__otTotal56) return;
+    if (window.__otTotal57) return;
     if (typeof updateReport !== "function") return;
-    window.__otTotal56 = true;
+    window.__otTotal57 = true;
     var orig = updateReport;
     window.updateReport = function () {
       orig.apply(this, arguments);

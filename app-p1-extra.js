@@ -1,4 +1,4 @@
-// app-p1-extra.js — v56
+// app-p1-extra.js — v57
 (function () {
   "use strict";
   function load(src) {
@@ -12,12 +12,12 @@
     });
   }
   window.__rezaotExtraReady = [
-    "app-v42-overlay.js?v=56",
-    "side-job-patch.js?v=56",
-    "sync-fix-v48.js?v=56",
-    "month-fix.js?v=56",
-    "print-fix-v51.js?v=56",
-    "ot-total-patch.js?v=56"
+    "app-v42-overlay.js?v=57",
+    "side-job-patch.js?v=57",
+    "sync-fix-v48.js?v=57",
+    "month-fix.js?v=57",
+    "print-fix-v51.js?v=57",
+    "ot-total-patch.js?v=57"
   ].reduce(function (p, src) {
     return p.then(function () { return load(src); });
   }, Promise.resolve());
