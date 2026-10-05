@@ -1,15 +1,16 @@
-// side-job-patch.js — Susun=*  Pallets=#  (v55: store mark on trip label)
+// side-job-patch.js — Susun=*  Pallets=#  (v60: default Pallets)
 (function () {
   "use strict";
 
   function getSideValue() {
     var el = document.querySelector('input[name="sideJob"]:checked');
-    return el ? el.value : "";
+    return el ? el.value : "pallets";
   }
 
   function resetSideRadios() {
+    // Default: Pallets (kebanyakan shipment)
     document.querySelectorAll('input[name="sideJob"]').forEach(function (r) {
-      r.checked = r.value === "";
+      r.checked = r.value === "pallets";
     });
   }
 
@@ -170,9 +171,9 @@
   }
 
   function patchTripSubmit() {
-    if (window.__sideJobTrip55) return;
+    if (window.__sideJobTrip60) return;
     if (typeof handleTripFormSubmit !== "function") return;
-    window.__sideJobTrip55 = true;
+    window.__sideJobTrip60 = true;
     var orig = handleTripFormSubmit;
 
     window.handleTripFormSubmit = function (e) {
@@ -237,9 +238,9 @@
   }
 
   function patchDeleteTrip() {
-    if (window.__sideJobDel55) return;
+    if (window.__sideJobDel60) return;
     if (typeof deleteTrip !== "function") return;
-    window.__sideJobDel55 = true;
+    window.__sideJobDel60 = true;
     var prev = deleteTrip;
     window.deleteTrip = function (date, tripIndex) {
       var rec = dailyRecords[date];
@@ -268,9 +269,9 @@
   }
 
   function patchUpdateReport() {
-    if (window.__sideJobReport55) return;
+    if (window.__sideJobReport60) return;
     if (typeof updateReport !== "function") return;
-    window.__sideJobReport55 = true;
+    window.__sideJobReport60 = true;
     var orig = updateReport;
     window.updateReport = function () {
       if (migrateLegacyTripLabels()) {
@@ -282,9 +283,9 @@
   }
 
   function patchExcel() {
-    if (window.__sideJobExcel55) return;
+    if (window.__sideJobExcel60) return;
     if (typeof handleExportExcel !== "function") return;
-    window.__sideJobExcel55 = true;
+    window.__sideJobExcel60 = true;
     var orig = handleExportExcel;
     window.handleExportExcel = function () {
       var backup = {};
@@ -321,6 +322,7 @@
     patchDeleteTrip();
     patchUpdateReport();
     patchExcel();
+    resetSideRadios();
     if (migrateLegacyTripLabels()) {
       try { saveToLocalStorage(); } catch (e) {}
       if (typeof updateReport === "function") updateReport();
