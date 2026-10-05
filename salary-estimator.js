@@ -1,4 +1,4 @@
-// salary-estimator.js — RezaOT v46 (sideJobs array)
+// salary-estimator.js — RezaOT v59 (payslip Sep 2026 formulas)
 (function () {
   "use strict";
 
@@ -10,7 +10,11 @@
     epfEmployerRate: 0.13,
     weekdayMult: 1.5,
     restMult: 2.0,
-    phMult: 3.0
+    phMult: 2.0,
+    uplDivisor: 30,
+    socso: 23.75,
+    eis: 9.50,
+    skim: 35.65
   };
 
   function loadSettings() {
@@ -18,10 +22,20 @@
       var raw = localStorage.getItem("salarySettings");
       if (raw) {
         var p = JSON.parse(raw);
-        return Object.assign({}, DEFAULTS, p);
+        var s = Object.assign({}, DEFAULTS, p);
+        if (!p._v || p._v < 59) {
+          s.phMult = 2.0;
+          s.uplDivisor = 30;
+          if (p.skim == null) s.skim = 35.65;
+          if (p.socso == null) s.socso = 23.75;
+          if (p.eis == null) s.eis = 9.50;
+          s._v = 59;
+          try { localStorage.setItem("salarySettings", JSON.stringify(s)); } catch (e2) {}
+        }
+        return s;
       }
     } catch (e) {}
-    return Object.assign({}, DEFAULTS);
+    return Object.assign({}, DEFAULTS, { _v: 59 });
   }
 
   function saveSettings(s) {
@@ -105,28 +119,18 @@
     var autoUpl = countUnpaidDays(records || {});
     var extraUpl = Number(extra.unpaidDays) || 0;
     var unpaidDays = autoUpl + extraUpl;
-    var dailyRate = s.basicSalary / 26;
+    var dailyRate = s.basicSalary / (s.uplDivisor || 30);
     var unpaidDeduction = unpaidDays * dailyRate;
 
     var kliaAllow = summary.kliaDays * s.kliaPerDay;
     var otPay = rates.weekday + rates.rest + rates.ph;
     var gross = s.basicSalary + otPay + kliaAllow;
 
-    var epfBase = s.basicSalary + kliaAllow;
+    var epfBase = s.basicSalary + otPay;
     var epfEmployee = epfBase * s.epfEmployeeRate;
-    var socso = 19.75;
-    var eis = 5.80;
-    var skim = 0;
-
-    try {
-      var raw = localStorage.getItem("salarySettings");
-      if (raw) {
-        var p = JSON.parse(raw);
-        if (p.socso != null) socso = Number(p.socso);
-        if (p.eis != null) eis = Number(p.eis);
-        if (p.skim != null) skim = Number(p.skim);
-      }
-    } catch (e) {}
+    var socso = (s.socso != null) ? Number(s.socso) : 23.75;
+    var eis = (s.eis != null) ? Number(s.eis) : 9.50;
+    var skim = (s.skim != null) ? Number(s.skim) : 35.65;
 
     var deductions = {
       unpaid: Math.round(unpaidDeduction * 100) / 100,
@@ -205,7 +209,7 @@
     tb.appendChild(row("EPF pekerja (" + (est.settings.epfEmployeeRate * 100) + "%)", -est.deductions.epf));
     tb.appendChild(row("SOCSO", -est.deductions.socso));
     tb.appendChild(row("EIS", -est.deductions.eis));
-    if (est.deductions.skim) tb.appendChild(row("Skim", -est.deductions.skim));
+    if (est.deductions.skim) tb.appendChild(row("Skim SKBBK", -est.deductions.skim));
     tb.appendChild(row("Jumlah potongan", -est.totalDeduct));
     tb.appendChild(row("Anggaran bersih", est.net, "salary-net"));
 
@@ -233,7 +237,7 @@
 
     var note = document.createElement("p");
     note.className = "salary-note";
-    note.textContent = "Anggaran sahaja. OT Sabtu ×1.5 · Ahad ×2 · Cuti ×3. Side income: Susun RM100 / Pallets RM50 — tidak dimasukkan dalam gaji.";
+    note.textContent = "Anggaran ikut payslip Sep 2026: OT ×1.5 · Ahad ×2 · Cuti ×2 · UPL=pokok÷30 · SKBBK RM35.65. Side income (Susun/Pallets) tidak dalam gaji.";
     container.appendChild(note);
   }
 
@@ -248,6 +252,11 @@
     s.basicSalary = parseFloat(b) || s.basicSalary;
     s.hoursPerMonth = parseFloat(h) || s.hoursPerMonth;
     s.kliaPerDay = parseFloat(k) || s.kliaPerDay;
+    var sk = prompt("Skim SKBBK / potongan tetap (RM):", s.skim != null ? s.skim : 35.65);
+    if (sk !== null) s.skim = parseFloat(sk) || 0;
+    s.phMult = s.phMult || 2.0;
+    s.uplDivisor = s.uplDivisor || 30;
+    s._v = 59;
     saveSettings(s);
     if (typeof showToast === "function") showToast("Tetapan gaji disimpan");
     var panel = document.getElementById("salaryPanelBody");
