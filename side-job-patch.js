@@ -1,4 +1,4 @@
-// side-job-patch.js — Susun=*  Pallets=#  (v60: default Pallets)
+// side-job-patch.js — Susun=*  Pallets=#  (v61: side job KLIA only)
 (function () {
   "use strict";
 
@@ -8,7 +8,6 @@
   }
 
   function resetSideRadios() {
-    // Default: Pallets (kebanyakan shipment)
     document.querySelectorAll('input[name="sideJob"]').forEach(function (r) {
       r.checked = r.value === "pallets";
     });
@@ -33,9 +32,12 @@
 
   function sideMarkFor(rec, tripStr) {
     var raw = String(tripStr || "");
+    var base = cleanTripLabel(raw);
+    // Tanda * / # hanya untuk KLIA Cargo
+    if (base.toLowerCase().indexOf("klia cargo") < 0) return "";
     if (/\*\s*$/.test(raw)) return " *";
     if (/#\s*$/.test(raw)) return " #";
-    var awb = extractAwb(cleanTripLabel(raw));
+    var awb = extractAwb(base);
     if (!awb || !rec || !Array.isArray(rec.sideJobs)) return "";
     var awbN = normalizeAwb(awb);
     for (var i = 0; i < rec.sideJobs.length; i++) {
@@ -83,6 +85,26 @@
     }
   }
 
+  function cleanNonKliaSideMarks() {
+    if (!window.dailyRecords) return false;
+    var changed = false;
+    Object.keys(dailyRecords).forEach(function (date) {
+      var rec = dailyRecords[date];
+      if (!rec || !Array.isArray(rec.trips)) return;
+      rec.trips = rec.trips.map(function (t) {
+        var s = String(t);
+        var base = cleanTripLabel(s);
+        if (base.toLowerCase().indexOf("klia cargo") >= 0) return s;
+        if (s !== base) {
+          changed = true;
+          return base;
+        }
+        return s;
+      });
+    });
+    return changed;
+  }
+
   function migrateLegacyTripLabels() {
     if (!window.dailyRecords) return false;
     var changed = false;
@@ -100,7 +122,9 @@
           if (type === "susun" || type === "pallets") {
             pushSideJob(date, awb || extractAwb(s), type);
             changed = true;
-            return clean + (type === "susun" ? " *" : " #");
+            if (clean.toLowerCase().indexOf("klia cargo") >= 0)
+              return clean + (type === "susun" ? " *" : " #");
+            return clean;
           }
           changed = true;
           return clean;
@@ -109,13 +133,15 @@
           var c = cleanTripLabel(s);
           var a = extractAwb(c);
           if (a) pushSideJob(date, a, "susun");
-          return c + " *";
+          if (c.toLowerCase().indexOf("klia cargo") >= 0) return c + " *";
+          return c;
         }
         if (/#\s*$/.test(s)) {
           var c2 = cleanTripLabel(s);
           var a2 = extractAwb(c2);
           if (a2) pushSideJob(date, a2, "pallets");
-          return c2 + " #";
+          if (c2.toLowerCase().indexOf("klia cargo") >= 0) return c2 + " #";
+          return c2;
         }
         var base = cleanTripLabel(s);
         var mark = sideMarkFor(rec, base);
@@ -144,17 +170,6 @@
         var shown = el.textContent || "";
         var base = cleanTripLabel(shown);
         var mark = rec ? sideMarkFor(rec, (rec.trips && rec.trips[i]) || shown) : "";
-        if (!mark) {
-          var awb = extractAwb(base);
-          if (awb) {
-            Object.keys(dailyRecords).some(function (d) {
-              var rr = dailyRecords[d];
-              if (!rr) return false;
-              mark = sideMarkFor(rr, base);
-              return !!mark;
-            });
-          }
-        }
         el.textContent = "";
         el.appendChild(document.createTextNode(base));
         if (mark) {
@@ -171,9 +186,9 @@
   }
 
   function patchTripSubmit() {
-    if (window.__sideJobTrip60) return;
+    if (window.__sideJobTrip61) return;
     if (typeof handleTripFormSubmit !== "function") return;
-    window.__sideJobTrip60 = true;
+    window.__sideJobTrip61 = true;
     var orig = handleTripFormSubmit;
 
     window.handleTripFormSubmit = function (e) {
@@ -189,12 +204,17 @@
         if (!dailyRecords[date]) dailyRecords[date] = { trips: [], clock_in: "", clock_out: "" };
         if (!Array.isArray(dailyRecords[date].trips)) dailyRecords[date].trips = [];
         var tripName = destination;
-        if (destination.toLowerCase().includes("klia cargo") && awb) {
+        var isKlia = destination.toLowerCase().indexOf("klia cargo") >= 0;
+        if (isKlia && awb) {
           tripName = "KLIA Cargo (" + awb + ")";
         }
-        var side = getSideValue();
-        if (side === "susun") tripName += " *";
-        else if (side === "pallets") tripName += " #";
+        // Side job * / # HANYA untuk KLIA Cargo
+        var side = "";
+        if (isKlia) {
+          side = getSideValue();
+          if (side === "susun") tripName += " *";
+          else if (side === "pallets") tripName += " #";
+        }
         dailyRecords[date].trips.push(tripName);
         if (side && awb) pushSideJob(date, awb, side);
         var upl = document.getElementById("unpaidLeaveCheck");
@@ -209,7 +229,7 @@
         showToast("Trip ditambah" + (tip ? " (" + tip.trim() + ")" : ""));
       }
 
-      if (destination.toLowerCase().includes("klia cargo") && awb) {
+      if (destination.toLowerCase().indexOf("klia cargo") >= 0 && awb) {
         var dup = null;
         Object.keys(dailyRecords).forEach(function (d) {
           var rec = dailyRecords[d];
@@ -238,9 +258,9 @@
   }
 
   function patchDeleteTrip() {
-    if (window.__sideJobDel60) return;
+    if (window.__sideJobDel61) return;
     if (typeof deleteTrip !== "function") return;
-    window.__sideJobDel60 = true;
+    window.__sideJobDel61 = true;
     var prev = deleteTrip;
     window.deleteTrip = function (date, tripIndex) {
       var rec = dailyRecords[date];
@@ -269,12 +289,12 @@
   }
 
   function patchUpdateReport() {
-    if (window.__sideJobReport60) return;
+    if (window.__sideJobReport61) return;
     if (typeof updateReport !== "function") return;
-    window.__sideJobReport60 = true;
+    window.__sideJobReport61 = true;
     var orig = updateReport;
     window.updateReport = function () {
-      if (migrateLegacyTripLabels()) {
+      if (cleanNonKliaSideMarks() || migrateLegacyTripLabels()) {
         try { saveToLocalStorage(); } catch (e) {}
       }
       orig.apply(this, arguments);
@@ -283,9 +303,9 @@
   }
 
   function patchExcel() {
-    if (window.__sideJobExcel60) return;
+    if (window.__sideJobExcel61) return;
     if (typeof handleExportExcel !== "function") return;
-    window.__sideJobExcel60 = true;
+    window.__sideJobExcel61 = true;
     var orig = handleExportExcel;
     window.handleExportExcel = function () {
       var backup = {};
@@ -323,7 +343,7 @@
     patchUpdateReport();
     patchExcel();
     resetSideRadios();
-    if (migrateLegacyTripLabels()) {
+    if (cleanNonKliaSideMarks() || migrateLegacyTripLabels()) {
       try { saveToLocalStorage(); } catch (e) {}
       if (typeof updateReport === "function") updateReport();
     } else if (typeof updateReport === "function") {
