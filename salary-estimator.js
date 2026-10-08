@@ -1,4 +1,4 @@
-// salary-estimator.js — RezaOT v59 (payslip Sep 2026 formulas)
+// salary-estimator.js — RezaOT v63 (EPF+KLIA, SOCSO 0.5%, EIS 0.2%)
 (function () {
   "use strict";
 
@@ -12,8 +12,8 @@
     restMult: 2.0,
     phMult: 2.0,
     uplDivisor: 30,
-    socso: 23.75,
-    eis: 9.50,
+    socsoRate: 0.005,
+    eisRate: 0.002,
     skim: 35.65
   };
 
@@ -23,19 +23,21 @@
       if (raw) {
         var p = JSON.parse(raw);
         var s = Object.assign({}, DEFAULTS, p);
-        if (!p._v || p._v < 59) {
+        if (!p._v || p._v < 63) {
           s.phMult = 2.0;
           s.uplDivisor = 30;
           if (p.skim == null) s.skim = 35.65;
-          if (p.socso == null) s.socso = 23.75;
-          if (p.eis == null) s.eis = 9.50;
-          s._v = 59;
+          s.socsoRate = 0.005;
+          s.eisRate = 0.002;
+          delete s.socso;
+          delete s.eis;
+          s._v = 63;
           try { localStorage.setItem("salarySettings", JSON.stringify(s)); } catch (e2) {}
         }
         return s;
       }
     } catch (e) {}
-    return Object.assign({}, DEFAULTS, { _v: 59 });
+    return Object.assign({}, DEFAULTS, { _v: 63 });
   }
 
   function saveSettings(s) {
@@ -126,10 +128,16 @@
     var otPay = rates.weekday + rates.rest + rates.ph;
     var gross = s.basicSalary + otPay + kliaAllow;
 
-    var epfBase = s.basicSalary + otPay;
+    // EPF: pokok + OT + KLIA
+    var epfBase = s.basicSalary + otPay + kliaAllow;
     var epfEmployee = epfBase * s.epfEmployeeRate;
-    var socso = (s.socso != null) ? Number(s.socso) : 23.75;
-    var eis = (s.eis != null) ? Number(s.eis) : 9.50;
+    // SOCSO 0.5%, EIS 0.2% atas asas yang sama
+    var socsoRate = (s.socsoRate != null) ? Number(s.socsoRate) : 0.005;
+    var eisRate = (s.eisRate != null) ? Number(s.eisRate) : 0.002;
+    var socso = epfBase * socsoRate;
+    var eis = epfBase * eisRate;
+    if (s.socso != null && s.socsoRate == null) socso = Number(s.socso);
+    if (s.eis != null && s.eisRate == null) eis = Number(s.eis);
     var skim = (s.skim != null) ? Number(s.skim) : 35.65;
 
     var deductions = {
@@ -138,8 +146,8 @@
       autoUplDays: autoUpl,
       extraUplDays: extraUpl,
       epf: Math.round(epfEmployee * 100) / 100,
-      socso: socso,
-      eis: eis,
+      socso: Math.round(socso * 100) / 100,
+      eis: Math.round(eis * 100) / 100,
       skim: skim
     };
     var totalDeduct = deductions.unpaid + deductions.epf + deductions.socso + deductions.eis + deductions.skim;
@@ -207,8 +215,8 @@
       tb.appendChild(row("UPL (" + est.deductions.unpaidDays + " hari)", -est.deductions.unpaid));
     }
     tb.appendChild(row("EPF pekerja (" + (est.settings.epfEmployeeRate * 100) + "%)", -est.deductions.epf));
-    tb.appendChild(row("SOCSO", -est.deductions.socso));
-    tb.appendChild(row("EIS", -est.deductions.eis));
+    tb.appendChild(row("SOCSO (" + ((est.settings.socsoRate != null ? est.settings.socsoRate : 0.005) * 100).toFixed(1) + "%)", -est.deductions.socso));
+    tb.appendChild(row("EIS (" + ((est.settings.eisRate != null ? est.settings.eisRate : 0.002) * 100).toFixed(1) + "%)", -est.deductions.eis));
     if (est.deductions.skim) tb.appendChild(row("Skim SKBBK", -est.deductions.skim));
     tb.appendChild(row("Jumlah potongan", -est.totalDeduct));
     tb.appendChild(row("Anggaran bersih", est.net, "salary-net"));
@@ -237,7 +245,7 @@
 
     var note = document.createElement("p");
     note.className = "salary-note";
-    note.textContent = "Anggaran ikut payslip Sep 2026: OT ×1.5 · Ahad ×2 · Cuti ×2 · UPL=pokok÷30 · SKBBK RM35.65. Side income (Susun/Pallets) tidak dalam gaji.";
+    note.textContent = "EPF 11% (pokok+OT+KLIA) · SOCSO 0.5% · EIS 0.2% · OT ×1.5 · Ahad/Cuti ×2 · UPL=pokok÷30. Side income tidak dalam gaji.";
     container.appendChild(note);
   }
 
@@ -256,7 +264,9 @@
     if (sk !== null) s.skim = parseFloat(sk) || 0;
     s.phMult = s.phMult || 2.0;
     s.uplDivisor = s.uplDivisor || 30;
-    s._v = 59;
+    s.socsoRate = 0.005;
+    s.eisRate = 0.002;
+    s._v = 63;
     saveSettings(s);
     if (typeof showToast === "function") showToast("Tetapan gaji disimpan");
     var panel = document.getElementById("salaryPanelBody");
