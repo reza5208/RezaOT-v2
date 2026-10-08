@@ -79,8 +79,11 @@ function calculateOT(clockIn, clockOut, date, recordTrips) {
 
   const inM = toMinutes(clockIn);
   var outM = toMinutes(clockOut);
+  // Same clock-in and clock-out = 0 (bukan 24 jam)
+  if (outM === inM) return 0;
   // Overnight: clock-out keesokan hari (cth. 08:00 → 02:00)
-  if (outM <= inM) outM += 24 * 60;
+  // Nota: span penuh dikira pada kadar hari clock-in (policy sedia ada)
+  if (outM < inM) outM += 24 * 60;
 
   var hasKLIACargo = (recordTrips || []).some(function (t) {
     return String(t).toLowerCase().indexOf("klia cargo") >= 0;
@@ -100,7 +103,6 @@ function calculateOT(clockIn, clockOut, date, recordTrips) {
   // KLIA Cargo hari biasa/Sabtu: tiada OT
   if (hasKLIACargo) return 0;
 
-  // Baca weekdayAfter/saturdayAfter (settings UI) + fallback nama lama
   var weekdayStr = settings.weekdayAfter || settings.weekdayStart || "17:00";
   var saturdayStr = settings.saturdayAfter || settings.saturdayStart || "14:00";
   var otStart = (day === 6) ? toMinutes(saturdayStr) : toMinutes(weekdayStr);
