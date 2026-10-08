@@ -1,7 +1,9 @@
+// constants.js
 const defaultTrips = [
-  "MBG Wangsa Walk", "MBG IOI Putrajaya", "MBG DPulze", "MBG KLIA2",
-  "MBG AEON Maluri", "MBG NU Sentral", "MBG Ampang", "Hospital Serdang",
-  "KLIA Cargo"
+  "KLIA Cargo", "MBG KLIA2", "MBG 163", "MBG AEON Maluri", "MBG NU Sentral",
+  "MBG DPulze", "MBG Setapak Sentral", "MBG Selayang", "MBG Nilai", "MBG Redtick",
+  "MBG AEON Shah Alam", "MBG IOI Putrajaya", "MBG MRT", "MBG Pavilion Bukit Jalil",
+  "MBG Ampang", "MBG Bangsar", "MBG Setia Alam", "MBG Kota Damansara"
 ];
 
 const monthNames = [
@@ -14,43 +16,61 @@ const defaultOtSettings = {
   saturdayAfter: "14:00"
 };
 
-/** Katalog cuti umum MY (KL/Selangor) — key YYYY-MM-DD */
+// Cuti umum Malaysia — Nasional + WP KL + Selangor
+// Tarikh Islamik 2027 adalah anggaran (tertakluk moon-sighting rasmi)
 const publicHolidays = {
-  "2026-01-01": "Hari Tahun Baru",
+  "2025-01-01": "Tahun Baru",
+  "2025-01-29": "Tahun Baru Cina",
+  "2025-01-30": "Tahun Baru Cina (Hari 2)",
+  "2025-02-01": "Thaipusam / Hari Wilayah Persekutuan (KL)",
+  "2025-03-31": "Hari Raya Aidilfitri",
+  "2025-04-01": "Hari Raya Aidilfitri (Hari 2)",
+  "2025-05-01": "Hari Pekerja",
+  "2025-05-12": "Hari Wesak",
+  "2025-06-02": "Keputeraan YDPA",
+  "2025-06-07": "Hari Raya Aidiladha",
+  "2025-06-27": "Awal Muharram",
+  "2025-08-31": "Hari Kebangsaan",
+  "2025-09-05": "Maulidur Rasul",
+  "2025-09-16": "Hari Malaysia",
+  "2025-10-20": "Deepavali",
+  "2025-12-11": "Keputeraan Sultan Selangor",
+  "2025-12-25": "Krismas",
+  "2026-01-01": "Tahun Baru",
   "2026-01-29": "Tahun Baru Cina",
-  "2026-01-30": "Tahun Baru Cina (hari ke-2)",
-  "2026-02-01": "Hari Wilayah Persekutuan",
-  "2026-03-21": "Hari Nuzul Al-Quran (anggaran)",
+  "2026-01-30": "Tahun Baru Cina (Hari 2)",
+  "2026-02-01": "Hari Wilayah Persekutuan (KL)",
+  "2026-02-01": "Thaipusam",
+  "2026-03-21": "Nuzul Al-Quran (anggaran)",
   "2026-03-22": "Hari Raya Aidilfitri (anggaran)",
-  "2026-03-23": "Hari Raya Aidilfitri (hari ke-2, anggaran)",
+  "2026-03-23": "Hari Raya Aidilfitri Hari 2 (anggaran)",
   "2026-05-01": "Hari Pekerja",
   "2026-05-27": "Hari Wesak (anggaran)",
-  "2026-06-01": "Hari Keputeraan SPB Yang di-Pertuan Agong",
+  "2026-06-01": "Keputeraan YDPA",
   "2026-06-17": "Hari Raya Aidiladha (anggaran)",
   "2026-07-07": "Awal Muharram (anggaran)",
   "2026-08-31": "Hari Kebangsaan",
   "2026-09-16": "Hari Malaysia",
-  "2026-09-16": "Hari Malaysia",
   "2026-11-08": "Deepavali (anggaran)",
   "2026-12-11": "Keputeraan Sultan Selangor",
-  "2026-12-25": "Hari Krismas",
-  "2027-01-01": "Hari Tahun Baru",
+  "2026-12-25": "Krismas",
+  "2027-01-01": "Tahun Baru",
+  "2027-02-01": "Hari Wilayah Persekutuan (KL)",
   "2027-02-06": "Tahun Baru Cina (anggaran)",
-  "2027-02-07": "Tahun Baru Cina (hari ke-2, anggaran)",
-  "2027-02-01": "Hari Wilayah Persekutuan",
-  "2027-03-10": "Hari Nuzul Al-Quran (anggaran)",
+  "2027-02-07": "Tahun Baru Cina Hari 2 (anggaran)",
+  "2027-03-10": "Nuzul Al-Quran (anggaran)",
   "2027-03-12": "Hari Raya Aidilfitri (anggaran)",
-  "2027-03-13": "Hari Raya Aidilfitri (hari ke-2, anggaran)",
+  "2027-03-13": "Hari Raya Aidilfitri Hari 2 (anggaran)",
   "2027-05-01": "Hari Pekerja",
   "2027-05-16": "Hari Wesak (anggaran)",
-  "2027-06-01": "Hari Keputeraan SPB Yang di-Pertuan Agong",
+  "2027-06-01": "Keputeraan YDPA",
   "2027-06-07": "Hari Raya Aidiladha (anggaran)",
   "2027-06-26": "Awal Muharram (anggaran)",
   "2027-08-31": "Hari Kebangsaan",
   "2027-09-16": "Hari Malaysia",
   "2027-10-28": "Deepavali (anggaran)",
   "2027-12-11": "Keputeraan Sultan Selangor",
-  "2027-12-25": "Hari Krismas"
+  "2027-12-25": "Krismas"
 };
 
 function getObservedHolidaysMap() {
