@@ -1,4 +1,4 @@
-// p0-critical-fix.js — P0 safety nets (v62)
+// p0-critical-fix.js — P0 safety nets (v64)
 (function () {
   "use strict";
 
@@ -17,31 +17,69 @@
     });
   }
 
-  function wireUpl() {
+  function wireUplAnn() {
     var upl = document.getElementById("unpaidLeaveCheck");
+    var ann = document.getElementById("annualLeaveCheck");
     var cin = document.getElementById("clockIn");
     var cout = document.getElementById("clockOut");
-    if (!upl || upl.__p0) return;
-    upl.__p0 = true;
-    function sync() {
-      var on = !!upl.checked;
-      if (cin) cin.required = !on;
-      if (cout) cout.required = !on;
+    function syncRequired() {
+      var leave = !!(upl && upl.checked) || !!(ann && ann.checked);
+      if (cin) cin.required = !leave;
+      if (cout) cout.required = !leave;
     }
-    upl.addEventListener("change", sync);
-    sync();
+    if (upl && !upl.__p0) {
+      upl.__p0 = true;
+      upl.addEventListener("change", function () {
+        if (upl.checked && ann) ann.checked = false;
+        syncRequired();
+      });
+    }
+    if (ann && !ann.__p0) {
+      ann.__p0 = true;
+      ann.addEventListener("change", function () {
+        if (ann.checked && upl) upl.checked = false;
+        syncRequired();
+      });
+    }
+    syncRequired();
+  }
+
+  function patchClockSave() {
+    if (window.__p0AnnClock || typeof handleClockFormSubmit !== "function") return;
+    window.__p0AnnClock = true;
+    var orig = handleClockFormSubmit;
+    window.handleClockFormSubmit = function (e) {
+      orig.apply(this, arguments);
+      try {
+        var date = document.getElementById("date") && document.getElementById("date").value;
+        if (!date || !window.dailyRecords || !dailyRecords[date]) return;
+        var ann = document.getElementById("annualLeaveCheck");
+        if (ann) {
+          dailyRecords[date].annual = !!ann.checked;
+          if (dailyRecords[date].annual) dailyRecords[date].unpaid = false;
+          if (typeof saveToLocalStorage === "function") saveToLocalStorage();
+          if (typeof updateReport === "function") updateReport();
+        }
+      } catch (err) {}
+    };
+    var form = document.getElementById("clockForm");
+    if (form) {
+      try { form.removeEventListener("submit", orig); } catch (e) {}
+      form.addEventListener("submit", window.handleClockFormSubmit);
+    }
   }
 
   document.addEventListener("rezaot-ready", function () {
     setTimeout(function () {
       forceTiadaDefault();
-      wireUpl();
+      wireUplAnn();
+      patchClockSave();
     }, 300);
   });
   if (document.readyState !== "loading") {
     setTimeout(function () {
       forceTiadaDefault();
-      wireUpl();
+      wireUplAnn();
     }, 1500);
   }
 })();

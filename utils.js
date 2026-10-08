@@ -79,10 +79,7 @@ function calculateOT(clockIn, clockOut, date, recordTrips) {
 
   const inM = toMinutes(clockIn);
   var outM = toMinutes(clockOut);
-  // Same clock-in and clock-out = 0 (bukan 24 jam)
   if (outM === inM) return 0;
-  // Overnight: clock-out keesokan hari (cth. 08:00 → 02:00)
-  // Nota: span penuh dikira pada kadar hari clock-in (policy sedia ada)
   if (outM < inM) outM += 24 * 60;
 
   var hasKLIACargo = (recordTrips || []).some(function (t) {
@@ -95,12 +92,21 @@ function calculateOT(clockIn, clockOut, date, recordTrips) {
     ? getOtSettings()
     : { weekdayAfter: "17:00", saturdayAfter: "14:00" };
 
-  // Ahad / cuti company: semua jam kerja = OT (termasuk overnight)
+  // Ahad / cuti: optional potong rehat (restBreakHours dari salarySettings)
   if (day === 0 || isHol) {
-    return Math.round(((outM - inM) / 60) * 100) / 100;
+    var hours = (outM - inM) / 60;
+    var breakH = 0;
+    try {
+      var raw = localStorage.getItem("salarySettings");
+      if (raw) {
+        var ss = JSON.parse(raw);
+        if (ss && ss.restBreakHours != null) breakH = Number(ss.restBreakHours) || 0;
+      }
+    } catch (e) {}
+    if (breakH > 0) hours = Math.max(0, hours - breakH);
+    return Math.round(hours * 100) / 100;
   }
 
-  // KLIA Cargo hari biasa/Sabtu: tiada OT
   if (hasKLIACargo) return 0;
 
   var weekdayStr = settings.weekdayAfter || settings.weekdayStart || "17:00";
