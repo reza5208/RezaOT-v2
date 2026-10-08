@@ -17,7 +17,8 @@
     "sync-fix-v48.js?v=62",
     "month-fix.js?v=62",
     "print-fix-v51.js?v=62",
-    "ot-total-patch.js?v=62"
+    "ot-total-patch.js?v=62",
+    "p0-critical-fix.js?v=62"
   ].reduce(function (p, src) {
     return p.then(function () { return load(src); });
   }, Promise.resolve());
