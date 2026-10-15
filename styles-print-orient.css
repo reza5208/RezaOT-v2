@@ -1,0 +1,115 @@
+/* styles-print-orient.css — Portrait / Landscape choice UI + layout tweaks */
+
+.print-orient-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+.print-orient-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+}
+.print-orient-box {
+  position: relative;
+  background: #fff;
+  color: #111;
+  border-radius: 12px;
+  padding: 18px 20px 14px;
+  min-width: 260px;
+  max-width: 92vw;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+  text-align: center;
+}
+body.dark .print-orient-box {
+  background: #1e1e24;
+  color: #eee;
+}
+.print-orient-title {
+  margin: 0 0 4px;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+.print-orient-sub {
+  margin: 0 0 14px;
+  font-size: 0.85rem;
+  opacity: 0.75;
+}
+.print-orient-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.print-orient-btn {
+  flex: 1 1 110px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1.5px solid #ccc;
+  background: #f5f5f7;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.print-orient-btn[data-pref] {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25);
+}
+body.dark .print-orient-btn {
+  background: #2a2a32;
+  border-color: #444;
+  color: #eee;
+}
+.print-orient-btn:hover {
+  border-color: #2563eb;
+}
+.print-orient-cancel {
+  margin-top: 12px;
+  background: none;
+  border: none;
+  color: #666;
+  font-size: 0.85rem;
+  cursor: pointer;
+  text-decoration: underline;
+}
+body.dark .print-orient-cancel { color: #aaa; }
+
+@media print {
+  body.print-landscape #reportTable {
+    font-size: 8.5pt !important;
+  }
+  body.print-landscape #reportTable th,
+  body.print-landscape #reportTable td {
+    padding: 2px 4px !important;
+  }
+  body.print-landscape h1 {
+    font-size: 13pt !important;
+  }
+  body.print-landscape .header-info {
+    font-size: 9pt !important;
+  }
+  body.print-landscape .print-summary-note {
+    font-size: 8pt !important;
+  }
+  body.print-landscape .container {
+    max-width: none !important;
+  }
+}
+
+body.print-landscape.pdf-export #reportTable {
+  font-size: 11px !important;
+}
+body.print-landscape.pdf-export #reportTable th,
+body.print-landscape.pdf-export #reportTable td {
+  padding: 3px 5px !important;
+}
+body.print-landscape.pdf-export h1 {
+  font-size: 16px !important;
+}
+body.print-landscape.pdf-export .container {
+  max-width: none !important;
+}
