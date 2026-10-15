@@ -18,7 +18,8 @@
     "month-fix.js?v=65",
     "print-fix-v51.js?v=65",
     "ot-total-patch.js?v=65",
-    "p0-critical-fix.js?v=65"
+    "p0-critical-fix.js?v=65",
+    "month-history-v65.js?v=65"
   ].reduce(function (p, src) {
     return p.then(function () { return load(src); });
   }, Promise.resolve());
