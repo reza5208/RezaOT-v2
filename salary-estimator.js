@@ -103,8 +103,6 @@
       trips.forEach(function (t) {
         var str = String(t);
         if (str.toLowerCase().indexOf("klia cargo") >= 0) kliaDays.add(date);
-        if (/\*\s*$/.test(str)) susunCount++;
-        else if (/#\s*$/.test(str)) palletsCount++;
       });
       if (Array.isArray(rec.sideJobs)) {
         rec.sideJobs.forEach(function (sj) {
