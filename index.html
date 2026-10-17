@@ -28,10 +28,15 @@
                 <h1><span class="no-print">🚛 </span><span data-i18n="appTitle">Report Trips dan OT</span></h1>
                 <div class="header-actions no-print">
                     <button type="button" id="langToggleBtn" class="icon-btn lang-btn" title="Switch language">EN</button>
-                    <button type="button" id="holidayPickerBtn" class="icon-btn" title="Pilih cuti company">🏖</button>
-                    <button type="button" id="otSettingsBtn" class="icon-btn" title="Settings OT">⚙️</button>
-                    <button type="button" id="pinSettingsBtn" class="icon-btn" title="PIN app">🔑</button>
                     <button type="button" id="darkModeBtn" class="icon-btn" title="Tukar tema">🌙</button>
+                    <div class="menu-wrap no-print">
+                        <button type="button" id="menuToggleBtn" class="icon-btn" aria-label="Menu" title="Menu">⋯</button>
+                        <div id="menuPanel" class="menu-panel" hidden>
+                            <button type="button" id="holidayPickerBtn" class="icon-btn" title="Pilih cuti company">🏖 Cuti umum</button>
+                            <button type="button" id="otSettingsBtn" class="icon-btn" title="Settings OT">⚙️ Tetapan OT</button>
+                            <button type="button" id="pinSettingsBtn" class="icon-btn" title="PIN app">🔑 PIN app</button>
+                        </div>
+                    </div>
                 </div>
             </div>
             <p class="no-print">WH3 Transport - Khairul Reza</p>
