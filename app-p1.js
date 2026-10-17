@@ -214,42 +214,98 @@
       document.body.appendChild(ov);
       document.body.classList.add("pin-locked");
 
+      // PIN is client-side only (stored in localStorage). This lockout slows casual guessing; it is NOT real security.
+      function getFailState() {
+        try { return JSON.parse(localStorage.getItem("rezaot_pin_fail") || "null") || { n: 0, until: 0 }; }
+        catch (e) { return { n: 0, until: 0 }; }
+      }
+      function setFailState(s) {
+        localStorage.setItem("rezaot_pin_fail", JSON.stringify(s));
+      }
+      function lockedRemaining() {
+        var st = getFailState();
+        var left = Math.ceil((st.until - Date.now()) / 1000);
+        return left > 0 ? left : 0;
+      }
+      function applyLockUi(secs) {
+        var input = document.getElementById("pinInput");
+        var btn = document.getElementById("pinSubmitBtn");
+        var err = document.getElementById("pinError");
+        if (input) input.disabled = true;
+        if (btn) btn.disabled = true;
+        if (err) {
+          err.hidden = false;
+          err.textContent = "Terlalu banyak cubaan. Cuba lagi dalam " + (secs || 60) + " saat.";
+        }
+      }
+      function clearLockUi() {
+        var input = document.getElementById("pinInput");
+        var btn = document.getElementById("pinSubmitBtn");
+        var err = document.getElementById("pinError");
+        if (input) input.disabled = false;
+        if (btn) btn.disabled = false;
+        if (err) { err.hidden = true; err.textContent = "PIN salah"; }
+      }
+      function registerFail() {
+        var st = getFailState();
+        st.n = (st.n || 0) + 1;
+        if (st.n >= 5) {
+          st.until = Date.now() + 60000;
+          st.n = 0;
+          setFailState(st);
+          applyLockUi(60);
+          setTimeout(function () {
+            setFailState({ n: 0, until: 0 });
+            clearLockUi();
+          }, 60000);
+        } else {
+          setFailState(st);
+        }
+      }
+
       function unlockOk() {
+        setFailState({ n: 0, until: 0 });
         ov.style.display = "none";
         document.body.classList.remove("pin-locked");
         var input = document.getElementById("pinInput");
-        if (input) input.value = "";
+        if (input) { input.value = ""; input.disabled = false; }
+        var btn = document.getElementById("pinSubmitBtn");
+        if (btn) btn.disabled = false;
         var err = document.getElementById("pinError");
-        if (err) err.hidden = true;
+        if (err) { err.hidden = true; err.textContent = "PIN salah"; }
       }
 
       function tryU() {
+        if (lockedRemaining() > 0) return;
         var input = document.getElementById("pinInput");
         var err = document.getElementById("pinError");
         if (!input) return;
         if (input.value === pin) {
           unlockOk();
         } else {
-          if (err) err.hidden = false;
+          registerFail();
+          if (err && lockedRemaining() === 0) { err.hidden = false; err.textContent = "PIN salah"; }
           input.value = "";
-          input.focus();
+          if (!input.disabled) input.focus();
         }
       }
 
       document.getElementById("pinInput").addEventListener("input", function () {
+        if (lockedRemaining() > 0) return;
         var input = document.getElementById("pinInput");
         var err = document.getElementById("pinError");
         if (!input) return;
-        if (err) err.hidden = true;
+        if (err) { err.hidden = true; err.textContent = "PIN salah"; }
         var v = String(input.value).replace(/[^0-9]/g, "");
         if (v !== input.value) input.value = v;
         if (v.length < pin.length) return;
         if (v.slice(0, pin.length) === pin) {
           unlockOk();
         } else {
-          if (err) err.hidden = false;
+          registerFail();
+          if (err && lockedRemaining() === 0) { err.hidden = false; err.textContent = "PIN salah"; }
           input.value = "";
-          input.focus();
+          if (!input.disabled) input.focus();
         }
       });
 
@@ -257,9 +313,17 @@
       document.getElementById("pinInput").addEventListener("keydown", function (e) {
         if (e.key === "Enter") tryU();
       });
+      var left0 = lockedRemaining();
+      if (left0 > 0) {
+        applyLockUi(left0);
+        setTimeout(function () {
+          setFailState({ n: 0, until: 0 });
+          clearLockUi();
+        }, left0 * 1000);
+      }
       setTimeout(function () {
         var i = document.getElementById("pinInput");
-        if (i) i.focus();
+        if (i && !i.disabled) i.focus();
       }, 100);
     }
 
@@ -349,30 +413,6 @@
     if (window.__coreMerged35) return true;
     window.__coreMerged35 = true;
 
-    function settingsPath() { return "users/default/settings"; }
-
-    function pushSettingsToCloud() {
-      if (!navigator.onLine) return;
-      try {
-        db.ref(settingsPath()).set({
-          observedHolidays: (typeof getObservedHolidaysMap === "function") ? getObservedHolidaysMap() : {},
-          otSettings: (typeof getOtSettings === "function") ? getOtSettings() : {},
-          lastUpdated: new Date().toISOString(),
-          deviceId: (typeof getDeviceId === "function") ? getDeviceId() : ""
-        }).catch(function () {});
-      } catch (e) {}
-    }
-
-    function pullSettingsFromCloud(data) {
-      if (!data) return;
-      try {
-        if (data.observedHolidays) localStorage.setItem("observedHolidays", JSON.stringify(data.observedHolidays));
-        if (data.otSettings) localStorage.setItem("otSettings", JSON.stringify(data.otSettings));
-      } catch (e) {}
-      if (typeof updateHolidayBadge === "function") updateHolidayBadge();
-      if (typeof updateReport === "function") updateReport();
-    }
-
     window.flushOfflineQueue = async function () {
       if (!navigator.onLine) return;
       var q = (typeof getOfflineQueue === "function") ? getOfflineQueue() : [];
@@ -451,37 +491,6 @@
       if (typeof flushOfflineQueue === "function") flushOfflineQueue();
     };
 
-    if (typeof setHolidayObserved === "function" && !setHolidayObserved._s35) {
-      var oHol = setHolidayObserved;
-      window.setHolidayObserved = function (d, v) {
-        oHol(d, v);
-        window.__settingsLocalAt = Date.now();
-        pushSettingsToCloud();
-      };
-      window.setHolidayObserved._s35 = true;
-    }
-    if (typeof saveObservedHolidaysMap === "function" && !saveObservedHolidaysMap._s35) {
-      var oSave = saveObservedHolidaysMap;
-      window.saveObservedHolidaysMap = function (m) {
-        oSave(m);
-        window.__settingsLocalAt = Date.now();
-        clearTimeout(window.__settingsPushT);
-        window.__settingsPushT = setTimeout(pushSettingsToCloud, 400);
-      };
-      window.saveObservedHolidaysMap._s35 = true;
-    }
-
-    if (!window.__settingsListener35) {
-      window.__settingsListener35 = true;
-      db.ref(settingsPath()).on("value", function (snap) {
-        var s = snap.val();
-        if (!s) { window.__settingsLocalAt = Date.now(); pushSettingsToCloud(); return; }
-        if (s.deviceId && typeof getDeviceId === "function" &&
-            s.deviceId === getDeviceId() && Date.now() - (window.__settingsLocalAt || 0) < 2500) return;
-        pullSettingsFromCloud(s);
-      });
-    }
-
     if (typeof handleMonthChange === "function" && !handleMonthChange._v35) {
       var oMonth = handleMonthChange;
       window.handleMonthChange = function () {
@@ -503,19 +512,9 @@
     setTimeout(function () { tryInstallSync(n + 1); }, 150);
   }
 
-  function boot() {
+  document.addEventListener("rezaot-ready", function () {
     wireSyncSkeleton();
     wrapExcel();
-    wireExtras();
-    tryInstallSync(0);
-  }
-
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", boot);
-  } else {
-    boot();
-  }
-  document.addEventListener("rezaot-ready", function () {
     wireExtras();
     tryInstallSync(0);
   });
