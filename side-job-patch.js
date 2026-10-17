@@ -4,12 +4,12 @@
 
   function getSideValue() {
     var el = document.querySelector('input[name="sideJob"]:checked');
-    return el ? el.value : "pallets";
+    return el ? el.value : "";
   }
 
   function resetSideRadios() {
     document.querySelectorAll('input[name="sideJob"]').forEach(function (r) {
-      r.checked = r.value === "pallets";
+      r.checked = r.value === "";
     });
   }
 
@@ -33,7 +33,6 @@
   function sideMarkFor(rec, tripStr) {
     var raw = String(tripStr || "");
     var base = cleanTripLabel(raw);
-    // Tanda * / # hanya untuk KLIA Cargo
     if (base.toLowerCase().indexOf("klia cargo") < 0) return "";
     if (/\*\s*$/.test(raw)) return " *";
     if (/#\s*$/.test(raw)) return " #";
@@ -208,7 +207,6 @@
         if (isKlia && awb) {
           tripName = "KLIA Cargo (" + awb + ")";
         }
-        // Side job * / # HANYA untuk KLIA Cargo
         var side = "";
         if (isKlia) {
           side = getSideValue();
@@ -331,7 +329,7 @@
     var st = document.createElement("style");
     st.id = "side-mark-css";
     st.textContent = ".side-mark{font-weight:800;color:#c0392b;margin-left:2px;white-space:nowrap;}" +
-      "body.dark-mode .side-mark{color:#ff8a80;}" +
+      "body.dark-mode .side-mark{color:#ff8a80;}" + "body.dark .side-mark{color:#ff8a80;}" +
       "@media print{.side-mark{color:#000!important;font-weight:700!important;}}";
     document.head.appendChild(st);
   }
