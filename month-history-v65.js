@@ -1,9 +1,14 @@
-// month-history-v65.js — bulan cepat dari local + Firebase
+// month-history-v65.js — bulan cepat dari local + Firebase (cloud keys sekali sahaja)
 (function () {
   "use strict";
+
+  var cloudKeysCache = null;
+  var cloudFetched = false;
+
   function boot() {
     var sel = document.getElementById("monthHistory");
     if (!sel) return;
+
     function renderKeys(keys) {
       if (typeof currentMonthKey === "string" && keys.indexOf(currentMonthKey) < 0) keys.push(currentMonthKey);
       keys = keys.filter(function (k, i, a) { return k && a.indexOf(k) === i; });
@@ -23,6 +28,7 @@
       });
       if (prev && keys.indexOf(prev) >= 0 && prev !== currentMonthKey) sel.value = prev;
     }
+
     function localMonthKeys() {
       var keys = [];
       try {
@@ -33,29 +39,67 @@
       } catch (e) {}
       return keys;
     }
-    function fill() {
+
+    function mergeKeys() {
       var keys = localMonthKeys();
-      renderKeys(keys.slice());
+      if (cloudKeysCache && cloudKeysCache.length) {
+        cloudKeysCache.forEach(function (k) {
+          if (keys.indexOf(k) < 0) keys.push(k);
+        });
+      }
+      renderKeys(keys);
+    }
+
+    function fetchCloudKeys(force) {
+      if (cloudFetched && !force) {
+        mergeKeys();
+        return;
+      }
       try {
-        if (typeof db === "undefined" || !navigator.onLine) return;
+        if (typeof db === "undefined" || !navigator.onLine) {
+          mergeKeys();
+          return;
+        }
         db.ref("users/default").once("value").then(function (snap) {
           var val = snap.val() || {};
+          var keys = [];
           Object.keys(val).forEach(function (k) {
             if (k === "_meta" || k === "settings") return;
-            if (keys.indexOf(k) < 0) keys.push(k);
+            keys.push(k);
           });
-          renderKeys(keys);
-        }).catch(function () {});
-      } catch (e) {}
+          cloudKeysCache = keys;
+          cloudFetched = true;
+          mergeKeys();
+        }).catch(function () {
+          mergeKeys();
+        });
+      } catch (e) {
+        mergeKeys();
+      }
     }
-    fill();
+
+    function fillLocalOnly() {
+      mergeKeys();
+    }
+
+    fetchCloudKeys(false);
+
+    if (typeof handleMonthChange === "function" && !handleMonthChange._mh65) {
+      var oMonth = handleMonthChange;
+      window.handleMonthChange = function () {
+        oMonth.apply(this, arguments);
+        fetchCloudKeys(true);
+      };
+      window.handleMonthChange._mh65 = true;
+    }
+
     if (!window.__monthHistCloud) {
       window.__monthHistCloud = true;
       var orig = window.updateReport;
       if (typeof orig === "function") {
         window.updateReport = function () {
           orig.apply(this, arguments);
-          try { fill(); } catch (e) {}
+          try { fillLocalOnly(); } catch (e) {}
         };
       }
     }

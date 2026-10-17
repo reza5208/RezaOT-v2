@@ -18,7 +18,7 @@
   }
 
   function totalLabel() {
-    var lang = (localStorage.getItem("rezaotLang") || "ms").toLowerCase();
+    var lang = (localStorage.getItem("rezaot_lang") || "ms").toLowerCase();
     if (window.RezaOT_i18n && typeof RezaOT_i18n.t === "function") {
       var t = RezaOT_i18n.t("totalOTRow");
       if (t && t !== "totalOTRow") return t;
