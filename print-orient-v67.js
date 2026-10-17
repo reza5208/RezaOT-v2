@@ -44,7 +44,7 @@
     var link = document.createElement("link");
     link.id = "printOrientCss";
     link.rel = "stylesheet";
-    link.href = "styles-print-orient.css?v=68";
+    link.href = "styles-print-orient.css?v=69";
     document.head.appendChild(link);
   }
 
