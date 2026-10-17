@@ -93,11 +93,10 @@ function isCatalogHoliday(dateStr) {
   return Object.prototype.hasOwnProperty.call(publicHolidays, dateStr);
 }
 
-/** Cuti yang company AMBIL — diguna untuk OT & highlight table */
+/** Cuti yang company AMBIL — default NOT taken; only map[dateStr]===true counts for OT & highlight */
 function isPublicHoliday(dateStr) {
   if (!isCatalogHoliday(dateStr)) return false;
   const map = getObservedHolidaysMap();
-  if (!Object.prototype.hasOwnProperty.call(map, dateStr)) return true;
   return map[dateStr] === true;
 }
 
