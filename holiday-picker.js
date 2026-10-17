@@ -76,7 +76,7 @@
       const label = document.createElement("label");
       const cb = document.createElement("input");
       cb.type = "checkbox";
-      cb.checked = map[dateStr] !== false;
+      cb.checked = map[dateStr] === true;
       cb.addEventListener("change", function () {
         setHolidayObserved(dateStr, this.checked);
         updateHolidayBadge();
