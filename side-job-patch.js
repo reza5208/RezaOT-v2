@@ -152,9 +152,9 @@
       if (!dateCell) return;
       var txt = (dateCell.textContent || "").trim();
       var date = null;
-      Object.keys(dailyRecords || {}).forEach(function (d) {
-        var rev = d.split("-").reverse().join("/");
-        if (txt.indexOf(d) >= 0 || txt.indexOf(rev) >= 0 || txt.indexOf(d.slice(2)) >= 0) date = d;
+      Object.keys(dailyRecords || {}).some(function (d) {
+        if (formatDateForPDF(d) === txt) { date = d; return true; }
+        return false;
       });
       if (!date || !dailyRecords[date]) return;
       var rec = dailyRecords[date];
