@@ -36,7 +36,17 @@
       "body.dark .mc-card.mc-sun,body.dark-mode .mc-card.mc-sun{background:#1a2029;}" +
       "body.dark .mc-card.mc-ph,body.dark-mode .mc-card.mc-ph{background:#1a2838;}" +
       "body.dark .mc-actions button,body.dark-mode .mc-actions button{" +
-      "background:#2a3340;border-color:#3a4555;color:#e8eaed;}";
+      "background:#2a3340;border-color:#3a4555;color:#e8eaed;}" +
+      ".header-top h1{font-size:18px;line-height:1.25;}" +
+      ".menu-wrap{position:relative;display:inline-block;}" +
+      ".menu-panel{position:absolute;right:0;top:100%;background:#fff;border-radius:10px;" +
+      "box-shadow:0 6px 20px rgba(0,0,0,.15);padding:6px;min-width:180px;z-index:50;}" +
+      ".menu-panel button{display:block;width:100%;text-align:left;padding:10px 12px;" +
+      "border:0;background:none;font-size:15px;}" +
+      "body.dark .menu-panel,body.dark-mode .menu-panel{background:#1e2530;color:#e8eaed;}" +
+      "body.dark .menu-panel button,body.dark-mode .menu-panel button{color:#e8eaed;}" +
+      "body{padding-bottom:96px;}" +
+      "@media print{.menu-wrap{display:none!important;}}";
     document.head.appendChild(st);
   }
 
@@ -165,8 +175,31 @@
     };
   }
 
+  function wireMenu() {
+    var toggle = document.getElementById("menuToggleBtn");
+    var panel = document.getElementById("menuPanel");
+    if (!toggle || !panel || toggle._mcMenu) return;
+    toggle._mcMenu = true;
+    toggle.addEventListener("click", function () {
+      if (panel.hasAttribute("hidden")) panel.removeAttribute("hidden");
+      else panel.setAttribute("hidden", "");
+    });
+    document.addEventListener("click", function (e) {
+      if (!panel || panel.hasAttribute("hidden")) return;
+      var t = e.target;
+      if (toggle.contains(t) || panel.contains(t)) {
+        if (panel.contains(t) && t.closest("button") && t !== toggle) {
+          panel.setAttribute("hidden", "");
+        }
+        return;
+      }
+      panel.setAttribute("hidden", "");
+    });
+  }
+
   function boot() {
     injectCss();
+    wireMenu();
     patchUpdateReport();
     try { rebuildCards(); } catch (e) {}
   }
