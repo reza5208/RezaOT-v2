@@ -1,4 +1,4 @@
-# RezaOT v58
+# RezaOT v68
 
 PWA peribadi untuk rekod **Clock-In/Out**, **Trip**, **OT**, dan **anggaran gaji**  
 WH3 Transport — **Khairul Reza** (M-264)
@@ -26,7 +26,7 @@ WH3 Transport — **Khairul Reza** (M-264)
 | Isnin–Jumaat | Selepas **17:00** (×1.5) |
 | Sabtu | Selepas **14:00** (×1.5) |
 | Ahad | Semua jam (×2) |
-| Cuti company | Semua jam (×3) |
+| Cuti company | Semua jam (×2.0) |
 | KLIA Cargo | Tiada OT (hari biasa / Sabtu) |
 | Overnight | Sokong (cth. 08:00 → 02:00 keesokan hari) |
 
@@ -35,7 +35,7 @@ WH3 Transport — **Khairul Reza** (M-264)
 - Base rate anggaran: `gaji pokok ÷ 208`
 
 ### Laporan
-- Print / PDF **A4 portrait** formal hitam-putih
+- Print / PDF **A4 Portrait default**; **Landscape option available**
 - Kolum **T/T pekerja** & **T/T ketua**
 - Baris **JUMLAH OT** (bold) — **print/PDF sahaja**, tak keluar di UI
 - Footer ringkas: `OT · Trip · KLIA · AWB`
@@ -46,7 +46,8 @@ WH3 Transport — **Khairul Reza** (M-264)
 - Gaji pokok, OT (pecahan weekday / Ahad / cuti)
 - Allowance KLIA **RM70 / hari** (hari ada trip KLIA Cargo)
 - EPF 11%, SOCSO, EIS
-- **Side income** berasingan: Susun RM100/AWB · Pallets RM50/AWB (**bukan** digabung ke gaji bersih)
+- **Side income** berasingan dari **sideJobs list only**: Susun RM100/AWB · Pallets RM50/AWB (**bukan** digabung ke gaji bersih)
+- Side job default: **Tiada**
 
 ### App
 - Bahasa **BM / EN**, dark mode, PWA (installable)
@@ -63,6 +64,7 @@ WH3 Transport — **Khairul Reza** (M-264)
 - Last-write-wins per bulan
 - Jika cloud kosong, **data local tidak dipadam** — di-push naik
 - Backup: **Export Data (JSON)**
+- **Security:** Realtime Database rules are currently open (`.read`/`.write` true). To be locked down in a future batch. Do not change until owner approves.
 
 ```json
 {
@@ -79,53 +81,42 @@ WH3 Transport — **Khairul Reza** (M-264)
 
 ---
 
-## Struktur fail (v58)
+## Struktur fail (v68)
 
 | Fail | Peranan |
 |------|----------|
 | `index.html` | UI shell |
-| `main.js` | Bootstrap loader (`?v=58`) |
-| `main-app-1.js` / `main-app-2.js` | Core: storage, forms, report, Excel |
-| `app-p1.js` | PIN, print/PDF, FAB, sync |
-| `app-p1-extra.js` | Loader patch tambahan |
-| `side-job-patch.js` | Susun `*` / Pallets `#` |
-| `ot-total-patch.js` | Baris JUMLAH OT (print-only) |
-| `print-fix-v51.js` | Print/PDF A4 portrait |
-| `salary-estimator.js` | Anggaran gaji + side income |
-| `holiday-picker.js` | Pilih cuti company |
-| `modal.js` / `i18n.js` / `utils.js` / `constants.js` | Sokongan |
-| `styles.css` + `styles-print.css` | Skrin + print |
-| `sw.js` | Service worker **v58** |
-| `manifest.json` | PWA manifest |
+| `main.js` | Bootstrap loader (`?v=68`) |
+| `main-app-1.js` / `main-app-2.js` | Core: storage, forms, report, export |
+| `salary-estimator.js` | Anggaran gaji + EPF bracket |
+| `app-p1.js` | PIN, print/PDF, month history, sync merge |
+| `app-p1-extra.js` | Loads patch scripts |
+| `constants.js` / `utils.js` | Holidays, OT calc |
+| `holiday-picker.js` | Cuti company observed |
+| `side-job-patch.js` | Susun/Pallets marks |
+| `sync-cross-v66.js` | Cross-device settings + never-wipe |
+| `print-orient-v67.js` | Portrait/Landscape choice |
+| `sw.js` | Service worker cache `rezaot-v68` |
 
 ---
 
-## AI / Grok context (for other agents)
+## AI / Grok context
 
-> **Purpose:** Ground any future Grok/coding agent so it can edit RezaOT without rediscovering rules from chat history.
-
-### What this app is
-- **Name:** RezaOT (ship target **v58**)
-- **Stack:** Personal **PWA** — static HTML/CSS/**vanilla JS** (not React/Vue)
-- **Owner:** Khairul Reza, emp **M-264**, dept **WH3 Transport**; supervisor default **Talib** (editable)
-- **Repo:** `reza5208/RezaOT-v2`, branch `main`, static host + service worker
-- **Chat language with owner:** mostly **Bahasa Malaysia**; UI has BM/EN toggle
-
-### Domain rules (do not simplify away)
-1. **OT hours** (`calculateOT` in `utils.js`):
-   - Missing clock in/out → 0
-   - **Overnight:** if out-minutes ≤ in-minutes, add 24h to out
-   - **Sunday OR company-observed PH:** OT = full span (out − in)
-   - **KLIA Cargo** on Mon–Sat → OT hours **0** (allowance is separate money)
+### Domain rules (do not invent payroll law)
+1. **OT clock rules** (hours for table):
+   - Mon–Fri after **17:00**; Sat after **14:00**; Sun full span; PH (observed only) full span ×2.0 pay
+   - KLIA Cargo Mon–Sat → OT hours **0** (allowance is separate money)
    - Sat OT after **14:00**; weekday after **17:00** (from settings)
-2. **Pay multipliers** (salary estimator only): Mon–Sat ×1.5, Sun ×2, PH ×3; base = pokok ÷ 208
+2. **Pay multipliers** (salary estimator only): Mon–Sat ×1.5, Sun ×2, PH ×2.0; base = pokok ÷ 208
 3. **KLIA allowance:** **RM70 per day** with ≥1 KLIA Cargo trip (not per AWB)
 4. **Side jobs** (NOT added into net salary):
    - Susun **RM100**/AWB → mark `*`
    - Pallets **RM50**/AWB → mark `#`
-   - Persist in `sideJobs[]` **and** on trip label string
+   - Side income comes from the **sideJobs list only** (not trip-label markers)
+   - Side job default is **Tiada** (empty)
+   - Persist in `sideJobs[]` **and** on trip label string for display
 5. **UPL:** forces OT = 0 that date
-6. **Public holidays:** catalog in `constants.js`; only **observed** (holiday picker) count for OT/highlight
+6. **Public holidays:** catalog in `constants.js`; **NOT taken by default** — user ticks the ones the company takes; only checked days count for OT/highlight
 
 ### Data model (per month)
 - Month key: Malay name + year, e.g. `Ogos 2026`, `September 2026`
@@ -134,7 +125,7 @@ WH3 Transport — **Khairul Reza** (M-264)
 - Sync: last-write-wins; **never clear local when remote empty** — push local up
 
 ### UI / export constraints (user-enforced)
-- Print/PDF: **A4 portrait only** (landscape was tried and **rejected**)
+- Print/PDF: **A4 Portrait default**; **Landscape option available** (print-orient modal)
 - Table row **JUMLAH OT**: **print/PDF only**, hidden in normal UI; label must be human (`JUMLAH OT` / `TOTAL OT`), never raw i18n key like `totalOTRow`
 - Print footer: **one-line** note (`OT · Trip · KLIA · AWB`), not a summary table
 - Report dates: **dd/mm/yy**
@@ -147,12 +138,13 @@ WH3 Transport — **Khairul Reza** (M-264)
 - Prefer small **patches** for incremental fixes; bump `?v=NN` + `sw.js` `CACHE_NAME`
 - OT settings keys: UI stores `weekdayAfter` / `saturdayAfter`; `getOtSettings` must also expose `weekdayStart` / `saturdayStart` aliases for `calculateOT`
 - Firebase web API key in client is expected; hardening must not lock owner out without explicit request
+- **Security:** Realtime Database rules are currently open (`.read`/`.write` true). To be locked down in a future batch. Do not change until owner approves.
 
 ### When changing code
 - User says commit/push → **commit and push `main`**
 - After print CSS or OT logic change → bump SW cache
 - Retest: overnight OT, KLIA weekday (0 OT hours), Sunday full OT, UPL, side marks in table/print/Excel
-- **Do not** reintroduce: landscape print, emoji-heavy print headers, salary on printed report — unless user asks
+- **Do not** reintroduce: emoji-heavy print headers, salary on printed report — unless user asks. Landscape print is an allowed option.
 
 ### Out of scope unless asked
 - Native apps, custom backend, real payroll filing, multi-user auth, company-wide rollout
