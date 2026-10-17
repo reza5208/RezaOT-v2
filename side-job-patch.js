@@ -183,26 +183,54 @@
 
   function patchTripSubmit() {
     if (window.__sideJobTrip61) return;
-    var form = document.getElementById("tripForm");
-    if (!form) return;
+    if (typeof handleTripFormSubmit !== "function") return;
     window.__sideJobTrip61 = true;
     ensureSideJobUi();
-    form.addEventListener("submit", function () {
-      setTimeout(function () {
-        var dateEl = document.getElementById("date");
-        var awbEl = document.getElementById("airwayBill");
-        if (!dateEl || !awbEl) return;
-        var date = dateEl.value;
-        var awb = (awbEl.value || "").trim();
-        var side = getSideValue();
-        if (!date || !awb || !side) { resetSideRadios(); return; }
-        if (!dailyRecords[date]) return;
-        pushSideJob(date, awb, side);
-        try { saveToLocalStorage(); } catch (e) {}
-        if (typeof updateReport === "function") updateReport();
-        resetSideRadios();
-      }, 50);
-    }, true);
+    var orig = handleTripFormSubmit;
+    window.handleTripFormSubmit = function (e) {
+      var dateEl = document.getElementById("date");
+      var destEl = document.getElementById("destination");
+      var awbEl = document.getElementById("airwayBill");
+      var date = dateEl ? dateEl.value : "";
+      var destination = destEl ? destEl.value : "";
+      var awb = awbEl ? String(awbEl.value || "").trim() : "";
+      var side = getSideValue();
+
+      orig.apply(this, arguments);
+
+      try {
+        if (
+          date &&
+          destination &&
+          destination.toLowerCase().indexOf("klia cargo") >= 0 &&
+          awb &&
+          (side === "susun" || side === "pallets")
+        ) {
+          var rec = dailyRecords[date];
+          if (rec && Array.isArray(rec.trips) && rec.trips.length) {
+            var last = String(rec.trips[rec.trips.length - 1] || "");
+            var awbLower = awb.toLowerCase();
+            if (
+              last.toLowerCase().indexOf(awbLower) >= 0 &&
+              !/\s\*$/.test(last) &&
+              !/\s#$/.test(last)
+            ) {
+              rec.trips[rec.trips.length - 1] =
+                last + (side === "susun" ? " *" : " #");
+            }
+          }
+          pushSideJob(date, awb, side);
+          try { saveToLocalStorage(); } catch (err) {}
+          if (typeof updateReport === "function") updateReport();
+        }
+      } catch (err) {}
+      resetSideRadios();
+    };
+    var form = document.getElementById("tripForm");
+    if (form) {
+      try { form.removeEventListener("submit", orig); } catch (e) {}
+      form.addEventListener("submit", window.handleTripFormSubmit);
+    }
   }
 
   function patchDeleteTrip() {
