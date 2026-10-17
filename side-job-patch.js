@@ -84,202 +84,138 @@
     }
   }
 
+  function ensureSideJobUi() {
+    if (document.getElementById("sideJobField")) return;
+    var awbField = document.getElementById("airwayBillField");
+    if (!awbField || !awbField.parentNode) return;
+    var box = document.createElement("div");
+    box.id = "sideJobField";
+    box.className = "side-job-field";
+    box.innerHTML =
+      '<span class="side-job-label">Side job</span>' +
+      '<label class="side-job-opt"><input type="radio" name="sideJob" value="" checked> Tiada</label>' +
+      '<label class="side-job-opt"><input type="radio" name="sideJob" value="susun"> Susun</label>' +
+      '<label class="side-job-opt"><input type="radio" name="sideJob" value="pallets"> Pallets</label>';
+    awbField.parentNode.insertBefore(box, awbField.nextSibling);
+  }
+
   function cleanNonKliaSideMarks() {
-    if (!window.dailyRecords) return false;
     var changed = false;
-    Object.keys(dailyRecords).forEach(function (date) {
+    Object.keys(dailyRecords || {}).forEach(function (date) {
       var rec = dailyRecords[date];
       if (!rec || !Array.isArray(rec.trips)) return;
-      rec.trips = rec.trips.map(function (t) {
-        var s = String(t);
-        var base = cleanTripLabel(s);
-        if (base.toLowerCase().indexOf("klia cargo") >= 0) return s;
-        if (s !== base) {
+      for (var i = 0; i < rec.trips.length; i++) {
+        var t = String(rec.trips[i]);
+        var cleaned = cleanTripLabel(t);
+        if (cleaned.toLowerCase().indexOf("klia cargo") < 0 && cleaned !== t) {
+          rec.trips[i] = cleaned;
           changed = true;
-          return base;
         }
-        return s;
-      });
+      }
     });
     return changed;
   }
 
   function migrateLegacyTripLabels() {
-    if (!window.dailyRecords) return false;
     var changed = false;
-    Object.keys(dailyRecords).forEach(function (date) {
+    Object.keys(dailyRecords || {}).forEach(function (date) {
       var rec = dailyRecords[date];
       if (!rec || !Array.isArray(rec.trips)) return;
-      if (!Array.isArray(rec.sideJobs)) rec.sideJobs = [];
-      rec.trips = rec.trips.map(function (t) {
-        var s = String(t);
-        var m = s.match(/^(.*?)(?:\s*[·•\-]\s*(Susun|Pallets)|\s*\[(Susun|Pallets)\])\s*$/i);
-        if (m) {
-          var clean = m[1].trim();
-          var type = String(m[2] || m[3] || "").toLowerCase();
-          var awb = extractAwb(clean);
-          if (type === "susun" || type === "pallets") {
-            pushSideJob(date, awb || extractAwb(s), type);
-            changed = true;
-            if (clean.toLowerCase().indexOf("klia cargo") >= 0)
-              return clean + (type === "susun" ? " *" : " #");
-            return clean;
-          }
+      for (var i = 0; i < rec.trips.length; i++) {
+        var t = String(rec.trips[i]);
+        var mSusun = t.match(/\s*[·•\-]\s*Susun\s*$/i) || /\s*\[Susun\]\s*$/i.test(t);
+        var mPal = t.match(/\s*[·•\-]\s*Pallets\s*$/i) || /\s*\[Pallets\]\s*$/i.test(t);
+        if (!mSusun && !mPal && !/\*\s*$/.test(t) && !/#\s*$/.test(t)) continue;
+        var base = cleanTripLabel(t);
+        if (base.toLowerCase().indexOf("klia cargo") < 0) {
+          rec.trips[i] = base;
           changed = true;
-          return clean;
+          continue;
         }
-        if (/\*\s*$/.test(s)) {
-          var c = cleanTripLabel(s);
-          var a = extractAwb(c);
-          if (a) pushSideJob(date, a, "susun");
-          if (c.toLowerCase().indexOf("klia cargo") >= 0) return c + " *";
-          return c;
-        }
-        if (/#\s*$/.test(s)) {
-          var c2 = cleanTripLabel(s);
-          var a2 = extractAwb(c2);
-          if (a2) pushSideJob(date, a2, "pallets");
-          if (c2.toLowerCase().indexOf("klia cargo") >= 0) return c2 + " #";
-          return c2;
-        }
-        var base = cleanTripLabel(s);
-        var mark = sideMarkFor(rec, base);
-        if (mark && s === base) {
+        var awb = extractAwb(base);
+        var type = mSusun || /\*\s*$/.test(t) ? "susun" : "pallets";
+        if (awb) pushSideJob(date, awb, type);
+        if (base !== t) {
+          rec.trips[i] = base;
           changed = true;
-          return base + mark;
         }
-        return s;
-      });
+      }
     });
     return changed;
   }
 
   function applySideMarksInDom() {
-    if (!window.dailyRecords) return;
-    var dates = Object.keys(dailyRecords).sort();
     var rows = document.querySelectorAll("#reportTable tbody tr");
-    for (var r = 0; r < rows.length; r++) {
-      var texts = rows[r].querySelectorAll(".trip-text");
-      if (!texts.length) continue;
-      var rec = null;
-      var dateKey = dates[r];
-      if (dateKey && dailyRecords[dateKey]) rec = dailyRecords[dateKey];
-      for (var i = 0; i < texts.length; i++) {
-        var el = texts[i];
-        var shown = el.textContent || "";
-        var base = cleanTripLabel(shown);
-        var mark = rec ? sideMarkFor(rec, (rec.trips && rec.trips[i]) || shown) : "";
-        el.textContent = "";
-        el.appendChild(document.createTextNode(base));
+    if (!rows.length) return;
+    rows.forEach(function (tr) {
+      var dateCell = tr.querySelector("td.tarikh");
+      if (!dateCell) return;
+      var txt = (dateCell.textContent || "").trim();
+      var date = null;
+      Object.keys(dailyRecords || {}).forEach(function (d) {
+        var rev = d.split("-").reverse().join("/");
+        if (txt.indexOf(d) >= 0 || txt.indexOf(rev) >= 0 || txt.indexOf(d.slice(2)) >= 0) date = d;
+      });
+      if (!date || !dailyRecords[date]) return;
+      var rec = dailyRecords[date];
+      var tripCell = tr.querySelector("td:nth-child(3)");
+      if (!tripCell) return;
+      tripCell.querySelectorAll(".trip-text, .trip-item span").forEach(function (el, idx) {
+        var trips = rec.trips || [];
+        if (idx >= trips.length) return;
+        var mark = sideMarkFor(rec, trips[idx]);
+        var base = cleanTripLabel(trips[idx]);
+        var existing = el.querySelector(".side-mark");
+        if (existing) existing.remove();
+        el.childNodes.forEach(function (n) {
+          if (n.nodeType === 3) n.textContent = base;
+        });
+        if (!el.childNodes.length) el.textContent = base;
         if (mark) {
-          var badge = document.createElement("span");
-          badge.className = "side-mark";
-          badge.textContent = mark;
-          badge.title = mark.indexOf("*") >= 0 ? "Susun (RM100)" : "Pallets (RM50)";
-          el.appendChild(badge);
-        } else {
-          el.title = "Klik untuk edit";
+          var span = document.createElement("span");
+          span.className = "side-mark";
+          span.textContent = mark;
+          el.appendChild(span);
         }
-      }
-    }
+      });
+    });
   }
 
   function patchTripSubmit() {
     if (window.__sideJobTrip61) return;
-    if (typeof handleTripFormSubmit !== "function") return;
-    window.__sideJobTrip61 = true;
-    var orig = handleTripFormSubmit;
-
-    window.handleTripFormSubmit = function (e) {
-      if (e && e.preventDefault) e.preventDefault();
-      var date = document.getElementById("date").value;
-      var destination = document.getElementById("destination").value;
-      var awbEl = document.getElementById("airwayBill");
-      var awb = awbEl ? awbEl.value.trim() : "";
-      if (!date) { showToast("Sila pilih tarikh."); return; }
-      if (!destination) { showToast("Sila pilih destinasi."); return; }
-
-      function doAdd() {
-        if (!dailyRecords[date]) dailyRecords[date] = { trips: [], clock_in: "", clock_out: "" };
-        if (!Array.isArray(dailyRecords[date].trips)) dailyRecords[date].trips = [];
-        var tripName = destination;
-        var isKlia = destination.toLowerCase().indexOf("klia cargo") >= 0;
-        if (isKlia && awb) {
-          tripName = "KLIA Cargo (" + awb + ")";
-        }
-        var side = "";
-        if (isKlia) {
-          side = getSideValue();
-          if (side === "susun") tripName += " *";
-          else if (side === "pallets") tripName += " #";
-        }
-        dailyRecords[date].trips.push(tripName);
-        if (side && awb) pushSideJob(date, awb, side);
-        var upl = document.getElementById("unpaidLeaveCheck");
-        if (upl && upl.checked) dailyRecords[date].unpaid = true;
-        saveToLocalStorage();
-        document.getElementById("destination").value = "";
-        if (awbEl) awbEl.value = "";
-        resetSideRadios();
-        if (typeof updateAirwayBillVisibility === "function") updateAirwayBillVisibility();
-        updateReport();
-        var tip = side === "susun" ? " *" : (side === "pallets" ? " #" : "");
-        showToast("Trip ditambah" + (tip ? " (" + tip.trim() + ")" : ""));
-      }
-
-      if (destination.toLowerCase().indexOf("klia cargo") >= 0 && awb) {
-        var dup = null;
-        Object.keys(dailyRecords).forEach(function (d) {
-          var rec = dailyRecords[d];
-          if (!rec || !Array.isArray(rec.trips)) return;
-          rec.trips.forEach(function (t) {
-            if (normalizeAwb(extractAwb(t)) === normalizeAwb(awb)) dup = { date: d, trip: t };
-          });
-        });
-        if (dup) {
-          var msg = "AWB " + awb + " sudah wujud pada " + dup.date + ".\nTambah juga?";
-          if (typeof rezaotConfirm === "function") {
-            rezaotConfirm(msg).then(function (ok) { if (ok) doAdd(); });
-            return;
-          }
-          if (!confirm(msg)) return;
-        }
-      }
-      doAdd();
-    };
-
     var form = document.getElementById("tripForm");
-    if (form) {
-      try { form.removeEventListener("submit", orig); } catch (e) {}
-      form.addEventListener("submit", window.handleTripFormSubmit);
-    }
+    if (!form) return;
+    window.__sideJobTrip61 = true;
+    ensureSideJobUi();
+    form.addEventListener("submit", function () {
+      setTimeout(function () {
+        var dateEl = document.getElementById("date");
+        var awbEl = document.getElementById("airwayBill");
+        if (!dateEl || !awbEl) return;
+        var date = dateEl.value;
+        var awb = (awbEl.value || "").trim();
+        var side = getSideValue();
+        if (!date || !awb || !side) { resetSideRadios(); return; }
+        if (!dailyRecords[date]) return;
+        pushSideJob(date, awb, side);
+        try { saveToLocalStorage(); } catch (e) {}
+        if (typeof updateReport === "function") updateReport();
+        resetSideRadios();
+      }, 50);
+    }, true);
   }
 
   function patchDeleteTrip() {
     if (window.__sideJobDel61) return;
     if (typeof deleteTrip !== "function") return;
     window.__sideJobDel61 = true;
-    var prev = deleteTrip;
+    var orig = deleteTrip;
     window.deleteTrip = function (date, tripIndex) {
       var rec = dailyRecords[date];
-      var tname = rec && Array.isArray(rec.trips) ? rec.trips[tripIndex] : null;
-      var awb = tname ? extractAwb(cleanTripLabel(tname)) : "";
-
-      if (typeof rezaotConfirm === "function" && tname != null) {
-        var msg = "Padam trip ini?\n" + date + '\n"' + formatTripDisplay(rec, tname) + '"';
-        rezaotConfirm(msg).then(function (ok) {
-          if (!ok) return;
-          if (awb) removeSideJobForAwb(date, awb);
-          rec.trips.splice(tripIndex, 1);
-          saveToLocalStorage();
-          updateReport();
-          showToast("Trip dipadam");
-        });
-        return;
-      }
-      var before = tname ? String(tname) : null;
-      prev.apply(this, arguments);
-      if (before && awb && rec) {
+      var before = rec && Array.isArray(rec.trips) ? String(rec.trips[tripIndex] || "") : "";
+      var awb = extractAwb(before);
+      orig.apply(this, arguments);
+      if (awb && dailyRecords[date]) {
         var still = (rec.trips || []).some(function (t) { return String(t) === before; });
         if (!still) removeSideJobForAwb(date, awb);
       }
@@ -302,10 +238,10 @@
 
   function patchExcel() {
     if (window.__sideJobExcel61) return;
-    if (typeof handleExportExcel !== "function") return;
+    if (typeof exportToExcel !== "function") return;
     window.__sideJobExcel61 = true;
-    var orig = handleExportExcel;
-    window.handleExportExcel = function () {
+    var orig = exportToExcel;
+    window.exportToExcel = function () {
       var backup = {};
       if (window.dailyRecords) {
         Object.keys(dailyRecords).forEach(function (date) {
