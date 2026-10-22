@@ -1,179 +1,220 @@
+function appText(key, fallback) {
+  if (window.RezaOT_i18n) { const text = RezaOT_i18n.t(key); if (text !== key) return text; }
+  return fallback;
+}
+function appConfirm(message) { return typeof rezaotConfirm === "function" ? rezaotConfirm(message) : Promise.resolve(confirm(message)); }
+function appPrompt(message, value) { return typeof rezaotPrompt === "function" ? rezaotPrompt(message, value) : Promise.resolve(prompt(message, value)); }
 function toggleManageSection() {
   const section = document.getElementById("manageDestinations");
-  if (!section) return;
-  section.style.display = section.style.display === "none" ? "block" : "none";
+  if (section) section.style.display = section.style.display === "none" ? "block" : "none";
 }
-
-function handleMonthChange() {
-  const monthInput = document.getElementById("monthYear");
-  if (!monthInput || !monthInput.value) return;
-
-  const intended = monthInput.value;
-  const partsIn = intended.split("-");
-  if (partsIn.length < 2) return;
-  const year = partsIn[0];
-  const month = partsIn[1];
-  const mi = parseInt(month, 10) - 1;
-  if (mi < 0 || mi > 11) return;
-  const newKey = monthNames[mi] + " " + year;
-  if (newKey === currentMonthKey) return;
-
-  if (!confirm("Tukar ke " + newKey + "?\nData bulan semasa sudah disimpan.")) {
-    restoreMonthInput(monthInput, currentMonthKey);
-    return;
+function updateDateBounds() {
+  const date = document.getElementById("date");
+  const month = RezaOT_model.monthValue(currentMonthKey);
+  if (!date || !month) return;
+  date.min = month + "-01";
+  const [year, number] = month.split("-").map(Number);
+  date.max = month + "-" + new Date(year, number, 0).getDate();
+  if (!date.value || date.value.slice(0, 7) !== month) {
+    const today = getLocalDateString(new Date());
+    date.value = today.slice(0, 7) === month ? today : date.min;
   }
-
-  currentMonthKey = newKey;
-  monthInput.value = intended;
-  setTimeout(function () { monthInput.value = intended; }, 0);
-
-  const currentMonthEl = document.getElementById("currentMonth");
-  if (currentMonthEl) currentMonthEl.textContent = currentMonthKey;
+}
+function syncLeaveInputs(changed) {
+  const unpaid = document.getElementById("unpaidLeaveCheck");
+  const annual = document.getElementById("annualLeaveCheck");
+  if (changed === unpaid && unpaid.checked && annual) annual.checked = false;
+  if (changed === annual && annual.checked && unpaid) unpaid.checked = false;
+  const leave = !!(unpaid && unpaid.checked) || !!(annual && annual.checked);
+  for (const id of ["clockIn", "clockOut"]) { const input = document.getElementById(id); if (input) input.required = !leave; }
+}
+function validActiveDate(date) {
+  if (!RezaOT_model.validDate(date)) { showToast(appText("invalidDate", "Sila pilih tarikh yang sah.")); return false; }
+  if (RezaOT_model.monthFromDate(date) !== currentMonthKey) {
+    showToast(appText("wrongMonthDate", "Tarikh mesti dalam bulan laporan yang dipilih.")); return false;
+  }
+  return true;
+}
+function contextFor(date) { return { month: currentMonthKey, snapshot: JSON.stringify(dailyRecords[date] || null) }; }
+function contextUnchanged(context, date) {
+  if (context.month === currentMonthKey && context.snapshot === JSON.stringify(dailyRecords[date] || null)) return true;
+  showToast(appText("recordChanged", "Bulan atau rekod telah berubah. Sila cuba semula.")); return false;
+}
+async function withFormLock(id, action) {
+  const form = document.getElementById(id);
+  if (form && form.__saving) return false;
+  if (form) form.__saving = true;
+  const submit = form && form.querySelector('[type="submit"]');
+  if (submit) submit.disabled = true;
+  try { return await action(); }
+  catch (error) { console.error(error); showToast(error.message || appText("saveFailed", "Gagal menyimpan rekod.")); return false; }
+  finally { if (form) form.__saving = false; if (submit) submit.disabled = false; }
+}
+function selectMonth(key) {
+  RezaOT_model.validateMonthKey(key);
   stopFirebaseListener();
+  currentMonthKey = key;
+  const input = document.getElementById("monthYear");
+  if (input) input.value = RezaOT_model.monthValue(key);
+  const label = document.getElementById("currentMonth");
+  if (label) label.textContent = key;
   loadFromLocalStorage();
-  if (typeof lastLocalSaveAt !== "undefined") lastLocalSaveAt = 0;
+  updateDateBounds();
+  syncLeaveInputs();
   updateReport();
   loadTrips();
+  updateHolidayBadge();
   startFirebaseListener();
-  showToast("Bulan: " + currentMonthKey);
+  document.dispatchEvent(new Event("rezaot-month"));
 }
-
-function restoreMonthInput(monthInput, key) {
-  if (!monthInput || !key) return;
-  const parts = key.split(" ");
-  if (parts.length < 2) return;
-  const idx = monthNames.indexOf(parts[0]);
-  if (idx < 0) return;
-  const val = parts[1] + "-" + String(idx + 1).padStart(2, "0");
-  monthInput.value = val;
-  setTimeout(function () { monthInput.value = val; }, 0);
+async function handleMonthChange() {
+  const input = document.getElementById("monthYear");
+  if (!input || !/^\d{4}-(?:0[1-9]|1[0-2])$/.test(input.value)) return;
+  const intended = input.value;
+  const [year, month] = intended.split("-");
+  const key = monthNames[Number(month) - 1] + " " + year;
+  if (key === currentMonthKey) return;
+  const old = currentMonthKey;
+  if (!(await appConfirm(appText("switchMonth", "Tukar bulan ke") + " " + key + "?"))) { restoreMonthInput(input, currentMonthKey); return false; }
+  if (currentMonthKey !== old || input.value !== intended) { restoreMonthInput(input, currentMonthKey); return false; }
+  selectMonth(key);
+  showToast(appText("monthLabel", "Bulan:") + " " + key);
+  return true;
 }
-
+function restoreMonthInput(input, key) { if (input) input.value = RezaOT_model.monthValue(key); }
 function handleDestinationChange() {
-  const dest = document.getElementById("destination");
+  const destination = document.getElementById("destination");
   const field = document.getElementById("airwayBillField");
-  if (!dest || !field) return;
-  field.style.display = dest.value.toLowerCase().includes("klia cargo") ? "block" : "none";
+  if (destination && field) field.style.display = destination.value.toLowerCase().includes("klia cargo") ? "block" : "none";
 }
-
 function handleAddTrip() {
   const input = document.getElementById("newTrip");
   if (!input) return;
   const name = input.value.trim();
-  if (!name) { showToast("Masukkan nama destinasi"); return; }
-  if (trips.includes(name)) { showToast("Destinasi sudah wujud"); return; }
+  if (!name || name.length > 500) { showToast(appText("invalidDestination", "Masukkan nama destinasi yang sah.")); return false; }
+  if (trips.some((trip) => trip.toLowerCase() === name.toLowerCase())) { showToast(appText("destinationExists", "Destinasi sudah wujud")); return false; }
   trips.push(name);
-  saveToLocalStorage();
-  loadTrips();
-  input.value = "";
-  showToast("Destinasi ditambah");
+  if (window.RezaOT_sync) RezaOT_sync.tripsChanged();
+  else saveToLocalStorage();
+  loadTrips(); input.value = "";
+  showToast(appText("destinationAdded", "Destinasi ditambah"));
+  return true;
 }
-
 function findAwbDuplicate(awb) {
-  if (!awb) return null;
-  const needle = String(awb).trim().toLowerCase();
-  for (const d of Object.keys(dailyRecords || {})) {
-    const tripsArr = (dailyRecords[d] && dailyRecords[d].trips) || [];
-    for (const t of tripsArr) {
-      const m = String(t).match(/\(([^)]+)\)/);
-      if (m && m[1].trim().toLowerCase() === needle) return { date: d, trip: t };
-    }
+  const needle = RezaOT_model.normalizeAwb(awb);
+  if (!needle) return null;
+  for (const date of Object.keys(dailyRecords)) {
+    for (const trip of dailyRecords[date].trips || []) if (RezaOT_model.normalizeAwb(RezaOT_model.extractAwb(trip)) === needle) return { date, trip };
   }
   return null;
 }
-
-function handleClockFormSubmit(e) {
-  e.preventDefault();
-  const date = document.getElementById("date").value;
-  const clockIn = document.getElementById("clockIn").value;
-  const clockOut = document.getElementById("clockOut").value;
-  if (!date || !clockIn || !clockOut) { showToast("Sila isi semua medan."); return; }
-  if (dailyRecords[date] && (dailyRecords[date].clock_in || dailyRecords[date].clock_out)) {
-    if (!confirm("Rekod untuk " + date + " sudah wujud. Tulis ganti?")) return;
-  }
-  if (!dailyRecords[date]) dailyRecords[date] = { clock_in: clockIn, clock_out: clockOut, trips: [] };
-  else { dailyRecords[date].clock_in = clockIn; dailyRecords[date].clock_out = clockOut; }
-  const upl = document.getElementById("unpaidLeaveCheck");
-  dailyRecords[date].unpaid = !!(upl && upl.checked);
-  saveToLocalStorage();
-  updateReport();
-  try {
-    document.querySelectorAll("#reportTable tbody tr").forEach(function (r) {
-      var cell = r.querySelector("td.tarikh");
-      if (!cell) return;
-      var txt = cell.textContent || "";
-      var rev = date.split("-").reverse().join("/");
-      if (txt.indexOf(date) >= 0 || txt.indexOf(rev) >= 0) {
-        r.classList.add("flash-save");
-        setTimeout(function () { r.classList.remove("flash-save"); }, 1500);
-      }
-    });
-  } catch (e) {}
-  showToast(dailyRecords[date].unpaid ? "Kehadiran UPL disimpan (OT = 0)" : "Kehadiran berjaya disimpan!");
+async function handleClockFormSubmit(event) {
+  if (event) event.preventDefault();
+  return withFormLock("clockForm", async function () {
+    const date = document.getElementById("date").value;
+    if (!validActiveDate(date)) return false;
+    const clockIn = document.getElementById("clockIn").value;
+    const clockOut = document.getElementById("clockOut").value;
+    const unpaid = !!document.getElementById("unpaidLeaveCheck").checked;
+    const annual = !!document.getElementById("annualLeaveCheck").checked;
+    if (unpaid && annual) { showToast(appText("oneLeaveType", "Pilih satu jenis cuti sahaja.")); return false; }
+    if ((!unpaid && !annual && (!clockIn || !clockOut)) || (clockIn && !RezaOT_model.validTime(clockIn)) || (clockOut && !RezaOT_model.validTime(clockOut))) {
+      showToast(appText("invalidAttendance", "Sila isi waktu kerja yang sah.")); return false;
+    }
+    const context = contextFor(date);
+    if (dailyRecords[date] && !(await appConfirm(appText("overwriteRecord", "Rekod sudah wujud. Tulis ganti?") + "\n" + date))) return false;
+    if (!contextUnchanged(context, date)) return false;
+    const record = RezaOT_model.normalizeRecord(dailyRecords[date] || { trips: [] }, date);
+    record.clock_in = clockIn; record.clock_out = clockOut;
+    record.unpaid = unpaid; record.annual = annual;
+    dailyRecords[date] = record;
+    saveToLocalStorage(); updateReport(); syncLeaveInputs();
+    showToast(annual ? appText("annualSaved", "ANN disimpan (OT = 0)") : unpaid ? appText("unpaidSaved", "UPL disimpan (OT = 0)") : appText("attendanceSaved", "Kehadiran berjaya disimpan!"));
+    return true;
+  });
 }
-
-function handleTripFormSubmit(e) {
-  e.preventDefault();
-  const date = document.getElementById("date").value;
-  const destination = document.getElementById("destination").value;
-  const awbInput = document.getElementById("airwayBill");
-  const awb = awbInput ? awbInput.value.trim() : "";
-  if (!date) { showToast("Sila pilih tarikh dahulu."); return; }
-  if (!destination) { showToast("Sila pilih destinasi."); return; }
-  if (destination.toLowerCase().includes("klia cargo") && awb) {
-    const dup = findAwbDuplicate(awb);
-    if (dup && !confirm('AWB "' + awb + '" sudah wujud pada ' + dup.date + ".\nTambah juga?")) return;
-  }
-  if (!dailyRecords[date]) dailyRecords[date] = { clock_in: "", clock_out: "", trips: [] };
-  if (!Array.isArray(dailyRecords[date].trips)) dailyRecords[date].trips = [];
-  let tripName = destination;
-  if (destination.toLowerCase().includes("klia cargo") && awb) tripName = "KLIA Cargo (" + awb + ")";
-  dailyRecords[date].trips.push(tripName);
-  const upl = document.getElementById("unpaidLeaveCheck");
-  if (upl && upl.checked) dailyRecords[date].unpaid = true;
-  saveToLocalStorage();
-  updateReport();
-  document.getElementById("destination").value = "";
-  if (awbInput) awbInput.value = "";
-  const af = document.getElementById("airwayBillField");
-  if (af) af.style.display = "none";
-  showToast("Trip berjaya ditambah!");
+async function handleTripFormSubmit(event) {
+  if (event) event.preventDefault();
+  return withFormLock("tripForm", async function () {
+    const date = document.getElementById("date").value;
+    const destinationInput = document.getElementById("destination");
+    const destination = destinationInput.value.trim();
+    const awbInput = document.getElementById("airwayBill");
+    const awb = awbInput ? awbInput.value.trim() : "";
+    const radio = document.querySelector('input[name="sideJob"]:checked');
+    const sideJob = radio && ["susun", "pallets"].includes(radio.value) ? radio.value : "";
+    if (!validActiveDate(date)) return false;
+    if (!destination || destination.length > 500) { showToast(appText("pickDestination", "Sila pilih destinasi.")); return false; }
+    const klia = destination.toLowerCase().includes("klia cargo");
+    if (klia && (awb.length > 200 || /[()\r\n]/.test(awb) || (sideJob && !awb))) { showToast(appText("invalidAwb", "Masukkan AWB yang sah untuk side job.")); return false; }
+    const context = contextFor(date);
+    const duplicate = klia && awb ? findAwbDuplicate(awb) : null;
+    if (duplicate && !(await appConfirm('AWB "' + awb + '" ' + appText("duplicateAwb", "sudah wujud pada") + " " + duplicate.date + ".\n" + appText("addAnyway", "Tambah juga?")))) return false;
+    if (!contextUnchanged(context, date)) return false;
+    const record = RezaOT_model.normalizeRecord(dailyRecords[date] || { trips: [] }, date);
+    const label = klia && awb ? "KLIA Cargo (" + awb + ")" : destination;
+    const effectiveSide = klia && awb ? sideJob : "";
+    if (effectiveSide) for (const detail of record.tripDetails) if (RezaOT_model.normalizeAwb(detail.awb) === RezaOT_model.normalizeAwb(awb)) detail.sideJob = effectiveSide;
+    record.tripDetails.push({ id: RezaOT_model.newId(), label, awb: klia ? awb : "", sideJob: effectiveSide });
+    RezaOT_model.syncSideJobs(record);
+    dailyRecords[date] = record;
+    saveToLocalStorage(); updateReport();
+    destinationInput.value = "";
+    if (awbInput) awbInput.value = "";
+    document.querySelectorAll('input[name="sideJob"]').forEach((input) => { input.checked = input.value === ""; });
+    handleDestinationChange();
+    showToast(appText("tripAdded", "Trip berjaya ditambah!"));
+    return true;
+  });
 }
-
-function deleteRecord(date) {
-  const rec = dailyRecords[date];
-  const n = rec && Array.isArray(rec.trips) ? rec.trips.length : 0;
-  if (!confirm("Padam rekod " + date + "?\nTrip: " + n + " · In: " + ((rec && rec.clock_in) || "-") + " · Out: " + ((rec && rec.clock_out) || "-"))) return;
-  delete dailyRecords[date];
-  saveToLocalStorage();
-  updateReport();
-  showToast("Rekod dipadam");
+async function deleteRecord(date) {
+  const record = dailyRecords[date];
+  if (!record) return false;
+  const context = contextFor(date);
+  if (!(await appConfirm(appText("confirmDelRec", "Padam rekod ini?") + "\n" + date + "\nTrip: " + (record.trips || []).length))) return false;
+  if (!contextUnchanged(context, date)) return false;
+  delete dailyRecords[date]; saveToLocalStorage(); updateReport();
+  showToast(appText("toastRecDel", "Rekod dipadam")); return true;
 }
-
-function deleteTrip(date, tripIndex) {
-  const rec = dailyRecords[date];
-  if (!rec || !Array.isArray(rec.trips) || !rec.trips[tripIndex]) return;
-  const name = String(rec.trips[tripIndex]);
-  if (!confirm("Padam trip pada " + date + "?\n\"" + name + "\"\nBaki trip hari ini: " + (rec.trips.length - 1))) return;
-  rec.trips.splice(tripIndex, 1);
-  saveToLocalStorage();
-  updateReport();
-  showToast("Trip dipadam");
+async function deleteTrip(date, tripIndex) {
+  if (!dailyRecords[date]) return false;
+  const record = RezaOT_model.normalizeRecord(dailyRecords[date], date);
+  const detail = record.tripDetails[tripIndex];
+  if (!detail) return false;
+  const context = contextFor(date);
+  if (!(await appConfirm(appText("confirmDelTrip", "Padam trip ini?") + "\n" + date + "\n" + record.trips[tripIndex]))) return false;
+  if (!contextUnchanged(context, date)) return false;
+  record.tripDetails.splice(tripIndex, 1); RezaOT_model.syncSideJobs(record);
+  dailyRecords[date] = record; saveToLocalStorage(); updateReport();
+  showToast(appText("toastTripDel", "Trip dipadam")); return true;
 }
-
+async function editTrip(date, tripIndex) {
+  if (!dailyRecords[date]) return false;
+  const record = RezaOT_model.normalizeRecord(dailyRecords[date], date);
+  const detail = record.tripDetails[tripIndex];
+  if (!detail) return false;
+  const context = contextFor(date);
+  const next = await appPrompt(appText("editTripPrompt", "Edit trip (tanda * = Susun, # = Pallets):"), record.trips[tripIndex]);
+  if (next == null) return false;
+  const label = RezaOT_model.cleanTripLabel(next);
+  if (!label || label.length > 1000) { showToast(appText("invalidDestination", "Masukkan nama destinasi yang sah.")); return false; }
+  if (!contextUnchanged(context, date)) return false;
+  const awb = RezaOT_model.extractAwb(label);
+  const type = awb ? RezaOT_model.markerType(next) : "";
+  detail.label = label; detail.awb = awb; detail.sideJob = type;
+  if (type) for (const other of record.tripDetails) if (RezaOT_model.normalizeAwb(other.awb) === RezaOT_model.normalizeAwb(awb)) other.sideJob = type;
+  RezaOT_model.syncSideJobs(record); dailyRecords[date] = record;
+  saveToLocalStorage(); updateReport(); showToast(appText("tripUpdated", "Trip dikemaskini")); return true;
+}
 function editRecord(date) {
-  const rec = dailyRecords[date];
-  if (!rec) return;
-  const dateInput = document.getElementById("date");
-  const clockIn = document.getElementById("clockIn");
-  const clockOut = document.getElementById("clockOut");
-  const uplEl = document.getElementById("unpaidLeaveCheck");
-  if (dateInput) dateInput.value = date;
-  if (clockIn) clockIn.value = rec.clock_in || "08:00";
-  if (clockOut) clockOut.value = rec.clock_out || "17:00";
-  if (uplEl) uplEl.checked = !!rec.unpaid;
-  updateHolidayBadge();
-  showToast("Rekod dimuat ke form — simpan untuk kemaskini");
+  const record = dailyRecords[date]; if (!record) return;
+  document.getElementById("date").value = date;
+  document.getElementById("clockIn").value = record.clock_in || "";
+  document.getElementById("clockOut").value = record.clock_out || "";
+  document.getElementById("unpaidLeaveCheck").checked = !!record.unpaid;
+  document.getElementById("annualLeaveCheck").checked = !!record.annual;
+  syncLeaveInputs(); updateHolidayBadge();
+  showToast(appText("recordLoaded", "Rekod dimuat ke borang — simpan untuk kemaskini"));
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
@@ -183,7 +224,7 @@ function updateSummary(totalOT) {
   dates.forEach((date) => {
     const rec = dailyRecords[date];
     if (!rec) return;
-    if (rec.clock_in || rec.clock_out || (rec.trips && rec.trips.length)) workDays++;
+    if (!rec.unpaid && !rec.annual && (rec.clock_in || rec.clock_out || (rec.trips && rec.trips.length))) workDays++;
     const tripsArr = rec.trips || [];
     totalTrips += tripsArr.length;
     let hasKlia = false;
@@ -213,6 +254,7 @@ function updateReport() {
     if (noMsg) noMsg.style.display = "block";
     if (totalOTEl) totalOTEl.textContent = "0.00";
     updateSummary(0);
+    document.dispatchEvent(new Event("rezaot-report"));
     return;
   }
   if (noMsg) noMsg.style.display = "none";
@@ -220,8 +262,7 @@ function updateReport() {
   dates.forEach((date) => {
     const rec = dailyRecords[date];
     if (!rec) return;
-    let ot = calculateOT(rec.clock_in, rec.clock_out, date, rec.trips || []);
-    if (rec.unpaid) ot = 0;
+    const ot = typeof RezaOT_recordOT === "function" ? RezaOT_recordOT(date, rec) : (rec.unpaid || rec.annual ? 0 : calculateOT(rec.clock_in, rec.clock_out, date, rec.trips || []));
     totalOT += ot;
     const day = new Date(date + "T00:00:00").getDay();
     const holiday = isPublicHoliday(date);
@@ -230,19 +271,20 @@ function updateReport() {
     else if (day === 6) tr.classList.add("saturday");
     if (holiday) tr.classList.add("holiday");
     if (rec.unpaid) tr.classList.add("upl-row");
+    if (rec.annual) tr.classList.add("annual-row");
     const tdDate = document.createElement("td");
     tdDate.className = "tarikh";
     tdDate.textContent = formatDateForPDF(date);
     const tdDay = document.createElement("td");
     tdDay.className = "hari";
-    let dayLabel = holiday ? dayNamesMs[day] + " (Cuti)" : dayNamesMs[day];
+    let dayLabel = holiday ? dayNamesMs[day] + appText("holidaySuffix", " (Cuti)") : dayNamesMs[day];
     tdDay.textContent = dayLabel;
     if (holiday) tdDay.title = getHolidayName(date);
-    if (rec.unpaid) {
+    if (rec.unpaid || rec.annual) {
       const badge = document.createElement("span");
       badge.className = "upl-badge no-print";
-      badge.textContent = "UPL";
-      badge.title = "Cuti tanpa gaji";
+      badge.textContent = rec.annual ? "ANN" : "UPL";
+      badge.title = rec.annual ? appText("annualLeave", "Cuti tahunan") : appText("unpaidLeave", "Cuti tanpa gaji");
       tdDay.appendChild(document.createTextNode(" "));
       tdDay.appendChild(badge);
     }
@@ -255,14 +297,18 @@ function updateReport() {
         row.className = "trip-item";
         const text = document.createElement("span");
         text.className = "trip-text";
-        text.textContent = String(trip);
-        text.title = "Klik untuk edit";
+        text.textContent = RezaOT_model.formatTrip(rec, i);
+        text.title = appText("editTripHint", "Klik untuk edit trip");
+        text.tabIndex = 0;
+        text.setAttribute("role", "button");
+        text.addEventListener("keydown", (event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); editTrip(date, i); } });
         text.style.cursor = "pointer";
         text.addEventListener("click", () => editTrip(date, i));
         const del = document.createElement("button");
         del.type = "button";
         del.className = "trip-del-btn no-print";
-        del.title = "Padam trip";
+        del.title = appText("deleteTrip", "Padam trip");
+        del.setAttribute("aria-label", del.title + ": " + RezaOT_model.formatTrip(rec, i));
         del.textContent = "×";
         del.addEventListener("click", () => deleteTrip(date, i));
         row.appendChild(text);
@@ -289,9 +335,10 @@ function updateReport() {
   });
   if (totalOTEl) totalOTEl.textContent = totalOT.toFixed(2);
   updateSummary(totalOT);
+  document.dispatchEvent(new Event("rezaot-report"));
 }
 
-function exportToExcel() {
+function buildExcelData() {
   const dayNamesMs = (window.RezaOT_i18n && RezaOT_i18n.t("days")) || ["Ahad", "Isnin", "Selasa", "Rabu", "Khamis", "Jumaat", "Sabtu"];
   const empName = "Khairul Reza";
   const empNo = "M-264";
@@ -299,12 +346,12 @@ function exportToExcel() {
   const supervisor = (document.getElementById("supervisorName") && document.getElementById("supervisorName").textContent.trim()) || "Talib";
 
   const data = [];
-  data.push(["RezaOT — Laporan Trips & OT"]);
-  data.push(["Bulan", currentMonthKey || ""]);
-  data.push(["Nama", empName, "No. pekerja", empNo]);
-  data.push(["Jabatan", dept, "Ketua", supervisor]);
+  data.push([appText("excelTitle", "RezaOT — Laporan Trips & OT")]);
+  data.push([appText("monthLabel", "Bulan:"), currentMonthKey || ""]);
+  data.push([appText("nameLabel", "Nama:"), empName, appText("empNoLabel", "No. pekerja:"), empNo]);
+  data.push([appText("deptLabel", "Jabatan:"), dept, appText("supervisorLabel", "Nama Ketua:"), supervisor]);
   data.push([]);
-  data.push(["Tarikh", "Hari", "Destinasi", "AWB", "Trip", "Clock-In", "Clock-Out", "OT (Jam)", "T/T Pekerja", "T/T Ketua"]);
+  data.push([appText("thDate", "Tarikh"), appText("thDay", "Hari"), appText("thDest", "Destinasi"), "AWB", "Trip", "Clock-In", "Clock-Out", appText("thOT", "OT (Jam)"), appText("thSig1", "T/T pekerja"), appText("thSig2", "T/T ketua")]);
 
   let totalOT = 0, workDays = 0, kliaCargoDays = 0, totalAWB = 0, totalTrips = 0;
 
@@ -313,29 +360,30 @@ function exportToExcel() {
     if (!rec) return;
     const day = new Date(date + "T00:00:00").getDay();
     let dayName = dayNamesMs[day];
-    if (typeof isPublicHoliday === "function" && isPublicHoliday(date)) dayName += " (Cuti)";
+    if (typeof isPublicHoliday === "function" && isPublicHoliday(date)) dayName += appText("holidaySuffix", " (Cuti)");
     if (rec.unpaid) dayName += " (UPL)";
+    if (rec.annual) dayName += " (ANN)";
 
-    let ot = calculateOT(rec.clock_in, rec.clock_out, date, rec.trips || []);
-    if (rec.unpaid) ot = 0;
+    const ot = typeof RezaOT_recordOT === "function" ? RezaOT_recordOT(date, rec) : (rec.unpaid || rec.annual ? 0 : calculateOT(rec.clock_in, rec.clock_out, date, rec.trips || []));
     totalOT += ot;
 
     const tripsArr = Array.isArray(rec.trips) ? rec.trips : [];
     totalTrips += tripsArr.length;
-    if (rec.clock_in || rec.clock_out || tripsArr.length) workDays++;
+    if (!rec.unpaid && !rec.annual && (rec.clock_in || rec.clock_out || tripsArr.length)) workDays++;
 
     const destNames = [];
     const awbs = [];
     let hasKlia = false;
-    tripsArr.forEach((t) => {
-      const s = String(t);
+    tripsArr.forEach((t, index) => {
+      const s = RezaOT_model.formatTrip(rec, index);
       if (s.toLowerCase().indexOf("klia cargo") >= 0) {
         hasKlia = true;
         const m = s.match(/\((.+?)\)/);
         if (m) {
           awbs.push(m[1].trim());
           totalAWB++;
-          destNames.push("KLIA Cargo");
+          const type = RezaOT_model.markerType(s);
+          destNames.push("KLIA Cargo" + (type === "susun" ? " *" : type === "pallets" ? " #" : ""));
         } else {
           destNames.push(s);
         }
@@ -353,20 +401,29 @@ function exportToExcel() {
       tripsArr.length,
       rec.clock_in || "—",
       rec.clock_out || "—",
-      ot.toFixed(2),
+      ot,
       "",
       ""
     ]);
   });
 
   data.push([]);
-  data.push(["Ringkasan"]);
-  data.push(["Hari berkerja", workDays]);
-  data.push(["Total trip", totalTrips]);
-  data.push(["Hari KLIA Cargo", kliaCargoDays]);
-  data.push(["Total AWB", totalAWB]);
-  data.push(["Jumlah OT (jam)", totalOT.toFixed(2)]);
+  data.push([appText("summary", "Ringkasan")]);
+  data.push([appText("sumDays", "Hari Berkerja"), workDays]);
+  data.push([appText("sumTrips", "Total Trip"), totalTrips]);
+  data.push([appText("sumKlia", "Hari KLIA Cargo"), kliaCargoDays]);
+  data.push([appText("sumAwb", "Total AWB"), totalAWB]);
+  data.push([appText("thOT", "OT (Jam)"), totalOT]);
 
+  return data;
+}
+
+async function exportToExcel() {
+  if (window.__excelBusy) return false;
+  window.__excelBusy = true;
+  try {
+    await window.loadExcelLib();
+    const data = buildExcelData();
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.aoa_to_sheet(data);
 
@@ -385,68 +442,63 @@ function exportToExcel() {
   }
   ws["!cols"] = cols;
 
-  XLSX.utils.book_append_sheet(wb, ws, "Laporan OT");
+  XLSX.utils.book_append_sheet(wb, ws, appText("excelSheet", "Laporan OT"));
   XLSX.writeFile(wb, "RezaOT_" + String(currentMonthKey || "report").replace(/\s+/g, "_") + ".xlsx");
-  showToast("Excel dieksport");
+  showToast(appText("excelExported", "Excel dieksport"));
+  return true;
+  } catch (error) { console.error(error); showToast(appText("excelFailed", "Gagal eksport Excel. Sila cuba lagi.")); return false; }
+  finally { window.__excelBusy = false; }
 }
 
 function exportData() {
-  const payload = { month: currentMonthKey, dailyRecords, trips, otSettings: getOtSettings(), exportedAt: new Date().toISOString() };
+  try {
+    const payload = RezaOT_backup.create();
+    downloadBackup(payload, "RezaOT_backup_all_" + getLocalDateString(new Date()) + ".json");
+    showToast(appText("backupExported", "Backup semua bulan dieksport"));
+    return true;
+  } catch (error) { console.error(error); showToast(error.message); return false; }
+}
+function downloadBackup(payload, filename) {
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `RezaOT_backup_${currentMonthKey.replace(/\s+/g, "_")}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
-  showToast("Backup dieksport");
+  const link = document.createElement("a"); link.href = url; link.download = filename;
+  document.body.appendChild(link); link.click(); link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
-
-function importData(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function (event) {
-    try {
-      const data = JSON.parse(event.target.result);
-      const dr = data.dailyRecords;
-      if (!dr || typeof dr !== "object" || Array.isArray(dr)) {
-        showToast("Fail JSON tidak sah.");
-        return;
-      }
-      const keys = Object.keys(dr);
-      for (var i = 0; i < keys.length; i++) {
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(keys[i])) {
-          showToast("Fail JSON tidak sah.");
-          return;
-        }
-      }
-      const N = keys.length;
-      const msg = "Import akan GANTI data bulan ini dengan " + N + " rekod dari fail. Teruskan?";
-      const ask = (typeof rezaotConfirm === "function")
-        ? rezaotConfirm(msg)
-        : Promise.resolve(confirm(msg));
-      Promise.resolve(ask).then(function (ok) {
-        if (!ok) return;
-        dailyRecords = dr;
-        if (data.trips) trips = data.trips;
-        if (data.otSettings) saveOtSettings(data.otSettings);
-        saveToLocalStorage();
-        updateReport();
-        loadTrips();
-        showToast("Data berjaya diimport!");
-      });
-    } catch (err) {
-      showToast("Fail JSON tidak sah.");
-    }
-  };
-  reader.readAsText(file);
-  e.target.value = "";
+async function importData(event) {
+  const input = event.target;
+  const file = input.files[0];
+  input.value = "";
+  if (!file || input.__importing) return false;
+  input.__importing = true;
+  try {
+    if (file.size > 20 * 1024 * 1024) throw new Error(appText("backupTooLarge", "Fail backup melebihi 20 MB."));
+    const raw = await file.text();
+    const data = RezaOT_backup.parse(raw);
+    const preview = RezaOT_backup.preview(data);
+    const settingsCount = Object.keys(data.settings).length;
+    const message = appText("importPreview", "Pratonton import") + "\n" + preview + "\n" + settingsCount + " " + appText("settingsCount", "tetapan") + "\n\n" + appText("importConflictHint", "Gabung mengekalkan tarikh lain; tarikh yang sama menggunakan rekod fail. Ganti menggantikan rekod dalam bulan yang disenaraikan sahaja. Salinan pemulihan akan disimpan sebelum import.");
+    const mode = typeof rezaotChoose === "function" ? await rezaotChoose(message, [
+      { value: "merge", label: appText("importMerge", "Gabung") },
+      { value: "replace", label: appText("importReplace", "Ganti bulan disenaraikan") }
+    ]) : ((await appConfirm(message + "\n" + appText("importReplaceConfirm", "Ganti bulan yang disenaraikan?"))) ? "replace" : null);
+    if (!mode) return false;
+    const result = RezaOT_backup.apply(data, mode);
+    // Legacy single-month backups restore into their source month, never the unrelated active month.
+    if (result.months.length === 1 && result.months[0] !== currentMonthKey) selectMonth(result.months[0]);
+    else { loadFromLocalStorage(); updateDateBounds(); loadTrips(); updateReport(); }
+    if (window.RezaOT_i18n) RezaOT_i18n.apply();
+    initDarkMode(); updateHolidayBadge();
+    const supervisor = document.getElementById("supervisorName");
+    if (supervisor) supervisor.textContent = localStorage.getItem("supervisorName") || "Talib";
+    showToast(appText("importSucceeded", "Import berjaya. Salinan pemulihan disimpan."));
+    return true;
+  } catch (error) { console.error(error); showToast(error.message || appText("invalidBackup", "Fail backup tidak sah.")); return false; }
+  finally { input.__importing = false; }
 }
 
 function rezaotInitApp() {
   if (window.__rezaotInited) return;
-  window.__rezaotInited = true;
   initDarkMode();
   const now = new Date();
   currentMonthKey = `${monthNames[now.getMonth()]} ${now.getFullYear()}`;
@@ -467,13 +519,19 @@ function rezaotInitApp() {
   const supervisorEl = document.getElementById("supervisorName");
   if (supervisorEl) supervisorEl.textContent = localStorage.getItem("supervisorName") || "Talib";
   loadFromLocalStorage();
-  if (typeof lastLocalSaveAt !== "undefined") lastLocalSaveAt = 0;
+  updateDateBounds();
+  syncLeaveInputs();
   updateReport();
   loadTrips();
   setupEventListeners();
+  for (const id of ["unpaidLeaveCheck", "annualLeaveCheck"]) {
+    const input = document.getElementById(id);
+    if (input) input.addEventListener("change", () => syncLeaveInputs(input));
+  }
   updateHolidayBadge();
+  window.__rezaotInited = true;
   startFirebaseListener();
   if (!navigator.onLine) setSyncStatus("offline");
 }
 
-document.addEventListener("rezaot-ready", rezaotInitApp);
+// main.js calls rezaotInitApp once after required modules load, before publishing readiness.

@@ -18,32 +18,46 @@
     restBreakHours: 0
   };
 
-  function loadSettings() {
-    try {
-      var raw = localStorage.getItem("salarySettings");
-      if (raw) {
-        var p = JSON.parse(raw);
-        var s = Object.assign({}, DEFAULTS, p);
-        if (!p._v || p._v < 64) {
-          s.phMult = 2.0;
-          s.uplDivisor = 30;
-          if (p.skim == null) s.skim = 35.65;
-          if (p.socso == null) s.socso = 23.75;
-          if (p.eis == null) s.eis = 9.50;
-          if (p.restBreakHours == null) s.restBreakHours = 0;
-          delete s.socsoRate;
-          delete s.eisRate;
-          s._v = 64;
-          try { localStorage.setItem("salarySettings", JSON.stringify(s)); } catch (e2) {}
-        }
-        return s;
+  var LIMITS = {
+    basicSalary: [0, 100000000], hoursPerMonth: [0.01, 744], kliaPerDay: [0, 100000000],
+    epfEmployeeRate: [0, 1], epfEmployerRate: [0, 1], weekdayMult: [0, 10],
+    restMult: [0, 10], phMult: [0, 10], uplDivisor: [1, 366],
+    socso: [0, 100000000], eis: [0, 100000000], skim: [0, 100000000], restBreakHours: [0, 24]
+  };
+
+  function validateSettings(input) {
+    if (!input || typeof input !== "object" || Array.isArray(input)) throw new TypeError("Tetapan gaji tidak sah.");
+    var result = {};
+    Object.keys(DEFAULTS).forEach(function (key) {
+      var value = Object.prototype.hasOwnProperty.call(input, key) ? input[key] : DEFAULTS[key];
+      var range = LIMITS[key];
+      if (typeof value !== "number" || !Number.isFinite(value) || value < range[0] || value > range[1]) {
+        throw new RangeError("Nilai " + key + " mesti " + range[0] + "–" + range[1] + ".");
       }
-    } catch (e) {}
-    return Object.assign({}, DEFAULTS, { _v: 64 });
+      result[key] = value;
+    });
+    result._v = 70;
+    return result;
   }
 
-  function saveSettings(s) {
-    localStorage.setItem("salarySettings", JSON.stringify(s));
+  function loadSettings() {
+    var validator = function (value) { try { validateSettings(value); return true; } catch (e) { return false; } };
+    var value = typeof readCalculationSetting === "function"
+      ? readCalculationSetting("salarySettings", DEFAULTS, validator) : DEFAULTS;
+    return validateSettings(value);
+  }
+
+  function saveSettings(settings) {
+    var valid = validateSettings(settings);
+    writeCalculationSetting("salarySettings", valid);
+    return valid;
+  }
+
+  function selectedMonthKey(records, extra) {
+    if (extra && extra.monthKey) return extra.monthKey;
+    if (typeof currentMonthKey !== "undefined" && currentMonthKey) return currentMonthKey;
+    var date = Object.keys(records || {})[0];
+    return date && typeof monthKeyForDate === "function" ? monthKeyForDate(date) : "";
   }
 
   function baseRate(s) {
@@ -76,7 +90,7 @@
     };
   }
 
-  function summarizeRecords(records) {
+  function summarizeRecords(records, calculation) {
     var workDays = 0;
     var otWeekday = 0, otRest = 0, otPh = 0;
     var kliaDays = new Set();
@@ -85,18 +99,16 @@
     Object.keys(records || {}).forEach(function (date) {
       var rec = records[date];
       if (!rec) return;
-      var trips = rec.trips || [];
+      var trips = Array.isArray(rec.trips) ? rec.trips : [];
       if (rec.annual) {
         annualDays += 1;
         return;
       }
       if (rec.unpaid) unpaidDays += 1;
-      if (rec.clock_in || rec.clock_out || trips.length) workDays++;
-      var ot = (typeof calculateOT === "function")
-        ? calculateOT(rec.clock_in, rec.clock_out, date, trips) : 0;
-      if (rec.unpaid) ot = 0;
+      if (!rec.unpaid && (rec.clock_in || rec.clock_out || trips.length)) workDays++;
+      var ot = RezaOT_recordOT(date, rec, calculation);
       var day = new Date(date + "T00:00:00").getDay();
-      var hol = typeof isPublicHoliday === "function" && isPublicHoliday(date);
+      var hol = isPublicHoliday(date, calculation);
       if (hol) otPh += ot;
       else if (day === 0) otRest += ot;
       else otWeekday += ot;
@@ -149,11 +161,13 @@
 
   function estimate(records, extra) {
     extra = extra || {};
-    var s = loadSettings();
-    var summary = summarizeRecords(records || {});
+    var calculation = getMonthCalculationSettings(selectedMonthKey(records, extra));
+    var s = validateSettings(calculation.salarySettings);
+    var summary = summarizeRecords(records || {}, calculation);
     var rates = otMoney(summary, s);
     var autoUpl = summary.unpaidDays || countUnpaidDays(records || {});
-    var extraUpl = Number(extra.unpaidDays) || 0;
+    var extraUpl = extra.unpaidDays == null ? 0 : Number(extra.unpaidDays);
+    if (!Number.isFinite(extraUpl) || extraUpl < 0 || extraUpl > 31) throw new RangeError(text("salaryExtraUplRange", "UPL tambahan mesti 0–31 hari."));
     var unpaidDays = autoUpl + extraUpl;
     var dailyRate = s.basicSalary / (s.uplDivisor || 30);
     var unpaidDeduction = unpaidDays * dailyRate;
@@ -231,34 +245,34 @@
     table.className = "salary-table";
     var tb = document.createElement("tbody");
 
-    tb.appendChild(row("Gaji pokok", est.settings.basicSalary));
-    tb.appendChild(row("Kadar sejam", est.hourlyRate));
-    tb.appendChild(row("OT Isnin–Sabtu (" + est.summary.otWeekday.toFixed(2) + " j × " + est.settings.weekdayMult + ")",
+    tb.appendChild(row(text("salaryBasic", "Gaji pokok"), est.settings.basicSalary));
+    tb.appendChild(row(text("salaryHourlyRate", "Kadar sejam"), est.hourlyRate));
+    tb.appendChild(row(text("salaryWeekdayOt", "OT Isnin–Sabtu") + " (" + est.summary.otWeekday.toFixed(2) + " " + text("salaryHoursAbbr", "j") + " × " + est.settings.weekdayMult + ")",
       Math.round(est.rates.weekday * 100) / 100));
-    tb.appendChild(row("OT Ahad (" + est.summary.otRest.toFixed(2) + " j × " + est.settings.restMult + ")",
+    tb.appendChild(row(text("salarySundayOt", "OT Ahad") + " (" + est.summary.otRest.toFixed(2) + " " + text("salaryHoursAbbr", "j") + " × " + est.settings.restMult + ")",
       Math.round(est.rates.rest * 100) / 100));
-    tb.appendChild(row("OT cuti (" + est.summary.otPh.toFixed(2) + " j × " + est.settings.phMult + ")",
+    tb.appendChild(row(text("salaryHolidayOt", "OT cuti") + " (" + est.summary.otPh.toFixed(2) + " " + text("salaryHoursAbbr", "j") + " × " + est.settings.phMult + ")",
       Math.round(est.rates.ph * 100) / 100));
-    tb.appendChild(row("Jumlah OT pay", est.otPay));
-    tb.appendChild(row("Allowance KLIA (" + est.summary.kliaDays + " hari × RM" + est.settings.kliaPerDay + ")",
+    tb.appendChild(row(text("salaryTotalOtPay", "Jumlah bayaran OT"), est.otPay));
+    tb.appendChild(row(text("salaryKliaAllowance", "Allowance KLIA") + " (" + est.summary.kliaDays + " " + text("salaryDays", "hari") + " × RM" + est.settings.kliaPerDay + ")",
       est.kliaAllow));
     tb.appendChild(row("Gross", est.gross, "salary-total"));
 
     if (est.deductions.unpaidDays > 0) {
-      tb.appendChild(row("UPL (" + est.deductions.unpaidDays + " hari)", -est.deductions.unpaid));
+      tb.appendChild(row("UPL (" + est.deductions.unpaidDays + " " + text("salaryDays", "hari") + ")", -est.deductions.unpaid));
     }
     if (est.deductions.annualDays > 0) {
-      tb.appendChild(row("Cuti tahunan / ANN (" + est.deductions.annualDays + " hari)", "— (tiada potongan)"));
+      tb.appendChild(row(text("salaryAnnualLeave", "Cuti tahunan / ANN") + " (" + est.deductions.annualDays + " " + text("salaryDays", "hari") + ")", text("salaryNoDeduction", "— (tiada potongan)")));
     }
-    tb.appendChild(row("Asas EPF (pokok+KLIA−UPL)", est.deductions.epfWage));
-    tb.appendChild(row("Bracket EPF (↑ RM20)", est.deductions.epfBracket));
-    tb.appendChild(row("EPF pekerja (" + (est.settings.epfEmployeeRate * 100) + "%)", -est.deductions.epf));
-    tb.appendChild(row("EPF majikan (" + (est.settings.epfEmployerRate * 100) + "%) — info", est.deductions.epfEmployer));
+    tb.appendChild(row(text("salaryEpfBase", "Asas EPF (pokok+KLIA−UPL)"), est.deductions.epfWage));
+    tb.appendChild(row(text("salaryEpfBracket", "Bracket EPF (↑ RM20)"), est.deductions.epfBracket));
+    tb.appendChild(row(text("salaryEpfEmployeeLabel", "EPF pekerja") + " (" + (est.settings.epfEmployeeRate * 100) + "%)", -est.deductions.epf));
+    tb.appendChild(row(text("salaryEpfEmployerLabel", "EPF majikan") + " (" + (est.settings.epfEmployerRate * 100) + "%) — " + text("salaryInfo", "info"), est.deductions.epfEmployer));
     tb.appendChild(row("SOCSO", -est.deductions.socso));
     tb.appendChild(row("EIS", -est.deductions.eis));
     if (est.deductions.skim) tb.appendChild(row("Skim SKBBK", -est.deductions.skim));
-    tb.appendChild(row("Jumlah potongan (pekerja)", -est.totalDeduct));
-    tb.appendChild(row("Anggaran bersih", est.net, "salary-net"));
+    tb.appendChild(row(text("salaryTotalDeductions", "Jumlah potongan (pekerja)"), -est.totalDeduct));
+    tb.appendChild(row(text("salaryEstimatedNet", "Anggaran bersih"), est.net, "salary-net"));
 
     table.appendChild(tb);
     container.appendChild(table);
@@ -272,52 +286,75 @@
     var hd = document.createElement("td");
     hd.colSpan = 2;
     var strong = document.createElement("strong");
-    strong.textContent = "Side income (bukan gaji)";
+    strong.textContent = text("salarySideIncome", "Side income (bukan gaji)");
     hd.appendChild(strong);
     h.appendChild(hd);
     stb.appendChild(h);
     stb.appendChild(row("Susun (" + side.susun + " AWB × RM100)", side.susunRm));
     stb.appendChild(row("Pallets (" + side.pallets + " AWB × RM50)", side.palletsRm));
-    stb.appendChild(row("Jumlah side income", side.total, "salary-side-total"));
+    stb.appendChild(row(text("salarySideTotal", "Jumlah side income"), side.total, "salary-side-total"));
     sideTable.appendChild(stb);
     container.appendChild(sideTable);
 
     var note = document.createElement("p");
     note.className = "salary-note";
-    note.textContent = "EPF = ceil(% × bracket↑RM20) atas (pokok+KLIA−UPL), OT tak masuk asas EPF. " +
-      "Rehat Ahad/cuti: " + (est.settings.restBreakHours || 0) + " jam. Side income tidak dalam gaji.";
+    note.textContent = text("salaryFormulaNote", "EPF = ceil(% × bracket↑RM20) atas (pokok+KLIA−UPL), OT tidak masuk asas EPF. Side income berasingan daripada gaji.") +
+      " " + text("salaryBreakHours", "Rehat Ahad/cuti (jam):") + " " + est.settings.restBreakHours;
+    var snapshot = getMonthCalculationSettings(selectedMonthKey(records, extra));
+    if (snapshot.capturedAt) note.textContent += " " + text("salarySnapshotNote", "Menggunakan tetapan bulan yang disimpan. Butang Kemas kini tetapan bulan ini menggantikannya dengan tetapan semasa.");
     container.appendChild(note);
   }
 
-  function openSettings() {
-    var s = loadSettings();
-    var b = prompt("Gaji pokok (RM):", s.basicSalary);
-    if (b === null) return;
-    var h = prompt("Jam sebulan (untuk kadar OT):", s.hoursPerMonth);
-    if (h === null) return;
-    var k = prompt("Allowance KLIA per hari (RM):", s.kliaPerDay);
-    if (k === null) return;
-    s.basicSalary = parseFloat(b) || s.basicSalary;
-    s.hoursPerMonth = parseFloat(h) || s.hoursPerMonth;
-    s.kliaPerDay = parseFloat(k) || s.kliaPerDay;
-    var er = prompt("Kadar EPF pekerja (0.11 = 11%):", s.epfEmployeeRate);
-    if (er !== null) s.epfEmployeeRate = parseFloat(er) || 0.11;
-    var em = prompt("Kadar EPF majikan (0.13 = 13%):", s.epfEmployerRate);
-    if (em !== null) s.epfEmployerRate = parseFloat(em) || 0.13;
-    var so = prompt("SOCSO (RM tetap):", s.socso != null ? s.socso : 23.75);
-    if (so !== null) s.socso = parseFloat(so) || 0;
-    var ei = prompt("EIS (RM tetap):", s.eis != null ? s.eis : 9.50);
-    if (ei !== null) s.eis = parseFloat(ei) || 0;
-    var sk = prompt("Skim SKBBK (RM):", s.skim != null ? s.skim : 35.65);
-    if (sk !== null) s.skim = parseFloat(sk) || 0;
-    var br = prompt("Potong rehat Ahad/cuti (jam, 0=tiada):", s.restBreakHours != null ? s.restBreakHours : 0);
-    if (br !== null) s.restBreakHours = parseFloat(br) || 0;
-    s.phMult = s.phMult || 2.0;
-    s.uplDivisor = s.uplDivisor || 30;
-    s._v = 64;
-    saveSettings(s);
-    if (typeof showToast === "function") showToast("Tetapan gaji disimpan");
-    refresh();
+  function text(key, fallback) {
+    var translated = window.RezaOT_i18n && RezaOT_i18n.t(key);
+    return translated && translated !== key ? translated : fallback;
+  }
+
+  async function askNumber(label, value) {
+    var answer = typeof rezaotPrompt === "function" ? await rezaotPrompt(label, String(value)) : prompt(label, value);
+    if (answer === null) return null;
+    if (!String(answer).trim()) throw new TypeError(text("invalidNumber", "Sila masukkan nombor yang sah."));
+    var number = Number(answer);
+    if (!Number.isFinite(number)) throw new TypeError(text("invalidNumber", "Sila masukkan nombor yang sah."));
+    return number;
+  }
+
+  async function openSettings() {
+    var settings = loadSettings();
+    var fields = [
+      ["basicSalary", text("salaryBasic", "Gaji pokok (RM)")],
+      ["hoursPerMonth", text("salaryHours", "Jam sebulan (untuk kadar OT)")],
+      ["kliaPerDay", text("salaryKlia", "Allowance KLIA per hari (RM)")],
+      ["epfEmployeeRate", text("salaryEpfEmployee", "Kadar EPF pekerja (0.11 = 11%)")],
+      ["epfEmployerRate", text("salaryEpfEmployer", "Kadar EPF majikan (0.13 = 13%)")],
+      ["socso", "SOCSO (RM)"], ["eis", "EIS (RM)"], ["skim", "Skim SKBBK (RM)"],
+      ["restBreakHours", text("salaryRestBreak", "Potong rehat Ahad/cuti (jam, 0=tiada)")]
+    ];
+    try {
+      for (var i = 0; i < fields.length; i++) {
+        var value = await askNumber(fields[i][1], settings[fields[i][0]]);
+        if (value === null) return;
+        settings[fields[i][0]] = value;
+      }
+      saveSettings(settings);
+      showToast(text("salaryDefaultsSaved", "Tetapan gaji disimpan. Gunakan butang tetapan bulan untuk mengemas kini snapshot bulan ini."));
+      if (typeof updateReport === "function") updateReport();
+      refresh();
+    } catch (error) { showToast(error.message, 5000); }
+  }
+
+  async function updateMonthSnapshot() {
+    if (typeof currentMonthKey === "undefined" || !currentMonthKey) return;
+    var msg = text("updateMonthSettingsConfirm", "Gunakan tetapan OT, gaji dan cuti semasa untuk bulan ini?") + "\n" + currentMonthKey;
+    var accepted = typeof rezaotConfirm === "function" ? await rezaotConfirm(msg) : confirm(msg);
+    if (!accepted) return;
+    try {
+      captureMonthSettings(currentMonthKey, { replace: true });
+      if (typeof saveToLocalStorage === "function") saveToLocalStorage();
+      if (typeof updateReport === "function") updateReport();
+      refresh();
+      showToast(text("monthSettingsUpdated", "Tetapan bulan dikemas kini."));
+    } catch (error) { showToast(error.message, 5000); }
   }
 
   function refresh() {
@@ -325,11 +362,13 @@
     var extraEl = document.getElementById("salaryUnpaidDays");
     var hint = document.getElementById("salaryUplAutoHint");
     var auto = countUnpaidDays(typeof dailyRecords !== "undefined" ? dailyRecords : {});
-    if (hint) hint.textContent = "Rekod UPL: " + auto + " hari";
+    if (hint) hint.textContent = text("salaryUplRecords", "Rekod UPL:") + " " + auto + " " + text("salaryDays", "hari");
     if (panel && panel.offsetParent !== null) {
-      render(panel, typeof dailyRecords !== "undefined" ? dailyRecords : {}, {
-        unpaidDays: extraEl ? parseFloat(extraEl.value) || 0 : 0
-      });
+      try {
+        render(panel, typeof dailyRecords !== "undefined" ? dailyRecords : {}, {
+          unpaidDays: extraEl && extraEl.value !== "" ? Number(extraEl.value) : 0
+        });
+      } catch (error) { showToast(error.message, 5000); }
     }
   }
 
@@ -363,20 +402,31 @@
     }
     if (settingsBtn) settingsBtn.addEventListener("click", openSettings);
     if (extraEl) extraEl.addEventListener("change", refresh);
-    var orig = window.updateReport;
-    if (typeof orig === "function") {
-      window.updateReport = function () {
-        orig.apply(this, arguments);
-        refresh();
-      };
+    var toolbar = document.querySelector(".salary-toolbar");
+    if (toolbar && !document.getElementById("monthSettingsUpdateBtn")) {
+      var snapshotBtn = document.createElement("button");
+      snapshotBtn.id = "monthSettingsUpdateBtn";
+      snapshotBtn.type = "button";
+      snapshotBtn.className = "secondary-btn";
+      snapshotBtn.setAttribute("data-i18n", "updateMonthSettings");
+      snapshotBtn.textContent = text("updateMonthSettings", "Kemas kini tetapan bulan ini");
+      snapshotBtn.addEventListener("click", updateMonthSnapshot);
+      toolbar.appendChild(snapshotBtn);
     }
-    try { runUnitTest(); } catch (e) { console.warn(e); }
+    if (extraEl) { extraEl.max = "31"; extraEl.min = "0"; }
+    refresh();
   });
 
+  document.addEventListener("rezaot-report", refresh);
+  window.RezaOT_validateSalarySettings = validateSettings;
   window.RezaOT_salary = {
     estimate: estimate,
     render: render,
     loadSettings: loadSettings,
+    saveSettings: saveSettings,
+    validateSettings: validateSettings,
+    summarizeRecords: summarizeRecords,
+    openSettings: openSettings,
     refresh: refresh,
     calcEpf: calcEpf,
     epfBracket: epfBracket,

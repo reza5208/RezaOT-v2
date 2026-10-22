@@ -27,27 +27,10 @@
   }
 
   function computeTotalOT() {
-    var el = document.getElementById("totalOT");
-    if (el) {
-      var v = parseFloat(String(el.textContent).replace(/,/g, ""));
-      if (!isNaN(v) && v > 0) return v;
-    }
-    var printEl = document.getElementById("printTotalOT");
-    if (printEl) {
-      var v2 = parseFloat(String(printEl.textContent).replace(/,/g, ""));
-      if (!isNaN(v2) && v2 > 0) return v2;
-    }
-    var total = 0;
-    if (window.dailyRecords && typeof calculateOT === "function") {
-      Object.keys(dailyRecords).forEach(function (date) {
-        var rec = dailyRecords[date];
-        if (!rec) return;
-        var ot = calculateOT(rec.clock_in, rec.clock_out, date, rec.trips || []);
-        if (rec.unpaid) ot = 0;
-        total += ot;
-      });
-    }
-    return total;
+    const records = typeof dailyRecords !== "undefined" ? dailyRecords : {};
+    return Object.keys(records).reduce(function (total, date) {
+      return total + RezaOT_recordOT(date, records[date]);
+    }, 0);
   }
 
   function appendTotalRow() {
@@ -83,19 +66,9 @@
     tbody.appendChild(tr);
   }
 
-  function patch() {
-    if (window.__otTotal58) return;
-    if (typeof updateReport !== "function") return;
-    window.__otTotal58 = true;
-    var orig = updateReport;
-    window.updateReport = function () {
-      orig.apply(this, arguments);
-      appendTotalRow();
-    };
+  document.addEventListener("rezaot-ready", function () {
+    injectCss();
     appendTotalRow();
-  }
-
-  injectCss();
-  document.addEventListener("rezaot-ready", function () { setTimeout(patch, 300); });
-  if (document.readyState !== "loading") setTimeout(patch, 1500);
+  });
+  document.addEventListener("rezaot-report", appendTotalRow);
 })();

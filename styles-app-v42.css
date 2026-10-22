@@ -154,3 +154,12 @@ body.dark .side-job-opt:has(input:checked) {
 .salary-side-head td { padding-top: 10px; color: #555; }
 body.dark .salary-side-head td { color: #bbb; }
 .salary-side-total td { font-weight: 700; }
+
+/* Keyboard-accessible shared dialogs. */
+.rezaot-modal-title { margin: 0 0 10px; font-size: 1.1rem; }
+.rezaot-modal-label { display: block; margin: 0 0 6px; font-weight: 600; }
+.rezaot-modal-label[hidden], .rezaot-modal-input[hidden] { display: none !important; }
+.rezaot-modal-box { max-height: calc(100dvh - 32px); overflow: auto; }
+.rezaot-modal-actions { flex-wrap: wrap; }
+.rezaot-modal-btn:focus-visible, .rezaot-modal-input:focus-visible, .mc-card button:focus-visible { outline: 3px solid #2563eb; outline-offset: 3px; }
+.rezaot-modal-btn[data-pref] { box-shadow: 0 0 0 2px #2563eb; }

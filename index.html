@@ -18,10 +18,10 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="styles-print.css">
 
-    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
 </head>
 <body>
+    <div id="startupStatus" class="no-print" role="status">Memuatkan app / Loading app…</div>
+    <button id="updateAppBtn" class="no-print" type="button" hidden data-i18n="updateApp">Versi baharu tersedia — muat semula</button>
     <div class="container">
         <header>
             <div class="header-top">
@@ -32,9 +32,9 @@
                     <div class="menu-wrap no-print">
                         <button type="button" id="menuToggleBtn" class="icon-btn" aria-label="Menu" title="Menu">⋯</button>
                         <div id="menuPanel" class="menu-panel" hidden>
-                            <button type="button" id="holidayPickerBtn" class="icon-btn" title="Pilih cuti company">🏖 Cuti umum</button>
-                            <button type="button" id="otSettingsBtn" class="icon-btn" title="Settings OT">⚙️ Tetapan OT</button>
-                            <button type="button" id="pinSettingsBtn" class="icon-btn" title="PIN app">🔑 PIN app</button>
+                            <button type="button" id="holidayPickerBtn" class="icon-btn" data-i18n="holidayMenu">🏖 Cuti umum</button>
+                            <button type="button" id="otSettingsBtn" class="icon-btn" data-i18n="otMenu">⚙️ Tetapan OT</button>
+                            <button type="button" id="pinSettingsBtn" class="icon-btn" data-i18n="pinApp">PIN app</button>
                         </div>
                     </div>
                 </div>
@@ -55,7 +55,7 @@
             <h3 data-i18n="holidayTitle">Cuti umum — pilih yang company ambil</h3>
             <p class="holiday-picker-hint" data-i18n="holidayHint">Data katalog kekal. Hanya cuti yang ditanda ✓ dikira OT penuh & highlight biru.</p>
             <div class="holiday-picker-toolbar">
-                <label>Tahun:
+                <label><span data-i18n="yearLabel">Tahun:</span>
                     <select id="holidayPickerYear"></select>
                 </label>
                 <button type="button" id="holidaySelectAll" class="secondary-btn" data-i18n="allOn">✓ Semua</button>
@@ -100,7 +100,7 @@
             </label>
             <label class="upl-check ann-check" for="annualLeaveCheck">
               <input type="checkbox" id="annualLeaveCheck">
-              <span>ANN (cuti tahunan)</span>
+              <span data-i18n="annLabel">ANN (cuti tahunan)</span>
             </label>
             <button type="submit" data-i18n="saveAttendance">✅ Simpan Kehadiran</button>
         </form>
@@ -116,8 +116,8 @@
                 <label for="airwayBill" data-i18n="awb">Airway Bill (KLIA Cargo):</label>
                 <input type="text" id="airwayBill" placeholder="Contoh: ABC12345">
                 <div id="sideJobField" class="side-job-opts">
-                    <span class="side-job-label">Side job:</span>
-                    <label class="side-job-opt"><input type="radio" name="sideJob" value="" checked> Tiada</label>
+                    <span class="side-job-label" data-i18n="sideJob">Side job:</span>
+                    <label class="side-job-opt"><input type="radio" name="sideJob" value="" checked> <span data-i18n="sideNone">Tiada</span></label>
                     <label class="side-job-opt"><input type="radio" name="sideJob" value="susun"> Susun (RM100)</label>
                     <label class="side-job-opt"><input type="radio" name="sideJob" value="pallets"> Pallets (RM50)</label>
                 </div>
@@ -163,7 +163,7 @@
         <p id="noRecordsMessage" class="no-records" data-i18n="noRecords">Tiada rekod untuk bulan ini.</p>
 
         <div class="total-ot no-print">
-            <h3>Jumlah OT Bulan Ini: <span id="totalOT">0.00</span> Jam</h3>
+            <h3><span data-i18n="totalOT">Jumlah OT Bulan Ini:</span> <span id="totalOT">0.00</span> <span data-i18n="hours">Jam</span></h3>
         </div>
 
         <div class="summary-cards no-print" id="summaryCards">
@@ -196,15 +196,15 @@
         </div>
 
         <div class="no-print salary-toggle-wrap">
-            <button type="button" id="salaryToggleBtn" class="salary-toggle-btn">💰 Anggaran Gaji</button>
+            <button type="button" id="salaryToggleBtn" class="salary-toggle-btn" data-i18n="salaryToggle">💰 Anggaran Gaji</button>
         </div>
         <div id="salaryPanel" class="no-print" style="display: none;">
             <div class="salary-toolbar">
                 <span id="salaryUplAutoHint" class="upl-auto-hint">Rekod UPL: 0 hari</span>
-                <label>UPL tambahan (optional):
+                <label><span data-i18n="extraUpl">UPL tambahan (optional):</span>
                     <input type="number" id="salaryUnpaidDays" min="0" step="0.5" value="0" title="Hari UPL dari rekod dikira automatik.">
                 </label>
-                <button type="button" id="salarySettingsBtn" class="secondary-btn">⚙️ Tetapan gaji</button>
+                <button type="button" id="salarySettingsBtn" class="secondary-btn" data-i18n="salarySettings">⚙️ Tetapan gaji</button>
             </div>
             <div id="salaryPanelBody"></div>
         </div>
@@ -219,32 +219,20 @@
             <div class="actions-group data-actions">
                 <p class="actions-label" data-i18n="groupData">Data</p>
                 <button id="exportDataBtn" data-i18n="backupBtn">Export Data (Backup)</button>
+                <button id="exportRecoveryBtn" type="button" data-i18n="recoveryDownload">Muat turun pemulihan</button>
                 <label class="import-btn">
                     <span data-i18n="importBtn">Import Data</span>
                     <input type="file" id="importDataInput" accept=".json" style="display:none;">
                 </label>
             </div>
         </div>
-        <p class="no-print version-badge">RezaOT v69</p>
+        <p class="no-print version-badge">RezaOT v70</p>
     </div>
 
-    <button type="button" id="fabAddTrip" class="fab no-print" title="Tambah trip hari ini">＋</button>
-    <div id="toast" class="toast no-print" hidden></div>
+    <button type="button" id="fabAddTrip" class="fab no-print" data-i18n-title="fabTrip" aria-label="Tambah trip hari ini" data-i18n-aria-label="fabTrip">＋</button>
+    <div id="toast" class="toast no-print" role="status" aria-live="polite" hidden></div>
 
-    <script src="constants.js"></script>
-    <script src="utils.js"></script>
-    <script src="i18n.js"></script>
-    <script src="modal.js"></script>
+    <script src="release.js"></script>
     <script src="main.js"></script>
-    <script src="holiday-picker.js"></script>
-    <script src="mobile-cards.js?v=69"></script>
-
-    <script>
-        if ("serviceWorker" in navigator) {
-            navigator.serviceWorker.register("sw.js")
-                .then(() => console.log("✅ Service Worker Registered"))
-                .catch(err => console.log("SW Error:", err));
-        }
-    </script>
 </body>
 </html>

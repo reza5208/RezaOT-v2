@@ -1,0 +1,44 @@
+{
+  "packages": {
+    "firebase": {
+      "version": "10.14.1",
+      "url": "https://registry.npmjs.org/firebase/-/firebase-10.14.1.tgz",
+      "integrity": "sha512-0KZxU+Ela9rUCULqFsUUOYYkjh7OM1EWdIfG6///MtXd0t2/uUIf0iNV5i0KariMhRQ5jve/OY985nrAXFaZeQ==",
+      "license": "Apache-2.0",
+      "files": [
+        "firebase-app-compat.js",
+        "firebase-database-compat.js",
+        "firebase-auth-compat.js"
+      ]
+    },
+    "html2pdf.js": {
+      "version": "0.12.1",
+      "url": "https://registry.npmjs.org/html2pdf.js/-/html2pdf.js-0.12.1.tgz",
+      "integrity": "sha512-3rBWQ96H5oOU9jtoz3MnE/epGi27ig9h8aonBk4JTpvUERM3lMRxhIRckhJZEi4wE0YfRINoYOIDY0hLY0CHgQ==",
+      "license": "MIT",
+      "files": [
+        "dist/html2pdf.bundle.min.js"
+      ]
+    },
+    "xlsx": {
+      "version": "0.18.5",
+      "url": "https://registry.npmjs.org/xlsx/-/xlsx-0.18.5.tgz",
+      "integrity": "sha512-dmg3LCjBPHZnQp5/F/+nnTa+miPJxUXB6vtk42YjBBKayDNagxGEeIdWApkYPOf3Z3pm3k62Knjzp7lMeTEtFQ==",
+      "license": "Apache-2.0",
+      "files": [
+        "dist/xlsx.full.min.js"
+      ]
+    }
+  },
+  "assets": {
+    "vendor/firebase-app-compat.js": "2ac3f051aa8c357f050c18b6a8d57867f59ed85b61949acf21142139581f5cc4",
+    "vendor/firebase-database-compat.js": "57285c8b97aec997bf67714a169eee13d4e2bd37acaa03075793c01a9e20e415",
+    "vendor/firebase-auth-compat.js": "444be4c9e8bb4d16d2778177bb35fcad0f7b5b3927a81e6095a4978bad324572",
+    "vendor/html2pdf.bundle.min.js": "603aa7917180619f9ea2c5fc555169dd9e59f9461d3e67e1142f274cf02b30be",
+    "vendor/xlsx.full.min.js": "c9506197caf809a075b6dee1da0d36fb19da7158ffe8a88e7b0c96c5d8623c99"
+  },
+  "base_style": {
+    "url": "https://cdn.jsdelivr.net/gh/reza5208/RezaOT-v2@81d9af1125e1aadd9bd837abda445647ba318d3b/styles.css",
+    "sha256": "6c2d402cb73591b5112c7835cff7dac99a515be0018ebbc2b95fab1df350e897"
+  }
+}

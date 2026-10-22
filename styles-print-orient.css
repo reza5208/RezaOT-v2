@@ -113,3 +113,35 @@ body.print-landscape.pdf-export h1 {
 body.print-landscape.pdf-export .container {
   max-width: none !important;
 }
+
+/* PDF uses a document layout even while the source browser is a narrow phone. */
+body.pdf-export #reportTable { display: table !important; }
+body.pdf-export #mobileCards { display: none !important; }
+body.pdf-export.print-portrait .container {
+  width: 194mm !important;
+  min-width: 194mm !important;
+  max-width: 194mm !important;
+  box-sizing: border-box !important;
+  margin: 0 !important;
+}
+body.pdf-export.print-landscape .container {
+  width: 281mm !important;
+  min-width: 281mm !important;
+  max-width: 281mm !important;
+  box-sizing: border-box !important;
+  margin: 0 !important;
+}
+body.pdf-export #reportTable thead { display: table-header-group !important; }
+body.pdf-export #reportTable tbody { display: table-row-group !important; }
+body.pdf-export #reportTable tr { display: table-row !important; }
+body.pdf-export #reportTable tr:not(.no-print) > td:not(.no-print),
+body.pdf-export #reportTable tr:not(.no-print) > th:not(.no-print) { display: table-cell !important; }
+body.pdf-export .table-wrap { width: 100% !important; max-width: none !important; overflow: visible !important; }
+@media print {
+  body.pdf-export.print-portrait .container,
+  body.pdf-export.print-landscape .container {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+  }
+}

@@ -25,3 +25,8 @@ backup/
 
 # Optional: kalau ada html2pdf bundle besar
 html2pdf.bundle.min.js
+!vendor/html2pdf.bundle.min.js
+
+# Python browser-test outputs
+__pycache__/
+*.pyc

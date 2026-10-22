@@ -1,218 +1,92 @@
-// app-p1.js — feature layer v40 (PIN, print/PDF once, FAB, sync)
+// PIN and personal UI controls. Sync, reports and export modules own their flows.
 (function () {
   "use strict";
-
-  function isMobileOrPwa() {
-    var standalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
-    var coarse = window.matchMedia("(pointer: coarse)").matches;
-    var narrow = window.matchMedia("(max-width: 900px)").matches;
-    return standalone || (coarse && narrow);
+  function tr(key, fallback) { return window.RezaOT_i18n ? RezaOT_i18n.text(key, fallback) : fallback; }
+  async function ask(message, value, secret) {
+    return rezaotPrompt(message, value || "", { inputType: secret ? "password" : "text" });
   }
-
-  window.handlePrint = function () {
-    if (isMobileOrPwa()) { window.handleExportPdf(); return; }
-    if (window.__printBusy) return;
-    window.__printBusy = true;
-    if (typeof applyPrintAutoSize === "function") applyPrintAutoSize();
-    document.body.classList.add("pdf-export");
-    requestAnimationFrame(function () {
-      setTimeout(function () {
-        try { window.print(); } catch (e) {}
-        setTimeout(function () {
-          document.body.classList.remove("pdf-export");
-          if (typeof clearPrintAutoSize === "function") clearPrintAutoSize();
-          window.__printBusy = false;
-        }, 500);
-      }, 250);
-    });
-  };
-
-  window.handleExportPdf = function () {
-    if (window.__pdfBusy) return;
-    window.__pdfBusy = true;
-    showToast("Sediakan PDF…");
-    var ready = (typeof window.loadExportLibs === "function")
-      ? window.loadExportLibs()
-      : Promise.resolve();
-    ready.then(function () {
-      if (typeof html2pdf === "undefined") {
-        showToast("html2pdf tidak load");
-        window.__pdfBusy = false;
-        return;
-      }
-      var el = document.querySelector(".container");
-      if (!el) { window.__pdfBusy = false; return; }
-      if (typeof applyPrintAutoSize === "function") applyPrintAutoSize();
-      document.body.classList.add("pdf-export");
-      var opt = {
-        margin: [10, 8, 12, 8],
-        filename: "RezaOT_" + (currentMonthKey || "report").replace(/\s+/g, "_") + ".pdf",
-        image: { type: "jpeg", quality: 0.98 },
-        html2canvas: {
-          scale: 2,
-          useCORS: true,
-          scrollY: 0,
-          scrollX: 0,
-          windowWidth: el.scrollWidth,
-          windowHeight: el.scrollHeight + 40,
-          logging: false
-        },
-        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-        pagebreak: { mode: ["css", "legacy"] }
-      };
-      setTimeout(function () {
-        html2pdf().set(opt).from(el).save()
-          .then(function () { showToast("PDF dimuat turun"); })
-          .catch(function () { showToast("Gagal jana PDF"); })
-          .finally(function () {
-            document.body.classList.remove("pdf-export");
-            if (typeof clearPrintAutoSize === "function") clearPrintAutoSize();
-            setTimeout(function () { window.__pdfBusy = false; }, 800);
-          });
-      }, 250);
-    }).catch(function () {
-      showToast("Gagal load library PDF");
-      window.__pdfBusy = false;
-    });
-  };
-
-  function rebind(id, fn) {
-    var btn = document.getElementById(id);
-    if (!btn) return;
-    var neo = btn.cloneNode(true);
-    btn.parentNode.replaceChild(neo, btn);
-    neo.addEventListener("click", function (e) {
-      e.preventDefault();
-      e.stopPropagation();
-      fn();
-    });
+  async function checkPin(message) {
+    var pin = localStorage.getItem("rezaot_pin");
+    if (!pin) return true;
+    if (await ask(message, "", true) === pin) return true;
+    showToast(tr("wrongPin", "PIN salah")); return false;
   }
-
-  window.editSupervisorName = function () {
+  window.editSupervisorName = async function () {
     if (localStorage.getItem("supervisorLocked") === "1") {
-      var pin = localStorage.getItem("rezaot_pin") || "";
-      if (pin) {
-        if (prompt("Nama ketua dikunci. Masukkan PIN:") !== pin) {
-          showToast("PIN salah"); return;
-        }
-      } else {
-        showToast("Nama ketua dikunci. Set PIN (🔑)."); return;
-      }
+      if (!localStorage.getItem("rezaot_pin")) { showToast(tr("setPinFirst", "Set PIN untuk buka kunci nama ketua.")); return; }
+      if (!await checkPin(tr("supervisorPin", "Nama ketua dikunci. Masukkan PIN:"))) return;
     }
     var el = document.getElementById("supervisorName");
     if (!el) return;
-    var next = prompt("Nama ketua:", el.textContent.trim() || "Talib");
+    var next = await ask(tr("promptSup", "Nama ketua:"), el.textContent.trim() || "Talib");
     if (next === null) return;
     var name = next.trim() || "Talib";
+    if (window.RezaOT_sync && typeof RezaOT_sync.updateSettings === "function") RezaOT_sync.updateSettings({ supervisorName: name });
+    else localStorage.setItem("supervisorName", name);
     el.textContent = name;
-    localStorage.setItem("supervisorName", name);
-    showToast("Nama ketua dikemaskini");
+    showToast(tr("toastSupSaved", "Nama ketua dikemaskini"));
   };
-
-  function wireSyncSkeleton() {
-    if (typeof setSyncStatus !== "function" || setSyncStatus._p1) return;
-    var orig = setSyncStatus;
-    window.setSyncStatus = function (state) {
-      orig(state);
-      var wrap = document.querySelector(".table-wrap");
-      var noMsg = document.getElementById("noRecordsMessage");
-      if (!wrap) return;
-      if (state === "syncing") {
-        wrap.classList.add("is-loading");
-        if (noMsg) noMsg.style.visibility = "hidden";
-      } else {
-        wrap.classList.remove("is-loading");
-        if (noMsg) noMsg.style.visibility = "";
-      }
-    };
-    window.setSyncStatus._p1 = true;
+  async function editPin() {
+    var cur = localStorage.getItem("rezaot_pin");
+    if (cur) {
+      var action = await rezaotChoose(tr("pinAction", "PIN app"), [
+        { value: "change", label: tr("pinChange", "Tukar PIN") },
+        { value: "remove", label: tr("pinRemove", "Buang PIN") }
+      ]);
+      if (!action || !await checkPin(tr("currentPin", "PIN semasa:"))) return;
+      if (action === "remove") { localStorage.removeItem("rezaot_pin"); showToast(tr("pinRemoved", "PIN dibuang")); return; }
+    }
+    var next = await ask(tr("newPin", "PIN baru (4–8 digit):"), "", true);
+    if (next === null) return;
+    if (!/^\d{4,8}$/.test(next)) { showToast(tr("invalidPin", "PIN mesti 4–8 digit")); return; }
+    if (await ask(tr("repeatPin", "Ulang PIN:"), "", true) !== next) { showToast(tr("pinMismatch", "PIN tak sama")); return; }
+    localStorage.setItem("rezaot_pin", next);
+    showToast(tr("pinSaved", "PIN disimpan"));
   }
-
+  function wire(id, fn) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener("click", function () { Promise.resolve().then(fn).catch(function (e) { showToast(e.message); }); });
+  }
   function wireExtras() {
-    rebind("printButton", function () { window.handlePrint(); });
-    rebind("exportPdfBtn", function () { window.handleExportPdf(); });
-
-    var langBtn = document.getElementById("langToggleBtn");
-    if (langBtn && !langBtn._p1) {
-      langBtn._p1 = true;
-      langBtn.addEventListener("click", function () {
-        if (window.RezaOT_i18n) window.RezaOT_i18n.toggle();
-      });
-    }
-    if (window.RezaOT_i18n) window.RezaOT_i18n.apply();
-
+    wire("langToggleBtn", function () { RezaOT_i18n.toggle(); });
+    wire("pinSettingsBtn", editPin);
     var lockBtn = document.getElementById("supervisorLockBtn");
-    if (lockBtn && !lockBtn._p1) {
-      lockBtn._p1 = true;
+    if (lockBtn) {
       lockBtn.textContent = localStorage.getItem("supervisorLocked") === "1" ? "🔒" : "🔓";
-      lockBtn.addEventListener("click", function () {
+      wire("supervisorLockBtn", async function () {
         var locked = localStorage.getItem("supervisorLocked") === "1";
-        if (!locked) {
-          localStorage.setItem("supervisorLocked", "1");
-          lockBtn.textContent = "🔒";
-          showToast("Nama ketua dikunci");
-        } else {
-          var pin = localStorage.getItem("rezaot_pin");
-          if (pin && prompt("PIN untuk buka kunci:") !== pin) {
-            showToast("PIN salah"); return;
-          }
-          localStorage.setItem("supervisorLocked", "0");
-          lockBtn.textContent = "🔓";
-          showToast("Nama ketua dibuka");
-        }
+        if (locked && !await checkPin(tr("unlockPin", "PIN untuk buka kunci:"))) return;
+        localStorage.setItem("supervisorLocked", locked ? "0" : "1");
+        lockBtn.textContent = locked ? "🔓" : "🔒";
+        showToast(tr(locked ? "supervisorUnlocked" : "supervisorLocked", locked ? "Nama ketua dibuka" : "Nama ketua dikunci"));
       });
     }
-
-    var fab = document.getElementById("fabAddTrip");
-    if (fab && !fab._p1) {
-      fab._p1 = true;
-      fab.addEventListener("click", function () {
-        var dateInput = document.getElementById("date");
-        if (dateInput && typeof getLocalDateString === "function") {
-          dateInput.value = getLocalDateString(new Date());
-        }
-        var dest = document.getElementById("destination");
-        if (dest) {
-          dest.focus();
-          dest.scrollIntoView({ behavior: "smooth", block: "center" });
-        }
-        showToast("Pilih destinasi untuk hari ini");
-      });
-    }
-
-    var pinBtn = document.getElementById("pinSettingsBtn");
-    if (pinBtn && !pinBtn._p1) {
-      pinBtn._p1 = true;
-      pinBtn.addEventListener("click", function () {
-        var cur = localStorage.getItem("rezaot_pin") || "";
-        if (cur) {
-          var a = prompt("PIN semasa (atau HAPUS):");
-          if (a === null) return;
-          if (a.toUpperCase() === "HAPUS") {
-            if (prompt("PIN semasa:") !== cur) { showToast("PIN salah"); return; }
-            localStorage.removeItem("rezaot_pin");
-            showToast("PIN dibuang");
-            return;
-          }
-          if (a !== cur) { showToast("PIN salah"); return; }
-        }
-        var n1 = prompt("PIN baru (4-8 digit):");
-        if (!n1 || !/^\d{4,8}$/.test(n1)) { showToast("PIN mesti 4-8 digit"); return; }
-        if (prompt("Ulang PIN:") !== n1) { showToast("PIN tak sama"); return; }
-        localStorage.setItem("rezaot_pin", n1);
-        showToast("PIN disimpan");
-      });
-    }
-
+    wire("fabAddTrip", async function () {
+      var today = getLocalDateString(new Date());
+      var target = monthNames[new Date().getMonth()] + " " + new Date().getFullYear();
+      if (target !== currentMonthKey) {
+        var ok = await rezaotConfirm(tr("switchTodayMonth", "Tukar ke bulan semasa untuk tambah trip hari ini?"));
+        if (!ok) return;
+        selectMonth(target);
+      }
+      var date = document.getElementById("date");
+      if (date) date.value = today;
+      updateHolidayBadge();
+      var dest = document.getElementById("destination");
+      if (dest) { dest.focus(); dest.scrollIntoView({ behavior: "smooth", block: "center" }); }
+      showToast(tr("pickDest", "Sila pilih destinasi."));
+    });
     var pin = localStorage.getItem("rezaot_pin");
     if (pin && !document.getElementById("pinOverlay")) {
       var ov = document.createElement("div");
       ov.id = "pinOverlay";
       ov.className = "pin-overlay no-print";
       ov.style.display = "flex";
-      ov.innerHTML = '<div class="pin-box"><h2>RezaOT</h2><p class="pin-hint">Masukkan PIN</p><input type="password" id="pinInput" inputmode="numeric" maxlength="8" autocomplete="one-time-code"/><button type="button" id="pinSubmitBtn">Buka</button><p id="pinError" class="pin-error" hidden>PIN salah</p></div>';
+      ov.innerHTML = '<div class="pin-box" role="dialog" aria-modal="true" aria-labelledby="pinTitle"><h2 id="pinTitle">RezaOT</h2><label class="pin-hint" for="pinInput">PIN</label><input type="password" id="pinInput" aria-label="PIN" inputmode="numeric" maxlength="8" autocomplete="one-time-code"/><button type="button" id="pinSubmitBtn" data-i18n="pinOpen">Buka</button><p id="pinError" class="pin-error" hidden>PIN salah</p></div>';
       document.body.appendChild(ov);
       document.body.classList.add("pin-locked");
+      var app = document.querySelector(".container");
+      if (app) app.inert = true;
 
       // PIN is client-side only (stored in localStorage). This lockout slows casual guessing; it is NOT real security.
       function getFailState() {
@@ -235,7 +109,7 @@
         if (btn) btn.disabled = true;
         if (err) {
           err.hidden = false;
-          err.textContent = "Terlalu banyak cubaan. Cuba lagi dalam " + (secs || 60) + " saat.";
+          err.textContent = tr("pinWait", "Terlalu banyak cubaan. Cuba semula sebentar lagi.");
         }
       }
       function clearLockUi() {
@@ -244,7 +118,7 @@
         var err = document.getElementById("pinError");
         if (input) input.disabled = false;
         if (btn) btn.disabled = false;
-        if (err) { err.hidden = true; err.textContent = "PIN salah"; }
+        if (err) { err.hidden = true; err.textContent = tr("wrongPin", "PIN salah"); }
       }
       function registerFail() {
         var st = getFailState();
@@ -267,12 +141,13 @@
         setFailState({ n: 0, until: 0 });
         ov.style.display = "none";
         document.body.classList.remove("pin-locked");
+        if (app) app.inert = false;
         var input = document.getElementById("pinInput");
         if (input) { input.value = ""; input.disabled = false; }
         var btn = document.getElementById("pinSubmitBtn");
         if (btn) btn.disabled = false;
         var err = document.getElementById("pinError");
-        if (err) { err.hidden = true; err.textContent = "PIN salah"; }
+        if (err) { err.hidden = true; err.textContent = tr("wrongPin", "PIN salah"); }
       }
 
       function tryU() {
@@ -284,7 +159,7 @@
           unlockOk();
         } else {
           registerFail();
-          if (err && lockedRemaining() === 0) { err.hidden = false; err.textContent = "PIN salah"; }
+          if (err && lockedRemaining() === 0) { err.hidden = false; err.textContent = tr("wrongPin", "PIN salah"); }
           input.value = "";
           if (!input.disabled) input.focus();
         }
@@ -295,7 +170,7 @@
         var input = document.getElementById("pinInput");
         var err = document.getElementById("pinError");
         if (!input) return;
-        if (err) { err.hidden = true; err.textContent = "PIN salah"; }
+        if (err) { err.hidden = true; err.textContent = tr("wrongPin", "PIN salah"); }
         var v = String(input.value).replace(/[^0-9]/g, "");
         if (v !== input.value) input.value = v;
         if (v.length < pin.length) return;
@@ -303,7 +178,7 @@
           unlockOk();
         } else {
           registerFail();
-          if (err && lockedRemaining() === 0) { err.hidden = false; err.textContent = "PIN salah"; }
+          if (err && lockedRemaining() === 0) { err.hidden = false; err.textContent = tr("wrongPin", "PIN salah"); }
           input.value = "";
           if (!input.disabled) input.focus();
         }
@@ -321,201 +196,12 @@
           clearLockUi();
         }, left0 * 1000);
       }
-      setTimeout(function () {
+      requestAnimationFrame(function () {
         var i = document.getElementById("pinInput");
         if (i && !i.disabled) i.focus();
-      }, 100);
+      });
     }
 
-    var sel = document.getElementById("monthHistory");
-    if (sel && !sel._p1) {
-      sel._p1 = true;
-      function fill() {
-        var keys = [];
-        for (var i = 0; i < localStorage.length; i++) {
-          var k = localStorage.key(i);
-          if (k && k.indexOf("dailyRecords_") === 0) keys.push(k.replace("dailyRecords_", ""));
-        }
-        if (typeof currentMonthKey === "string" && keys.indexOf(currentMonthKey) < 0) keys.push(currentMonthKey);
-        keys.sort();
-        sel.innerHTML = "";
-        var opt0 = document.createElement("option");
-        opt0.value = "";
-        opt0.textContent = "— Bulan cepat —";
-        sel.appendChild(opt0);
-        keys.forEach(function (key) {
-          var o = document.createElement("option");
-          o.value = key;
-          o.textContent = key;
-          if (key === currentMonthKey) o.selected = true;
-          sel.appendChild(o);
-        });
-      }
-      fill();
-      sel.addEventListener("change", function () {
-        var key = sel.value;
-        if (!key || key === currentMonthKey) return;
-        var parts = key.split(" ");
-        if (parts.length < 2) return;
-        var idx = (typeof monthNames !== "undefined" ? monthNames : []).indexOf(parts[0]);
-        if (idx < 0) return;
-        if (!confirm("Tukar ke " + key + "?\nData bulan semasa sudah disimpan.")) {
-          fill(); return;
-        }
-        currentMonthKey = key;
-        var monthInput = document.getElementById("monthYear");
-        if (monthInput) monthInput.value = parts[1] + "-" + String(idx + 1).padStart(2, "0");
-        var cm = document.getElementById("currentMonth");
-        if (cm) cm.textContent = currentMonthKey;
-        if (typeof stopFirebaseListener === "function") stopFirebaseListener();
-        loadFromLocalStorage();
-        if (typeof lastLocalSaveAt !== "undefined") lastLocalSaveAt = 0;
-        updateReport();
-        if (typeof loadTrips === "function") loadTrips();
-        if (typeof startFirebaseListener === "function") startFirebaseListener();
-        showToast("Bulan: " + currentMonthKey);
-        fill();
-      });
-      var orig = window.updateReport;
-      if (typeof orig === "function" && !orig._p1hist) {
-        window.updateReport = function () {
-          orig.apply(this, arguments);
-          try { fill(); } catch (e) {}
-        };
-        window.updateReport._p1hist = true;
-      }
-    }
   }
-
-  function wrapExcel() {
-    if (typeof exportToExcel !== "function" || exportToExcel._p1fast) return;
-    var orig = exportToExcel;
-    window.exportToExcel = function () {
-      showToast("Sediakan Excel…");
-      var ready = (typeof window.loadExportLibs === "function")
-        ? window.loadExportLibs()
-        : Promise.resolve();
-      ready.then(function () {
-        if (typeof XLSX === "undefined") {
-          showToast("Library Excel tidak load");
-          return;
-        }
-        orig.apply(this, arguments);
-      }).catch(function () {
-        showToast("Gagal load library Excel");
-      });
-    };
-    window.exportToExcel._p1fast = true;
-  }
-
-  function installSyncAndMonth() {
-    if (typeof db === "undefined" || typeof getFirebasePath !== "function") return false;
-    if (window.__coreMerged35) return true;
-    window.__coreMerged35 = true;
-
-    window.flushOfflineQueue = async function () {
-      if (!navigator.onLine) return;
-      var q = (typeof getOfflineQueue === "function") ? getOfflineQueue() : [];
-      if (!q.length) return;
-      for (var i = 0; i < q.length; i++) {
-        var item = q[i];
-        try {
-          var snap = await db.ref(item.path).once("value");
-          var remote = snap.val();
-          var remoteTs = remote && remote.lastUpdated ? Date.parse(remote.lastUpdated) : 0;
-          var queueTs = item.data && item.data.lastUpdated ? Date.parse(item.data.lastUpdated) : 0;
-          if (remoteTs && queueTs && remoteTs > queueTs) {
-            clearOfflineQueueItem(item.path);
-            continue;
-          }
-          await db.ref(item.path).set(item.data);
-          clearOfflineQueueItem(item.path);
-        } catch (err) {
-          console.warn("Offline queue flush failed:", err);
-          setSyncStatus("offline");
-          return;
-        }
-      }
-      setSyncStatus("online");
-    };
-
-    window.startFirebaseListener = function () {
-      if (typeof stopFirebaseListener === "function") stopFirebaseListener();
-      if (!currentMonthKey) return;
-      var path = getFirebasePath();
-      firebaseRef = db.ref(path);
-      setSyncStatus("syncing");
-      firebaseRef.on("value", function (snap) {
-        firebaseReady = true;
-        var data = snap.val();
-        if (!data) {
-          var localCount = Object.keys(dailyRecords || {}).length;
-          if (localCount > 0 && lastLocalSaveAt && (Date.now() - lastLocalSaveAt < 8000)) {
-            setTimeout(function () { saveToFirebase(); }, 200);
-          } else if (localCount > 0) {
-            dailyRecords = {};
-            persistLocalOnly();
-            updateReport();
-          }
-          setSyncStatus("online");
-          return;
-        }
-        var remoteTs = data.lastUpdated ? Date.parse(data.lastUpdated) : 0;
-        if (data.deviceId && data.deviceId === getDeviceId() && Date.now() - lastLocalSaveAt < 2500) {
-          setSyncStatus("online");
-          return;
-        }
-        if (remoteTs && lastLocalSaveAt && remoteTs < lastLocalSaveAt - 800) {
-          setSyncStatus("online");
-          return;
-        }
-        syncingFromFirebase = true;
-        try {
-          var remoteRecords = (data.dailyRecords && typeof data.dailyRecords === "object")
-            ? data.dailyRecords : {};
-          dailyRecords = Object.assign({}, remoteRecords);
-          if (data.trips && Array.isArray(data.trips)) trips = data.trips.slice();
-          try { clearOfflineQueueItem(path); } catch (e) {}
-          persistLocalOnly();
-          updateReport();
-          if (typeof loadTrips === "function") loadTrips();
-          setSyncStatus("online");
-        } finally {
-          setTimeout(function () { syncingFromFirebase = false; }, 300);
-        }
-      }, function (err) {
-        console.error("Firebase listener error:", err);
-        setSyncStatus("offline");
-        updateReport();
-      });
-      if (typeof flushOfflineQueue === "function") flushOfflineQueue();
-    };
-
-    if (typeof handleMonthChange === "function" && !handleMonthChange._v35) {
-      var oMonth = handleMonthChange;
-      window.handleMonthChange = function () {
-        oMonth.apply(this, arguments);
-        if (typeof lastLocalSaveAt !== "undefined") lastLocalSaveAt = 0;
-        if (typeof startFirebaseListener === "function" && currentMonthKey) startFirebaseListener();
-      };
-      window.handleMonthChange._v35 = true;
-    }
-
-    lastLocalSaveAt = 0;
-    if (currentMonthKey) startFirebaseListener();
-    return true;
-  }
-
-  function tryInstallSync(n) {
-    if (installSyncAndMonth()) return;
-    if (n > 40) return;
-    setTimeout(function () { tryInstallSync(n + 1); }, 150);
-  }
-
-  document.addEventListener("rezaot-ready", function () {
-    wireSyncSkeleton();
-    wrapExcel();
-    wireExtras();
-    tryInstallSync(0);
-  });
+  document.addEventListener("rezaot-ready", wireExtras, { once: true });
 })();

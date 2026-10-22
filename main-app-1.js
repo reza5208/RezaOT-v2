@@ -1,5 +1,4 @@
-// main-app-1.js - RezaOT core (v41 — print auto-fit A4)
-
+// RezaOT core: local storage is available independently of cloud startup.
 const firebaseConfig = {
   apiKey: "AIzaSyAIxHsCJYkJ05MflQnGTibGlCNru-dEPPs",
   authDomain: "reza-ot.firebaseapp.com",
@@ -9,19 +8,43 @@ const firebaseConfig = {
   messagingSenderId: "882084129955",
   appId: "1:882084129955:web:6556807195973a093ce316"
 };
-
-if (!firebase.apps.length) {
-  firebase.initializeApp(firebaseConfig);
-}
-const db = firebase.database();
-
+let db = null;
 let trips = [];
 let currentMonthKey = "";
 let dailyRecords = {};
+let firebaseRef = null;
+let syncingFromFirebase = false;
+let lastLocalSaveAt = 0;
+let firebaseReady = false;
+const OFFLINE_QUEUE_KEY = "rezaot_offline_queue";
+
+window.RezaOT_state = {};
+Object.defineProperties(window.RezaOT_state, {
+  db: { get: function () { return db; }, set: function (v) { db = v; } },
+  trips: { get: function () { return trips; }, set: function (v) { trips = v; } },
+  currentMonthKey: { get: function () { return currentMonthKey; }, set: function (v) { currentMonthKey = v; } },
+  dailyRecords: { get: function () { return dailyRecords; }, set: function (v) { dailyRecords = v; } }
+});
+
+function ensureDatabase() {
+  const config = window.REZAOT_CONFIG || {};
+  if (config.requireAuth && (!window.RezaOT_auth || !RezaOT_auth.canSync())) return null;
+  if (db) return db;
+  if (!window.firebase || typeof firebase.database !== "function") return null;
+  try {
+    if (!firebase.apps.length) firebase.initializeApp(config.firebaseConfig || firebaseConfig);
+    if (config.requireAuth && (!firebase.auth || !firebase.auth().currentUser)) return null;
+    db = firebase.database();
+    return db;
+  } catch (error) {
+    console.warn("Cloud initialization unavailable:", error.message);
+    return null;
+  }
+}
 
 function showToast(message, duration = 2500) {
   const el = document.getElementById("toast");
-  if (!el) { alert(message); return; }
+  if (!el) { console.warn(message); return; }
   el.textContent = message;
   el.hidden = false;
   el.classList.add("show");
@@ -38,7 +61,6 @@ function initDarkMode() {
   const btn = document.getElementById("darkModeBtn");
   if (btn) btn.textContent = saved ? "☀️" : "🌙";
 }
-
 function toggleDarkMode() {
   const isDark = document.body.classList.toggle("dark");
   localStorage.setItem("darkMode", isDark ? "1" : "0");
@@ -47,120 +69,80 @@ function toggleDarkMode() {
   const meta = document.querySelector('meta[name="theme-color"]');
   if (meta) meta.content = isDark ? "#1e2229" : "#007bff";
 }
-
 function getCurrentTimeString() {
   const now = new Date();
   return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
 }
-
 function getLocalDateString(d) {
   const x = d || new Date();
   return x.getFullYear() + "-" + String(x.getMonth() + 1).padStart(2, "0") + "-" + String(x.getDate()).padStart(2, "0");
 }
-
 function setNowTime(inputId) {
   const input = document.getElementById(inputId);
-  if (input) {
-    input.value = getCurrentTimeString();
-    showToast("Masa dikemaskini");
-  }
+  if (input) { input.value = getCurrentTimeString(); showToast("Masa dikemaskini"); }
 }
-
-const OFFLINE_QUEUE_KEY = "rezaot_offline_queue";
 function getOfflineQueue() {
-  try { return JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || "[]"); }
-  catch (e) { return []; }
-}
-function enqueueOfflineWrite(payload) {
-  const q = getOfflineQueue();
-  q.push({ ...payload, queuedAt: new Date().toISOString() });
-  const byPath = {};
-  q.forEach((item) => { byPath[item.path] = item; });
-  localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(Object.values(byPath)));
-}
-function clearOfflineQueueItem(path) {
-  localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(getOfflineQueue().filter((i) => i.path !== path)));
-}
-async function flushOfflineQueue() {
-  if (!navigator.onLine) return;
-  const q = getOfflineQueue();
-  if (!q.length) return;
-  for (const item of q) {
-    try {
-      const snap = await db.ref(item.path).once("value");
-      const remote = snap.val();
-      const remoteTs = remote && remote.lastUpdated ? Date.parse(remote.lastUpdated) : 0;
-      const queueTs = item.data && item.data.lastUpdated ? Date.parse(item.data.lastUpdated) : 0;
-      if (remoteTs && queueTs && remoteTs > queueTs) {
-        clearOfflineQueueItem(item.path);
-        continue;
-      }
-      await db.ref(item.path).set(item.data);
-      clearOfflineQueueItem(item.path);
-    } catch (err) {
-      console.warn("Offline queue flush failed:", err);
-      setSyncStatus("offline");
-      return;
-    }
-  }
-  setSyncStatus("online");
-  showToast("Data offline berjaya disync");
-}
-
-let firebaseRef = null;
-let syncingFromFirebase = false;
-let lastLocalSaveAt = 0;
-let firebaseReady = false;
-
-function getFirebasePath() {
-  return `users/default/${currentMonthKey}`;
-}
-
-function loadFromLocalStorage() {
-  const savedTrips = localStorage.getItem("trips");
-  trips = savedTrips ? JSON.parse(savedTrips) : [...defaultTrips];
-  const savedRecords = localStorage.getItem(`dailyRecords_${currentMonthKey}`);
-  dailyRecords = savedRecords ? JSON.parse(savedRecords) : {};
-}
-
-function persistLocalOnly() {
-  localStorage.setItem("trips", JSON.stringify(trips));
-  localStorage.setItem(`dailyRecords_${currentMonthKey}`, JSON.stringify(dailyRecords));
-}
-
-function saveToLocalStorage() {
-  lastLocalSaveAt = Date.now();
-  persistLocalOnly();
-  saveToFirebase();
-}
-
-function saveToFirebase() {
-  if (syncingFromFirebase) return;
-  if (!currentMonthKey) return;
-  const path = getFirebasePath();
-  const payload = {
-    dailyRecords, trips,
-    lastUpdated: new Date().toISOString(),
-    deviceId: getDeviceId()
-  };
-  if (!navigator.onLine) {
-    enqueueOfflineWrite({ path, data: payload });
-    setSyncStatus("offline");
-    return;
-  }
-  setSyncStatus("syncing");
-  db.ref(path).set(payload).then(() => {
-    clearOfflineQueueItem(path);
-    setSyncStatus("online");
-    firebaseReady = true;
-  }).catch((err) => {
-    console.error("Firebase save error:", err);
-    enqueueOfflineWrite({ path, data: payload });
-    const msg = String(err && err.message ? err.message : err);
-    setSyncStatus(msg.includes("permission") ? "denied" : "offline");
+  return RezaOT_storage.read(OFFLINE_QUEUE_KEY, [], function (q) {
+    if (!Array.isArray(q) || q.some(function (v) { return !v || typeof v.path !== "string" || !v.data; })) throw new Error("Queue tidak sah");
+    return q.map(function (item) {
+      if (item.revision) return item;
+      return Object.assign({}, item, { revision: "legacy:" + item.path + ":" + (item.queuedAt || item.data.lastUpdated || "initial") });
+    });
   });
 }
-
+function enqueueOfflineWrite(payload) {
+  const q = getOfflineQueue().filter(function (item) { return item.path !== payload.path; });
+  const revision = payload.revision || getDeviceId() + ":" + Date.now() + ":" + Math.random().toString(36).slice(2);
+  q.push({ path: payload.path, data: RezaOT_storage.clone(payload.data), revision: revision, queuedAt: new Date().toISOString() });
+  RezaOT_storage.write(OFFLINE_QUEUE_KEY, q);
+  return revision;
+}
+function clearOfflineQueueItem(path, revision) {
+  RezaOT_storage.write(OFFLINE_QUEUE_KEY, getOfflineQueue().filter(function (item) {
+    return item.path !== path || (revision != null && item.revision !== revision);
+  }));
+}
+function flushOfflineQueue() {
+  return window.RezaOT_sync ? RezaOT_sync.flush() : Promise.resolve(false);
+}
+function getFirebaseRoot() {
+  const config = window.REZAOT_CONFIG || {};
+  if (config.requireAuth) {
+    if (!window.RezaOT_auth || !RezaOT_auth.canSync()) return null;
+    const user = window.firebase && firebase.auth && firebase.auth().currentUser;
+    if (user && typeof RezaOT_auth.uid === "function" && RezaOT_auth.uid() !== user.uid) return null;
+    return user ? "users/" + user.uid : null;
+  }
+  return "users/default";
+}
+function getFirebasePath() {
+  const root = getFirebaseRoot();
+  return root ? root + "/" + currentMonthKey : null;
+}
+function loadFromLocalStorage() {
+  trips = RezaOT_storage.read("trips", defaultTrips, function (value) {
+    return RezaOT_model.validateDestinations(value);
+  });
+  dailyRecords = RezaOT_storage.read("dailyRecords_" + currentMonthKey, {}, function (value) {
+    return RezaOT_model.validateRecords(value, currentMonthKey);
+  });
+}
+function persistLocalOnly() {
+  RezaOT_storage.transaction([["trips", trips], ["dailyRecords_" + currentMonthKey, dailyRecords]]);
+}
+function saveToLocalStorage() {
+  if (typeof captureMonthSettings === "function") captureMonthSettings(currentMonthKey, { replace: false });
+  lastLocalSaveAt = Date.now();
+  // The sync layer commits the month and its durable queue revision atomically.
+  if (!window.RezaOT_sync) persistLocalOnly();
+  const saved = saveToFirebase();
+  if (window.RezaOT_sync) RezaOT_sync.tripsChanged();
+  return saved;
+}
+function saveToFirebase() {
+  // Every user save is durably queued before network work, even during snapshot application.
+  return window.RezaOT_sync ? RezaOT_sync.saveMonth() : Promise.resolve(false);
+}
 function getDeviceId() {
   let id = localStorage.getItem("deviceId");
   if (!id) {
@@ -169,74 +151,32 @@ function getDeviceId() {
   }
   return id;
 }
-
 function setSyncStatus(state) {
+  window.__rezaotSyncState = state;
   const el = document.getElementById("syncStatus");
   if (!el) return;
   el.className = "no-print sync-status";
-  if (state === "online") { el.classList.add("sync-on"); el.textContent = "● Sync on"; }
-  else if (state === "offline") { el.classList.add("sync-off"); el.textContent = "● Offline (queue)"; }
-  else if (state === "denied") { el.classList.add("sync-denied"); el.textContent = "● Permission denied"; }
-  else { el.classList.add("sync-syncing"); el.textContent = "● Syncing…"; }
+  const labels = {
+    online: ["sync-on", (window.rezaotT ? rezaotT("syncOnline", "● Sync on") : "● Sync on")],
+    offline: ["sync-off", (window.rezaotT ? rezaotT("syncOffline", "● Offline — perubahan disimpan lokal") : "● Offline — perubahan disimpan lokal")],
+    pending: ["sync-syncing", (window.rezaotT ? rezaotT("syncPending", "● Menunggu sync") : "● Menunggu sync")],
+    denied: ["sync-denied", (window.rezaotT ? rezaotT("syncDenied", "● Akses cloud ditolak — data lokal dikekalkan") : "● Akses cloud ditolak — data lokal dikekalkan")],
+    unavailable: ["sync-off", (window.rezaotT ? rezaotT("syncUnavailable", "● Mod lokal — cloud belum tersedia") : "● Mod lokal — cloud belum tersedia")],
+    auth: ["sync-denied", (window.rezaotT ? rezaotT("syncAuth", "● Log masuk diperlukan untuk sync") : "● Log masuk diperlukan untuk sync")],
+    conflict: ["sync-denied", (window.rezaotT ? rezaotT("syncConflict", "● Konflik disimpan dalam backup pemulihan") : "● Konflik disimpan dalam backup pemulihan")],
+    syncing: ["sync-syncing", (window.rezaotT ? rezaotT("syncSyncing", "● Syncing…") : "● Syncing…")]
+  };
+  const label = labels[state] || labels.pending;
+  el.classList.add(label[0]);
+  el.textContent = label[1];
+  el.setAttribute("role", "status");
 }
-
 function stopFirebaseListener() {
-  if (firebaseRef) { firebaseRef.off(); firebaseRef = null; }
+  if (window.RezaOT_sync) RezaOT_sync.stopMonth();
+  else if (firebaseRef) { firebaseRef.off(); firebaseRef = null; }
 }
-
 function startFirebaseListener() {
-  stopFirebaseListener();
-  if (!currentMonthKey) return;
-  const path = getFirebasePath();
-  firebaseRef = db.ref(path);
-  setSyncStatus("syncing");
-  firebaseRef.on("value", (snap) => {
-    firebaseReady = true;
-    const data = snap.val();
-    if (!data) {
-      const localCount = Object.keys(dailyRecords || {}).length;
-      if (localCount > 0 && lastLocalSaveAt && (Date.now() - lastLocalSaveAt < 8000)) {
-        setTimeout(() => saveToFirebase(), 200);
-      } else if (localCount > 0) {
-        dailyRecords = {};
-        persistLocalOnly();
-        updateReport();
-      }
-      setSyncStatus("online");
-      return;
-    }
-    const remoteTs = data.lastUpdated ? Date.parse(data.lastUpdated) : 0;
-    if (data.deviceId && data.deviceId === getDeviceId() && Date.now() - lastLocalSaveAt < 2500) {
-      setSyncStatus("online"); return;
-    }
-    if (remoteTs && lastLocalSaveAt && remoteTs < lastLocalSaveAt - 800) {
-      setSyncStatus("online"); return;
-    }
-    syncingFromFirebase = true;
-    try {
-      const remoteRecords = (data.dailyRecords && typeof data.dailyRecords === "object")
-        ? data.dailyRecords : {};
-      dailyRecords = Object.assign({}, remoteRecords);
-      if (data.trips && Array.isArray(data.trips)) trips = data.trips.slice();
-      try { clearOfflineQueueItem(path); } catch (e) {}
-      persistLocalOnly();
-      updateReport();
-      loadTrips();
-      setSyncStatus("online");
-    } finally {
-      setTimeout(() => { syncingFromFirebase = false; }, 300);
-    }
-  }, (err) => {
-    console.error("Firebase listener error:", err);
-    const msg = String(err && err.message ? err.message : err);
-    if (msg.includes("permission")) {
-      setSyncStatus("denied");
-      showToast("Firebase permission denied. Buka Realtime Database rules.", 4000);
-    } else setSyncStatus("offline");
-    updateReport();
-    loadTrips();
-  });
-  flushOfflineQueue();
+  return window.RezaOT_sync ? RezaOT_sync.startMonth() : Promise.resolve(false);
 }
 
 function applyPrintAutoSize() {
@@ -251,49 +191,6 @@ function applyPrintAutoSize() {
 }
 function clearPrintAutoSize() {
   document.body.classList.remove("print-size-sm", "print-size-xs", "print-size-xxs");
-}
-
-// Fallback only — app-p1 overrides window.handlePrint / handleExportPdf
-function handlePrint() {
-  if (typeof window.handlePrint === "function" && window.handlePrint !== handlePrint) {
-    return window.handlePrint();
-  }
-  applyPrintAutoSize();
-  window.print();
-  setTimeout(clearPrintAutoSize, 1000);
-}
-
-function handleExportPdf() {
-  if (typeof window.handleExportPdf === "function" && window.handleExportPdf !== handleExportPdf) {
-    return window.handleExportPdf();
-  }
-  applyPrintAutoSize();
-  const el = document.querySelector(".container");
-  if (!el || typeof html2pdf === "undefined") {
-    showToast("PDF library belum load — cuba Cetak");
-    return;
-  }
-  if (window.__pdfBusy) return;
-  window.__pdfBusy = true;
-  showToast("Menjana PDF…");
-  document.body.classList.add("pdf-export");
-  html2pdf().set({
-    margin: [8, 8, 8, 8],
-    filename: `RezaOT_${currentMonthKey.replace(/\s+/g, "_")}.pdf`,
-    image: { type: "jpeg", quality: 0.95 },
-    html2canvas: { scale: 2, useCORS: true },
-    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
-  }).from(el).save().then(() => {
-    document.body.classList.remove("pdf-export");
-    clearPrintAutoSize();
-    showToast("PDF dimuat turun");
-  }).catch((err) => {
-    console.error(err);
-    document.body.classList.remove("pdf-export");
-    showToast("Gagal jana PDF — cuba Cetak");
-  }).finally(() => {
-    setTimeout(() => { window.__pdfBusy = false; }, 800);
-  });
 }
 
 function updateHolidayBadge() {
@@ -312,125 +209,80 @@ function updateHolidayBadge() {
   }
 }
 
-function editSupervisorName() {
-  const el = document.getElementById("supervisorName");
-  if (!el) return;
-  const next = prompt("Nama ketua:", el.textContent.trim() || "Talib");
-  if (next === null) return;
-  const name = next.trim() || "Talib";
-  el.textContent = name;
-  localStorage.setItem("supervisorName", name);
-  showToast("Nama ketua dikemaskini");
-}
-
-function quickSaveToday() {
-  const now = new Date();
-  const dateStr = getLocalDateString(now);
-  const dateInput = document.getElementById("date");
-  const clockIn = document.getElementById("clockIn");
-  const clockOut = document.getElementById("clockOut");
-  if (dateInput) dateInput.value = dateStr;
-  if (clockIn) clockIn.value = "08:00";
-  if (clockOut) clockOut.value = "17:00";
-
-  const ym = dateStr.slice(0, 7);
-  const monthInput = document.getElementById("monthYear");
-  if (monthInput && monthInput.value !== ym) {
-    const [y, m] = ym.split("-");
-    const key = monthNames[parseInt(m, 10) - 1] + " " + y;
-    if (key !== currentMonthKey) {
-      currentMonthKey = key;
-      monthInput.value = ym;
-      const currentMonthEl = document.getElementById("currentMonth");
-      if (currentMonthEl) currentMonthEl.textContent = currentMonthKey;
-      stopFirebaseListener();
-      loadFromLocalStorage();
-      startFirebaseListener();
+async function quickSaveToday() {
+  if (window.__quickSaving) return false;
+  window.__quickSaving = true;
+  try {
+    const now = new Date(), date = getLocalDateString(now);
+    const month = monthNames[now.getMonth()] + " " + now.getFullYear();
+    if (month !== currentMonthKey) selectMonth(month);
+    const snapshot = JSON.stringify(dailyRecords[date] || null);
+    if (dailyRecords[date] && !(await rezaotConfirm(rezaotT("confirmQuickSave", "Rekod hari ini sudah wujud. Tulis ganti 08:00–17:00?")))) return false;
+    if (currentMonthKey !== month || snapshot !== JSON.stringify(dailyRecords[date] || null)) {
+      showToast(rezaotT("recordChanged", "Bulan atau rekod telah berubah. Sila cuba semula.")); return false;
     }
-  }
-
-  updateHolidayBadge();
-  if (dailyRecords[dateStr] && (dailyRecords[dateStr].clock_in || dailyRecords[dateStr].clock_out)) {
-    if (!confirm(`Rekod ${dateStr} sudah wujud. Tulis ganti 08:00–17:00?`)) return;
-  }
-  if (!dailyRecords[dateStr]) dailyRecords[dateStr] = { clock_in: "08:00", clock_out: "17:00", trips: [] };
-  else { dailyRecords[dateStr].clock_in = "08:00"; dailyRecords[dateStr].clock_out = "17:00"; }
-  saveToLocalStorage();
-  updateReport();
-  showToast("Hari ini disimpan (08:00–17:00) — " + dateStr);
+    if (!dailyRecords[date]) dailyRecords[date] = { clock_in: "", clock_out: "", trips: [] };
+    Object.assign(dailyRecords[date], { clock_in: "08:00", clock_out: "17:00", unpaid: false, annual: false });
+    captureMonthSettings(month);
+    document.getElementById("date").value = date;
+    document.getElementById("clockIn").value = "08:00";
+    document.getElementById("clockOut").value = "17:00";
+    document.getElementById("unpaidLeaveCheck").checked = false;
+    document.getElementById("annualLeaveCheck").checked = false;
+    syncLeaveInputs(); updateHolidayBadge();
+    saveToLocalStorage(); updateReport();
+    showToast(rezaotT("toastToday", "Hari ini disimpan (08:00–17:00)"));
+    return true;
+  } finally { window.__quickSaving = false; }
 }
 
-function editTrip(date, tripIndex) {
-  const rec = dailyRecords[date];
-  if (!rec || !Array.isArray(rec.trips) || !rec.trips[tripIndex]) return;
-  const next = prompt("Edit trip:", String(rec.trips[tripIndex]));
-  if (next === null) return;
-  const trimmed = next.trim();
-  if (!trimmed) { showToast("Nama trip tidak boleh kosong"); return; }
-  rec.trips[tripIndex] = trimmed;
-  saveToLocalStorage();
-  updateReport();
-  showToast("Trip dikemaskini");
-}
-
-function openOtSettings() {
-  const s = getOtSettings();
-  const weekday = prompt("OT Isnin–Jumaat bermula selepas (HH:MM):", s.weekdayAfter || s.weekdayStart || "17:00");
+async function openOtSettings() {
+  const settings = getOtSettings();
+  const weekday = await rezaotPrompt(rezaotT("weekdayOtPrompt", "OT Isnin–Jumaat bermula selepas (HH:MM):"), settings.weekdayAfter);
   if (weekday === null) return;
-  const saturday = prompt("OT Sabtu bermula selepas (HH:MM):", s.saturdayAfter || s.saturdayStart || "14:00");
+  const saturday = await rezaotPrompt(rezaotT("saturdayOtPrompt", "OT Sabtu bermula selepas (HH:MM):"), settings.saturdayAfter);
   if (saturday === null) return;
-  const w = weekday.trim() || "17:00";
-  const sa = saturday.trim() || "14:00";
-  if (!/^\d{1,2}:\d{2}$/.test(w) || !/^\d{1,2}:\d{2}$/.test(sa)) {
-    showToast("Format masa tidak sah. Guna HH:MM");
-    return;
-  }
-  saveOtSettings({ weekdayAfter: w, saturdayAfter: sa, weekdayStart: w, saturdayStart: sa });
-  updateReport();
-  showToast(`OT rules: Isnin–Jumaat lepas ${w}, Sabtu lepas ${sa}`);
+  try {
+    saveOtSettings(validateOtSettings({ weekdayAfter: weekday.trim(), saturdayAfter: saturday.trim() }));
+    updateReport();
+    showToast(rezaotT("otSettingsSaved", "Tetapan OT disimpan. Kemas kini tetapan bulan jika mahu guna untuk rekod sedia ada."));
+  } catch (error) { showToast(error.message); }
 }
-
 function setupEventListeners() {
-  const darkBtn = document.getElementById("darkModeBtn");
-  if (darkBtn) darkBtn.addEventListener("click", toggleDarkMode);
-  const nowIn = document.getElementById("nowInBtn");
-  if (nowIn) nowIn.addEventListener("click", () => setNowTime("clockIn"));
-  const nowOut = document.getElementById("nowOutBtn");
-  if (nowOut) nowOut.addEventListener("click", () => setNowTime("clockOut"));
-  const clockForm = document.getElementById("clockForm");
-  if (clockForm) clockForm.addEventListener("submit", handleClockFormSubmit);
-  const tripForm = document.getElementById("tripForm");
-  if (tripForm) tripForm.addEventListener("submit", handleTripFormSubmit);
-  const dest = document.getElementById("destination");
-  if (dest) dest.addEventListener("change", handleDestinationChange);
-  const addTripBtn = document.getElementById("addTripButton");
-  if (addTripBtn) addTripBtn.addEventListener("click", handleAddTrip);
-  const toggleManage = document.getElementById("toggleManageBtn");
-  if (toggleManage) toggleManage.addEventListener("click", toggleManageSection);
-  const monthYear = document.getElementById("monthYear");
-  if (monthYear) monthYear.addEventListener("change", handleMonthChange);
-  // Print / PDF: wired sekali sahaja dalam app-p1 (elak double download)
-  const excelBtn = document.getElementById("exportExcelBtn");
-  if (excelBtn) excelBtn.addEventListener("click", exportToExcel);
-  const exportBtn = document.getElementById("exportDataBtn");
-  if (exportBtn) exportBtn.addEventListener("click", exportData);
-  const importInput = document.getElementById("importDataInput");
-  if (importInput) importInput.addEventListener("change", importData);
-  const dateInput = document.getElementById("date");
-  if (dateInput) dateInput.addEventListener("change", updateHolidayBadge);
-  const supervisorEl = document.getElementById("supervisorName");
-  if (supervisorEl) {
-    supervisorEl.style.cursor = "pointer";
-    supervisorEl.title = "Klik untuk edit nama ketua";
-    supervisorEl.addEventListener("click", editSupervisorName);
+  if (window.__rezaotListeners) return;
+  window.__rezaotListeners = true;
+  function bind(id, event, callback) {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener(event, function (e) {
+      try { Promise.resolve(callback(e)).catch(function (error) { console.error(error); showToast(error.message); }); }
+      catch (error) { console.error(error); showToast(error.message); }
+    });
   }
-  const quickBtn = document.getElementById("quickSaveTodayBtn");
-  if (quickBtn) quickBtn.addEventListener("click", quickSaveToday);
-  const settingsBtn = document.getElementById("otSettingsBtn");
-  if (settingsBtn) settingsBtn.addEventListener("click", openOtSettings);
-  window.addEventListener("online", () => {
-    setSyncStatus("syncing");
-    flushOfflineQueue().then(() => startFirebaseListener());
+  bind("darkModeBtn", "click", () => toggleDarkMode());
+  bind("nowInBtn", "click", () => setNowTime("clockIn"));
+  bind("nowOutBtn", "click", () => setNowTime("clockOut"));
+  bind("clockForm", "submit", e => handleClockFormSubmit(e));
+  bind("tripForm", "submit", e => handleTripFormSubmit(e));
+  bind("destination", "change", () => handleDestinationChange());
+  bind("addTripButton", "click", () => handleAddTrip());
+  bind("toggleManageBtn", "click", () => toggleManageSection());
+  bind("monthYear", "change", () => handleMonthChange());
+  bind("exportExcelBtn", "click", () => exportToExcel());
+  bind("exportDataBtn", "click", () => exportData());
+  bind("exportRecoveryBtn", "click", () => {
+    const entries = RezaOT_storage.recoveryEntries();
+    if (!entries.length) { showToast(rezaotT("noRecovery", "Tiada salinan pemulihan.")); return; }
+    const payload = { schemaVersion: 1, kind: "rezaot-recovery", exportedAt: new Date().toISOString(), entries };
+    const url = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" }));
+    const link = document.createElement("a");
+    link.href = url; link.download = "RezaOT_recovery_" + getLocalDateString() + ".json";
+    link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
   });
-  window.addEventListener("offline", () => setSyncStatus("offline"));
+  bind("importDataInput", "change", e => importData(e));
+  bind("supervisorName", "click", () => editSupervisorName());
+  bind("supervisorName", "keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); return editSupervisorName(); } });
+  const supervisor = document.getElementById("supervisorName");
+  if (supervisor) { supervisor.tabIndex = 0; supervisor.setAttribute("role", "button"); supervisor.style.cursor = "pointer"; }
+  bind("quickSaveTodayBtn", "click", () => quickSaveToday());
+  bind("otSettingsBtn", "click", () => openOtSettings());
 }

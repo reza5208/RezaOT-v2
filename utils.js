@@ -27,7 +27,7 @@ function renderTripList() {
   if (trips.length === 0) {
     const li = document.createElement("li");
     li.style.color = "#888";
-    li.textContent = "Tiada destinasi. Tambah baru di atas.";
+    li.textContent = window.rezaotT ? rezaotT("noDestinations", "Tiada destinasi. Tambah baru di atas.") : "Tiada destinasi. Tambah baru di atas.";
     tripList.appendChild(li);
     return;
   }
@@ -38,15 +38,18 @@ function renderTripList() {
     span.textContent = trip;
     const btn = document.createElement("button");
     btn.type = "button";
-    btn.textContent = "Padam";
+    btn.textContent = window.rezaotT ? rezaotT("btnDelete", "Padam") : "Padam";
     btn.dataset.index = String(index);
     btn.addEventListener("click", function () {
       const index = parseInt(this.dataset.index, 10);
       if (Number.isNaN(index)) return;
-      trips.splice(index, 1);
-      saveToLocalStorage();
-      loadTrips();
-      showToast("Destinasi dipadam");
+      try {
+        trips.splice(index, 1);
+        if (window.RezaOT_sync) RezaOT_sync.tripsChanged();
+        else saveToLocalStorage();
+        loadTrips();
+        showToast(window.rezaotT ? rezaotT("destinationDeleted", "Destinasi dipadam") : "Destinasi dipadam");
+      } catch (error) { loadTrips(); showToast(error.message); }
     });
     li.appendChild(span);
     li.appendChild(btn);
@@ -69,53 +72,33 @@ function formatTime(time) {
   return time;
 }
 
-function calculateOT(clockIn, clockOut, date, recordTrips) {
-  if (!clockIn || !clockOut) return 0;
-
-  function toMinutes(time) {
-    const p = String(time).split(":");
-    return parseInt(p[0], 10) * 60 + parseInt(p[1] || "0", 10);
-  }
-
-  const inM = toMinutes(clockIn);
-  var outM = toMinutes(clockOut);
+function calculateOT(clockIn, clockOut, date, recordTrips, calculationSettings) {
+  if (!RezaOT_isValidDate(date) || !RezaOT_isValidTime(clockIn) || !RezaOT_isValidTime(clockOut)) return 0;
+  const inM = timeToMinutes(clockIn);
+  let outM = timeToMinutes(clockOut);
   if (outM === inM) return 0;
   if (outM < inM) outM += 24 * 60;
-
-  var hasKLIACargo = (recordTrips || []).some(function (t) {
-    return String(t).toLowerCase().indexOf("klia cargo") >= 0;
-  });
-
+  const calculation = calculationSettings || getRecordCalculationSettings(date);
   const day = new Date(date + "T00:00:00").getDay();
-  const isHol = typeof isPublicHoliday === "function" && isPublicHoliday(date);
-  const settings = typeof getOtSettings === "function"
-    ? getOtSettings()
-    : { weekdayAfter: "17:00", saturdayAfter: "14:00" };
-
-  // Ahad / cuti: optional potong rehat (restBreakHours dari salarySettings)
+  const isHol = isPublicHoliday(date, calculation);
+  const settings = validateOtSettings(calculation.otSettings || getOtSettings());
   if (day === 0 || isHol) {
-    var hours = (outM - inM) / 60;
-    var breakH = 0;
-    try {
-      var raw = localStorage.getItem("salarySettings");
-      if (raw) {
-        var ss = JSON.parse(raw);
-        if (ss && ss.restBreakHours != null) breakH = Number(ss.restBreakHours) || 0;
-      }
-    } catch (e) {}
-    if (breakH > 0) hours = Math.max(0, hours - breakH);
-    return Math.round(hours * 100) / 100;
+    const salary = calculation.salarySettings || {};
+    const rest = Number(salary.restBreakHours);
+    const breakH = Number.isFinite(rest) && rest >= 0 && rest <= 24 ? rest : 0;
+    return Math.round(Math.max(0, (outM - inM) / 60 - breakH) * 100) / 100;
   }
+  const hasKlia = Array.isArray(recordTrips) && recordTrips.some(function (trip) {
+    return String(trip).toLowerCase().includes("klia cargo");
+  });
+  if (hasKlia) return 0;
+  const start = Math.max(inM, timeToMinutes(day === 6 ? settings.saturdayAfter : settings.weekdayAfter));
+  return Math.round(Math.max(0, outM - start) / 60 * 100) / 100;
+}
 
-  if (hasKLIACargo) return 0;
-
-  var weekdayStr = settings.weekdayAfter || settings.weekdayStart || "17:00";
-  var saturdayStr = settings.saturdayAfter || settings.saturdayStart || "14:00";
-  var otStart = (day === 6) ? toMinutes(saturdayStr) : toMinutes(weekdayStr);
-
-  if (outM <= otStart) return 0;
-  const start = Math.max(inM, otStart);
-  return Math.round(((outM - start) / 60) * 100) / 100;
+function RezaOT_recordOT(date, record, calculationSettings) {
+  if (!record || record.unpaid || record.annual) return 0;
+  return calculateOT(record.clock_in, record.clock_out, date, record.trips, calculationSettings);
 }
 
 function getLocalDateString(d) {

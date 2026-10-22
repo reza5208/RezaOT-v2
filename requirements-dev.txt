@@ -1,0 +1,2 @@
+# Browser regression tests only; the static app needs no Python package install.
+playwright==1.62.0

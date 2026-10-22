@@ -1,63 +1,48 @@
-// sw.js - RezaOT v69
-const CACHE_NAME = "rezaot-v69";
-const urlsToCache = [
-  "./", "./index.html",
-  "./styles.css", "./styles-print.css", "./styles-print-v39.css", "./styles-print-orient.css?v=69",
-  "./styles-v18-extra.css", "./styles-salary.css", "./styles-v27.css",
-  "./styles-header-fix.css", "./styles-ux-v38.css", "./styles-app-v42.css",
-  "./main.js",
-  "./main-app-1.js?v=69", "./main-app-2.js?v=69",
-  "./salary-estimator.js?v=69", "./app-p1.js?v=69", "./app-p1-extra.js?v=69",
-  "./app-v42-overlay.js?v=69", "./side-job-patch.js?v=69", "./sync-fix-v48.js?v=69",
-  "./month-fix.js?v=69", "./print-fix-v51.js?v=69", "./ot-total-patch.js?v=69",
-  "./p0-critical-fix.js?v=69", "./month-history-v65.js?v=69",
-  "./sync-cross-v66.js?v=69", "./print-orient-v67.js?v=69",
-  "./mobile-cards.js?v=69",
-  "./i18n.js", "./modal.js", "./utils.js", "./constants.js", "./holiday-picker.js",
-  "./manifest.json",
-  "./assets/icons/favicon-32x32.png", "./assets/icons/android-icon-192x192.png"
-];
-self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) =>
-      Promise.all(urlsToCache.map((u) => cache.add(u).catch(() => {})))
-    ).then(() => self.skipWaiting())
-  );
+/* RezaOT: atomic offline releases; never touch another application's cache. */
+importScripts("./release.js");
+const CACHE_PREFIX = "rezaot-";
+const CACHE_NAME = CACHE_PREFIX + "v" + REZAOT_RELEASE.version;
+const required = Array.from(new Set(REZAOT_RELEASE.assets.concat(
+  REZAOT_RELEASE.scripts.map(path => path + "?v=" + REZAOT_RELEASE.version)
+)));
+self.addEventListener("install", event => {
+  event.waitUntil((async () => {
+    const cache = await caches.open(CACHE_NAME);
+    await cache.addAll(required);
+    // A failed critical asset rejects install, retaining the active version.
+    // Successful upgrades wait for an explicit reload action.
+  })());
 });
-self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    caches.keys().then((names) =>
-      Promise.all(names.map((n) => (n !== CACHE_NAME ? caches.delete(n) : null)))
-    ).then(() => self.clients.claim())
-  );
+self.addEventListener("message", event => {
+  if (event.data && event.data.type === "SKIP_WAITING") self.skipWaiting();
 });
-self.addEventListener("fetch", (event) => {
+self.addEventListener("activate", event => {
+  event.waitUntil((async () => {
+    for (const name of await caches.keys()) {
+      if (name.startsWith(CACHE_PREFIX) && name !== CACHE_NAME) await caches.delete(name);
+    }
+    await self.clients.claim();
+  })());
+});
+self.addEventListener("fetch", event => {
   const request = event.request;
   const url = new URL(request.url);
-  if (request.method !== "GET" || url.origin !== self.location.origin) return;
-  const isHTML = request.destination === "document" || url.pathname.endsWith(".html") || url.pathname.endsWith("/");
-  if (isHTML) {
-    event.respondWith(
-      fetch(request).then((r) => {
-        if (r && r.status === 200) {
-          const c = r.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, c));
-        }
-        return r;
-      }).catch(() => caches.match(request).then((c) => c || caches.match("./index.html")))
-    );
-    return;
-  }
-  event.respondWith(
-    caches.match(request).then((cached) => {
-      const net = fetch(request).then((r) => {
-        if (r && r.status === 200) {
-          const c = r.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, c));
-        }
-        return r;
-      }).catch(() => cached);
-      return cached || net;
-    })
-  );
+  if (request.method !== "GET" || url.origin !== self.location.origin ||
+      !url.href.startsWith(self.registration.scope)) return;
+  event.respondWith((async () => {
+    const cache = await caches.open(CACHE_NAME);
+    const cached = await cache.match(request);
+    if (cached) return cached;
+    if (request.mode === "navigate") {
+      const shell = await cache.match(new URL("index.html", self.registration.scope).href);
+      if (shell) return shell;
+    }
+    const relative = url.pathname.slice(new URL(self.registration.scope).pathname.length);
+    if (url.searchParams.get("v") === REZAOT_RELEASE.version && REZAOT_RELEASE.assets.includes(relative)) {
+      const plain = new URL(url); plain.search = "";
+      const asset = await cache.match(plain.href);
+      if (asset) return asset;
+    }
+    return fetch(request);
+  })());
 });
