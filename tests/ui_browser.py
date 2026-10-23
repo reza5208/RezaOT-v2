@@ -116,6 +116,14 @@ class UIRegressionTests(unittest.TestCase):
           window.html2pdf=()=>({
             set(options){window.__pdfOptions=options;return this;},
             from(element){window.__pdfLayout={table:getComputedStyle(document.querySelector('#reportTable')).display,cards:getComputedStyle(document.querySelector('#mobileCards')).display,width:element.getBoundingClientRect().width};return this;},
+            toCanvas(){
+              const canvas=document.createElement('canvas');canvas.width=800;canvas.height=300;
+              const ctx=canvas.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,800,300);
+              this.prop={canvas,pageSize:{inner:{ratio:window.__pdfOptions.jsPDF.orientation==='landscape'?196/281:279/194}}};
+              return this;
+            },
+            then(callback){return Promise.resolve().then(()=>callback.call(this));},
+            toPdf(){return this;},
             save(){return failure?Promise.reject(new Error('download failed')):Promise.resolve();}
           });
         }''', failure)
@@ -145,6 +153,7 @@ class UIRegressionTests(unittest.TestCase):
         self.assertFalse(self.page.evaluate('__pdfBusy'))
 
     def test_native_print_waits_for_afterprint_before_cleanup(self):
+        self.install_pdf_capture()
         self.page.evaluate("void (window.print=()=>{window.__nativePrinted=true})")
         self.assertTrue(self.page.evaluate("RezaOT_print.print('portrait')"))
         self.assertTrue(self.page.evaluate('__printBusy'))

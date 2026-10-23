@@ -51,7 +51,9 @@
     if (typeof applyPrintAutoSize === "function") applyPrintAutoSize();
   }
   function cleanup() {
-    document.body.classList.remove("pdf-export", "print-landscape", "print-portrait");
+    document.body.classList.remove("pdf-export", "print-landscape", "print-portrait", "print-image-ready");
+    var page = document.getElementById("rezaotPrintPage");
+    if (page) page.remove();
     var style = document.getElementById("printOrientPageStyle");
     if (style) style.textContent = "";
     if (typeof clearPrintAutoSize === "function") clearPrintAutoSize();
@@ -77,40 +79,74 @@
       requestAnimationFrame(function () { requestAnimationFrame(resolve); });
     });
   }
+  function fitOnePage() {
+    var source = this.prop.canvas;
+    var page = this.prop.pageSize;
+    if (!source || !source.width || !source.height || !page || !page.inner ||
+        !Number.isFinite(page.inner.ratio) || page.inner.ratio <= 0) {
+      throw new Error("Report canvas unavailable");
+    }
+    // html2pdf slices at floor(width * ratio). Stay below that exact boundary
+    // and draw the complete source, preserving its proportions and all records.
+    var maxHeight = Math.floor(source.width * page.inner.ratio) - 2;
+    if (maxHeight < 1) throw new Error("Report page unavailable");
+    var scale = Math.min(1, maxHeight / source.height);
+    var width = source.width * scale;
+    var height = source.height * scale;
+    var fitted = document.createElement("canvas");
+    fitted.width = source.width;
+    fitted.height = Math.min(maxHeight, Math.ceil(height) + 1);
+    var context = fitted.getContext("2d");
+    if (!context) throw new Error("Report canvas unavailable");
+    context.fillStyle = "#fff";
+    context.fillRect(0, 0, fitted.width, fitted.height);
+    context.imageSmoothingEnabled = true;
+    context.imageSmoothingQuality = "high";
+    context.drawImage(source, (fitted.width - width) / 2, 0, width, height);
+    this.prop.canvas = fitted;
+  }
+  async function renderOnePage(orientation) {
+    await ensureCss();
+    if (typeof window.loadPdfLib === "function") await window.loadPdfLib();
+    if (typeof html2pdf !== "function") throw new Error("PDF library unavailable");
+    var element = document.querySelector(".container");
+    if (!element) throw new Error("Report unavailable");
+    applyOrientation(orientation);
+    document.body.classList.add("pdf-export");
+    await nextPaint();
+    if (document.fonts && document.fonts.ready) await document.fonts.ready;
+    var landscape = orientation === "landscape";
+    var options = {
+      margin: landscape ? [6, 8, 8, 8] : [8, 8, 10, 8],
+      filename: "RezaOT_" + (typeof currentMonthKey !== "undefined" ? currentMonthKey : "report").replace(/\s+/g, "_") + (landscape ? "_L" : "") + ".pdf",
+      image: { type: "png", quality: 1 },
+      enableLinks: false,
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        scrollY: 0,
+        scrollX: 0,
+        windowWidth: landscape ? 1123 : 794,
+        windowHeight: Math.max(element.scrollHeight + 40, 1123),
+        logging: false
+      },
+      jsPDF: { unit: "mm", format: "a4", orientation: orientation, compress: true },
+      // Render one uninterrupted document; pagination spacers would waste the
+      // space that is needed to fit the complete month onto a single sheet.
+      pagebreak: { mode: [], before: [], after: [], avoid: [] }
+    };
+    var worker = html2pdf().set(options).from(element).toCanvas();
+    await worker.then(fitOnePage);
+    return { worker: worker, canvas: worker.prop.canvas, width: landscape ? 281 : 194 };
+  }
   async function doPdf(orientation) {
     if (window.__pdfBusy || window.__printBusy) return false;
     window.__pdfBusy = true;
     var savedScroll = { x: window.scrollX, y: window.scrollY };
     try {
       toast("pdfPreparing", "Sediakan PDF…");
-      await ensureCss();
-      if (typeof window.loadPdfLib === "function") await window.loadPdfLib();
-      if (typeof html2pdf !== "function") throw new Error("PDF library unavailable");
-      var element = document.querySelector(".container");
-      if (!element) throw new Error("Report unavailable");
-      applyOrientation(orientation);
-      document.body.classList.add("pdf-export");
-      await nextPaint();
-      if (document.fonts && document.fonts.ready) await document.fonts.ready;
-      var landscape = orientation === "landscape";
-      var options = {
-        margin: landscape ? [6, 8, 8, 8] : [8, 8, 10, 8],
-        filename: "RezaOT_" + (typeof currentMonthKey !== "undefined" ? currentMonthKey : "report").replace(/\s+/g, "_") + (landscape ? "_L" : "") + ".pdf",
-        image: { type: "jpeg", quality: 0.98 },
-        html2canvas: {
-          scale: 2,
-          useCORS: true,
-          scrollY: 0,
-          scrollX: 0,
-          // Keep desktop report media rules in the cloned canvas on a phone.
-          windowWidth: landscape ? 1123 : 794,
-          windowHeight: Math.max(element.scrollHeight + 40, 1123),
-          logging: false
-        },
-        jsPDF: { unit: "mm", format: "a4", orientation: orientation },
-        pagebreak: { mode: ["css", "legacy"], avoid: ["tr", ".print-footer"] }
-      };
-      await html2pdf().set(options).from(element).save();
+      var output = await renderOnePage(orientation);
+      await output.worker.toPdf().save();
       toast("pdfDownloaded", "PDF dimuat turun");
       return true;
     } catch (error) {
@@ -127,18 +163,30 @@
     window.__printBusy = true;
     var media;
     var finished = false;
+    var savedScroll = { x: window.scrollX, y: window.scrollY };
     function finish() {
       if (finished) return;
       finished = true;
       window.removeEventListener("afterprint", finish);
       if (media && media.removeEventListener) media.removeEventListener("change", onMedia);
       cleanup();
+      window.scrollTo(savedScroll.x, savedScroll.y);
     }
     function onMedia(event) { if (!event.matches) finish(); }
     try {
-      await ensureCss();
-      applyOrientation(orientation);
-      document.body.classList.add("pdf-export");
+      // Native printing uses the same fitted document as PDF, so browser print
+      // layout cannot expand a complete monthly report onto another sheet.
+      var output = await renderOnePage(orientation);
+      var page = document.createElement("section");
+      page.id = "rezaotPrintPage";
+      page.style.width = output.width + "mm";
+      var image = document.createElement("img");
+      image.alt = t("appTitle", "Trips & OT Report");
+      image.src = output.canvas.toDataURL("image/png");
+      page.appendChild(image);
+      document.body.appendChild(page);
+      if (image.decode) await image.decode();
+      document.body.classList.add("print-image-ready");
       await nextPaint();
       media = window.matchMedia("print");
       if (media.addEventListener) media.addEventListener("change", onMedia);

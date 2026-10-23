@@ -1,4 +1,4 @@
-RezaOT v70 regression and release checklist
+RezaOT v72 regression and release checklist
 
 Run the automated suites from the repository root:
 
@@ -6,6 +6,9 @@ Run the automated suites from the repository root:
 node --test tests/*.test.js
 python3 tests/ui_browser.py
 python3 tests/integration_browser.py
+python3 tests/detail_browser.py
+python3 tests/redesign_browser.py
+python3 tests/pdf_report_browser.py
 ```
 
 The browser suite needs Python Playwright and a Chromium executable. Tests use isolated local data and a fake Firebase backend; they must not read or write the owner's production records. Package/runtime installation is only needed for the test tooling, not to serve the app.
@@ -19,6 +22,7 @@ Check these behaviors against the local development server before publishing an 
 - Monday 08:00–19:00 gives 2 OT hours; Saturday 08:00–17:00 gives 3; Sunday 08:00–17:00 gives 9 without a rest deduction; Monday 08:00–02:00 gives 9. Equal clock-in/out gives 0. KLIA Cargo on a normal weekday gives 0 OT. Only company-observed holidays use the holiday rule.
 - Susun contributes RM100/AWB and Pallets RM50/AWB in the separate side-income section. Canceling a duplicate warning changes nothing. Editing/deleting a trip keeps its structured metadata and sideJobs consistent; deleting its last matching AWB removes the side income.
 - PDF exported from a 390 px viewport contains the report table, readable headers, signature columns, one total-OT row and the one-line footer. Repeat in Portrait and Landscape. Salary, app controls and duplicate mobile cards are absent. Canceling or failing an export restores the normal screen and clears busy status.
+- Export both a short month and all 31 days with multiple trips/long AWBs per day. Portrait and landscape must each produce exactly one A4 page containing every record, signature column, total OT and footer. Check native printing too. Denser months scale proportionally after compact formatting; no records may be cropped or hidden to meet the page limit. Screen-only height limits and search filters must not truncate the PDF.
 - Excel works on the first click after a fresh load without opening PDF first. Its OT values and Susun/Pallets marks match the report. Failing the PDF dependency must not prevent Excel, and vice versa.
 - Backup v2 includes all locally retained months and calculation/settings snapshots. Invalid record shapes, dates, times or side jobs are rejected before mutation. Import preview identifies the source month(s), counts and merge/replace choice. A recovery snapshot exists before replacement; canceling leaves current data unchanged. Legacy single-month backups still restore to their declared month.
 - Salary input rejects nonfinite/negative values and invalid divisors/rates while accepting supported zero values. OT start times accept real HH:MM only. Changing global salary settings does not silently recalculate a retained month's captured snapshot; replacing that snapshot is explicit.

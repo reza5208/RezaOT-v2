@@ -1,4 +1,4 @@
-# RezaOT v71
+# RezaOT v72
 
 PWA peribadi untuk rekod **Clock-In/Out**, **Trip**, **OT**, dan **anggaran gaji**  
 WH3 Transport — **Khairul Reza** (M-264)
@@ -37,7 +37,7 @@ WH3 Transport — **Khairul Reza** (M-264)
 - Base rate anggaran: `gaji pokok ÷ 208`
 
 ### Laporan
-- Print / PDF **A4 Portrait default**; **Landscape option available**
+- Print / PDF **satu helaian A4 untuk sebulan**, portrait atau landscape; saiz disesuaikan mengikut kandungan
 - Kolum **T/T pekerja** & **T/T ketua**
 - Baris **JUMLAH OT** (bold) — **print/PDF sahaja**, tak keluar di UI
 - Footer ringkas: `OT · Trip · KLIA · AWB`
@@ -82,6 +82,7 @@ python3 tests/ui_browser.py
 python3 tests/integration_browser.py
 python3 tests/detail_browser.py
 python3 tests/redesign_browser.py
+python3 tests/pdf_report_browser.py
 ```
 
 Suite browser memerlukan Python Playwright dan Chromium (`/usr/bin/chromium` pada environment ini). Pada mesin lain, jalankan `python3 -m pip install -r requirements-dev.txt` dan `python3 -m playwright install chromium`; tetapkan `CHROMIUM_PATH` jika perlu memilih browser tertentu. Ujian menggunakan fixture/Firebase palsu dan tidak menulis ke database production. Lihat [senarai QA](docs/qa-checklist.md) untuk pemeriksaan manual sebelum release.
@@ -101,7 +102,7 @@ Untuk memilih authenticated mode, gunakan `cloud-config.js` dan contoh [firebase
 
 [database.rules.example.json](database.rules.example.json) ialah **contoh rules sasaran**, bukan deployment automatik. Menutup `users/default` sebelum migrasi akan memutuskan client lama. Ikuti [panduan staging, migration dan rollback](docs/firebase-security.md), sediakan akaun pemilik dan uji rules terlebih dahulu. Password, service-account JSON dan private key tidak boleh dimasukkan ke repo atau backup.
 
-## Struktur fail (v71)
+## Struktur fail (v72)
 
 | Fail | Peranan |
 |------|----------|
@@ -151,6 +152,7 @@ Untuk memilih authenticated mode, gunakan `cloud-config.js` dan contoh [firebase
 
 ### UI / export constraints (user-enforced)
 - Print/PDF: **A4 Portrait default**; **Landscape option available** (print-orient modal)
+- Laporan seluruh bulan mesti muat **satu helaian A4** dalam kedua-dua orientasi. Padatkan susun atur dan skalakan kandungan penuh secara berkadar; jangan potong rekod, trip, jumlah OT, footer atau kolum tandatangan.
 - Table row **JUMLAH OT**: **print/PDF only**, hidden in normal UI; label must be human (`JUMLAH OT` / `TOTAL OT`), never raw i18n key like `totalOTRow`
 - Print footer: **one-line** note (`OT · Trip · KLIA · AWB`), not a summary table
 - Report dates: **dd/mm/yy**
@@ -178,3 +180,5 @@ Untuk memilih authenticated mode, gunakan `cloud-config.js` dan contoh [firebase
 Status pembaikan dan bukti ujian: [review v70](docs/review-fixes.md).
 
 Redesign workspace v71: [susun atur dan pengesahan](docs/redesign-v71.md). Carian/filter hanya mempengaruhi paparan; PDF/Excel tetap merangkumi keseluruhan bulan.
+
+Pembaikan eksport v72: [jadual penuh, jumlah OT dan footer](docs/pdf-export-v72.md).
