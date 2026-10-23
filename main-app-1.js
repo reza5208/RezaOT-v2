@@ -59,15 +59,17 @@ function initDarkMode() {
   const saved = localStorage.getItem("darkMode") === "1";
   document.body.classList.toggle("dark", saved);
   const btn = document.getElementById("darkModeBtn");
-  if (btn) btn.textContent = saved ? "☀️" : "🌙";
+  if (window.RezaOT_dashboard) RezaOT_dashboard.paintTheme();
+  else if (btn) btn.textContent = saved ? "☀️" : "🌙";
 }
 function toggleDarkMode() {
   const isDark = document.body.classList.toggle("dark");
   localStorage.setItem("darkMode", isDark ? "1" : "0");
   const btn = document.getElementById("darkModeBtn");
-  if (btn) btn.textContent = isDark ? "☀️" : "🌙";
+  if (window.RezaOT_dashboard) RezaOT_dashboard.paintTheme();
+  else if (btn) btn.textContent = isDark ? "☀️" : "🌙";
   const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.content = isDark ? "#1e2229" : "#007bff";
+  if (meta) meta.content = isDark ? "#101828" : "#3157e5";
 }
 function getCurrentTimeString() {
   const now = new Date();

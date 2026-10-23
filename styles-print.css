@@ -36,3 +36,16 @@ body.pdf-export .print-summary-note {
 body.pdf-export .print-summary-table {
   display: none !important;
 }
+
+/* Workspace views never hide the complete document during export. */
+body.pdf-export #view-records[hidden] { display: block !important; }
+body.pdf-export #view-records [data-screen-hidden] { display: table-row !important; }
+body.pdf-export .app-main { margin: 0 !important; }
+@media screen {
+  body.app-shell:not(.pdf-export) [data-screen-hidden] { display: none !important; }
+}
+@media print {
+  #view-records[hidden] { display: block !important; }
+  #view-records [data-screen-hidden] { display: table-row !important; }
+  .app-main { margin: 0 !important; }
+}

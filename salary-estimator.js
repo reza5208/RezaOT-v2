@@ -2,6 +2,15 @@
 (function () {
   "use strict";
 
+  if (window.RezaOT_i18n && typeof RezaOT_i18n.extend === "function") RezaOT_i18n.extend({
+    ms: {
+      salaryNetEyebrow: "ANGGARAN GAJI BERSIH", salaryEstimateTag: "Anggaran", salaryAfterDeductions: "Selepas potongan pekerja", salaryIncomeTitle: "Pendapatan", salaryDeductionTitle: "Potongan pekerja", salaryGross: "Pendapatan kasar", salarySideSeparateNote: "Dikira berasingan dan tidak ditambah kepada gaji bersih.", salaryCalculationDetails: "Lihat pengiraan", salaryCalculationIntro: "Pecahan OT dan asas caruman untuk semakan anda."
+    },
+    en: {
+      salaryNetEyebrow: "ESTIMATED TAKE-HOME PAY", salaryEstimateTag: "Estimate", salaryAfterDeductions: "After employee deductions", salaryIncomeTitle: "Income", salaryDeductionTitle: "Employee deductions", salaryGross: "Gross pay", salarySideSeparateNote: "Calculated separately and excluded from estimated net salary.", salaryCalculationDetails: "View calculation", salaryCalculationIntro: "Overtime breakdown and contribution basis for your review."
+    }
+  });
+
   var DEFAULTS = {
     basicSalary: 2905.76,
     hoursPerMonth: 208,
@@ -236,73 +245,97 @@
     return tr;
   }
 
+  function money(value, includeCurrency) {
+    var number = Number(value) || 0;
+    var formatted = Math.abs(number).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    return (number < 0 ? "−" : "") + (includeCurrency === false ? "" : "RM ") + formatted;
+  }
+
+  function element(tag, className, content) {
+    var node = document.createElement(tag);
+    if (className) node.className = className;
+    if (content != null) node.textContent = content;
+    return node;
+  }
+
+  function section(title, rows) {
+    var card = element("section", "salary-section-card");
+    card.appendChild(element("h3", "salary-section-title", title));
+    var table = element("table", "salary-table"), body = document.createElement("tbody");
+    rows.forEach(function (entry) { body.appendChild(row(entry[0], entry[1], entry[2])); });
+    table.appendChild(body); card.appendChild(table);
+    return card;
+  }
+
   function render(container, records, extra) {
     if (!container) return;
     var est = estimate(records, extra);
+    var previousDetails = container.querySelector && container.querySelector(".salary-calculation-details");
+    var detailsOpen = previousDetails && previousDetails.open;
     container.innerHTML = "";
 
-    var table = document.createElement("table");
-    table.className = "salary-table";
-    var tb = document.createElement("tbody");
+    var hero = element("section", "salary-net-card");
+    hero.setAttribute("aria-labelledby", "salaryNetTitle");
+    var heroTop = element("div", "salary-net-top");
+    var title = element("h3", "salary-net-eyebrow", text("salaryNetEyebrow", "ANGGARAN GAJI BERSIH")); title.id = "salaryNetTitle";
+    heroTop.appendChild(title); heroTop.appendChild(element("span", "salary-estimate-tag", text("salaryEstimateTag", "Anggaran"))); hero.appendChild(heroTop);
+    var net = element("div", "salary-net-value");
+    if (Math.abs(est.net) >= 1000000) net.classList.add("salary-net-value--large");
+    net.appendChild(element("span", "salary-currency", "RM"));
+    var amount = element("strong", "", money(est.net, false)); amount.id = "salaryNetValue"; net.appendChild(amount); hero.appendChild(net);
+    hero.appendChild(element("p", "salary-net-caption", text("salaryAfterDeductions", "Selepas potongan pekerja") + " · " + selectedMonthKey(records, extra)));
+    var strip = element("div", "salary-overview-strip");
+    [[text("salaryGross", "Pendapatan kasar"), est.gross], [text("salaryTotalDeductions", "Jumlah potongan (pekerja)"), est.totalDeduct]].forEach(function (entry) {
+      var stat = element("div", "salary-overview-stat"); stat.appendChild(element("span", "", entry[0])); stat.appendChild(element("strong", "", money(entry[1]))); strip.appendChild(stat);
+    });
+    hero.appendChild(strip); container.appendChild(hero);
 
-    tb.appendChild(row(text("salaryBasic", "Gaji pokok"), est.settings.basicSalary));
-    tb.appendChild(row(text("salaryHourlyRate", "Kadar sejam"), est.hourlyRate));
-    tb.appendChild(row(text("salaryWeekdayOt", "OT Isnin–Sabtu") + " (" + est.summary.otWeekday.toFixed(2) + " " + text("salaryHoursAbbr", "j") + " × " + est.settings.weekdayMult + ")",
-      Math.round(est.rates.weekday * 100) / 100));
-    tb.appendChild(row(text("salarySundayOt", "OT Ahad") + " (" + est.summary.otRest.toFixed(2) + " " + text("salaryHoursAbbr", "j") + " × " + est.settings.restMult + ")",
-      Math.round(est.rates.rest * 100) / 100));
-    tb.appendChild(row(text("salaryHolidayOt", "OT cuti") + " (" + est.summary.otPh.toFixed(2) + " " + text("salaryHoursAbbr", "j") + " × " + est.settings.phMult + ")",
-      Math.round(est.rates.ph * 100) / 100));
-    tb.appendChild(row(text("salaryTotalOtPay", "Jumlah bayaran OT"), est.otPay));
-    tb.appendChild(row(text("salaryKliaAllowance", "Allowance KLIA") + " (" + est.summary.kliaDays + " " + text("salaryDays", "hari") + " × RM" + est.settings.kliaPerDay + ")",
-      est.kliaAllow));
-    tb.appendChild(row("Gross", est.gross, "salary-total"));
-
-    if (est.deductions.unpaidDays > 0) {
-      tb.appendChild(row("UPL (" + est.deductions.unpaidDays + " " + text("salaryDays", "hari") + ")", -est.deductions.unpaid));
-    }
-    if (est.deductions.annualDays > 0) {
-      tb.appendChild(row(text("salaryAnnualLeave", "Cuti tahunan / ANN") + " (" + est.deductions.annualDays + " " + text("salaryDays", "hari") + ")", text("salaryNoDeduction", "— (tiada potongan)")));
-    }
-    tb.appendChild(row(text("salaryEpfBase", "Asas EPF (pokok+KLIA−UPL)"), est.deductions.epfWage));
-    tb.appendChild(row(text("salaryEpfBracket", "Bracket EPF (↑ RM20)"), est.deductions.epfBracket));
-    tb.appendChild(row(text("salaryEpfEmployeeLabel", "EPF pekerja") + " (" + (est.settings.epfEmployeeRate * 100) + "%)", -est.deductions.epf));
-    tb.appendChild(row(text("salaryEpfEmployerLabel", "EPF majikan") + " (" + (est.settings.epfEmployerRate * 100) + "%) — " + text("salaryInfo", "info"), est.deductions.epfEmployer));
-    tb.appendChild(row("SOCSO", -est.deductions.socso));
-    tb.appendChild(row("EIS", -est.deductions.eis));
-    if (est.deductions.skim) tb.appendChild(row("Skim SKBBK", -est.deductions.skim));
-    tb.appendChild(row(text("salaryTotalDeductions", "Jumlah potongan (pekerja)"), -est.totalDeduct));
-    tb.appendChild(row(text("salaryEstimatedNet", "Anggaran bersih"), est.net, "salary-net"));
-
-    table.appendChild(tb);
-    container.appendChild(table);
+    var grid = element("div", "salary-breakdown-grid");
+    grid.appendChild(section(text("salaryIncomeTitle", "Pendapatan"), [
+      [text("salaryBasic", "Gaji pokok"), est.settings.basicSalary],
+      [text("salaryTotalOtPay", "Jumlah bayaran OT"), est.otPay],
+      [text("salaryKliaAllowance", "Allowance KLIA") + " · " + est.summary.kliaDays + " " + text("salaryDays", "hari"), est.kliaAllow],
+      [text("salaryGross", "Pendapatan kasar"), est.gross, "salary-subtotal"]
+    ]));
+    var deductions = [];
+    if (est.deductions.unpaidDays > 0) deductions.push(["UPL · " + est.deductions.unpaidDays + " " + text("salaryDays", "hari"), -est.deductions.unpaid]);
+    deductions.push([text("salaryEpfEmployeeLabel", "EPF pekerja") + " · " + (est.settings.epfEmployeeRate * 100) + "%", -est.deductions.epf]);
+    deductions.push(["SOCSO", -est.deductions.socso], ["EIS", -est.deductions.eis]);
+    if (est.deductions.skim) deductions.push(["Skim SKBBK", -est.deductions.skim]);
+    deductions.push([text("salaryTotalDeductions", "Jumlah potongan (pekerja)"), -est.totalDeduct, "salary-subtotal"]);
+    var deductionCard = section(text("salaryDeductionTitle", "Potongan pekerja"), deductions);
+    if (est.deductions.annualDays > 0) deductionCard.appendChild(element("p", "salary-inline-note", "ANN · " + est.deductions.annualDays + " " + text("salaryDays", "hari") + " " + text("salaryNoDeduction", "— (tiada potongan)")));
+    grid.appendChild(deductionCard); container.appendChild(grid);
 
     var side = est.sideIncome || { susun: 0, pallets: 0, susunRm: 0, palletsRm: 0, total: 0 };
-    var sideTable = document.createElement("table");
-    sideTable.className = "salary-table salary-side";
-    var stb = document.createElement("tbody");
-    var h = document.createElement("tr");
-    h.className = "salary-side-head";
-    var hd = document.createElement("td");
-    hd.colSpan = 2;
-    var strong = document.createElement("strong");
-    strong.textContent = text("salarySideIncome", "Side income (bukan gaji)");
-    hd.appendChild(strong);
-    h.appendChild(hd);
-    stb.appendChild(h);
-    stb.appendChild(row("Susun (" + side.susun + " AWB × RM100)", side.susunRm));
-    stb.appendChild(row("Pallets (" + side.pallets + " AWB × RM50)", side.palletsRm));
-    stb.appendChild(row(text("salarySideTotal", "Jumlah side income"), side.total, "salary-side-total"));
-    sideTable.appendChild(stb);
-    container.appendChild(sideTable);
+    var sideCard = element("section", "salary-side-card");
+    var sideHeader = element("div", "salary-side-heading"); sideHeader.appendChild(element("h3", "salary-section-title", text("salarySideIncome", "Side income (bukan gaji)"))); sideHeader.appendChild(element("strong", "salary-side-value", money(side.total))); sideCard.appendChild(sideHeader);
+    sideCard.appendChild(element("p", "salary-side-description", text("salarySideSeparateNote", "Dikira berasingan dan tidak ditambah kepada gaji bersih.")));
+    var sideItems = element("div", "salary-side-items");
+    [["Susun", side.susun, 100, side.susunRm], ["Pallets", side.pallets, 50, side.palletsRm]].forEach(function (entry) {
+      var item = element("div", "salary-side-item");
+      var label = element("div", "salary-side-label"); label.appendChild(element("span", "", entry[0])); label.appendChild(element("small", "", entry[1] + " AWB × RM" + entry[2])); item.appendChild(label); item.appendChild(element("strong", "", money(entry[3]))); sideItems.appendChild(item);
+    });
+    sideCard.appendChild(sideItems); container.appendChild(sideCard);
 
-    var note = document.createElement("p");
-    note.className = "salary-note";
-    note.textContent = text("salaryFormulaNote", "EPF = ceil(% × bracket↑RM20) atas (pokok+KLIA−UPL), OT tidak masuk asas EPF. Side income berasingan daripada gaji.") +
-      " " + text("salaryBreakHours", "Rehat Ahad/cuti (jam):") + " " + est.settings.restBreakHours;
+    var details = element("details", "salary-calculation-details");
+    details.open = !!detailsOpen;
+    details.appendChild(element("summary", "", text("salaryCalculationDetails", "Lihat pengiraan")));
+    var calculations = element("div", "salary-calculation-body"); calculations.appendChild(element("p", "salary-calculation-intro", text("salaryCalculationIntro", "Pecahan OT dan asas caruman untuk semakan anda.")));
+    var table = element("table", "salary-table salary-detail-table"), body = document.createElement("tbody");
+    body.appendChild(row(text("salaryHourlyRate", "Kadar sejam"), est.hourlyRate));
+    body.appendChild(row(text("salaryWeekdayOt", "OT Isnin–Sabtu") + " (" + est.summary.otWeekday.toFixed(2) + " " + text("salaryHoursAbbr", "j") + " × " + est.settings.weekdayMult + ")", Math.round(est.rates.weekday * 100) / 100));
+    body.appendChild(row(text("salarySundayOt", "OT Ahad") + " (" + est.summary.otRest.toFixed(2) + " " + text("salaryHoursAbbr", "j") + " × " + est.settings.restMult + ")", Math.round(est.rates.rest * 100) / 100));
+    body.appendChild(row(text("salaryHolidayOt", "OT cuti") + " (" + est.summary.otPh.toFixed(2) + " " + text("salaryHoursAbbr", "j") + " × " + est.settings.phMult + ")", Math.round(est.rates.ph * 100) / 100));
+    body.appendChild(row(text("salaryKliaAllowance", "Allowance KLIA") + " (" + est.summary.kliaDays + " " + text("salaryDays", "hari") + " × RM" + est.settings.kliaPerDay + ")", est.kliaAllow));
+    body.appendChild(row(text("salaryEpfBase", "Asas EPF (pokok+KLIA−UPL)"), est.deductions.epfWage));
+    body.appendChild(row(text("salaryEpfBracket", "Bracket EPF (↑ RM20)"), est.deductions.epfBracket));
+    body.appendChild(row(text("salaryEpfEmployerLabel", "EPF majikan") + " (" + (est.settings.epfEmployerRate * 100) + "%) — " + text("salaryInfo", "info"), est.deductions.epfEmployer));
+    table.appendChild(body); calculations.appendChild(table);
+    var note = element("p", "salary-note", text("salaryFormulaNote", "EPF = ceil(% × bracket↑RM20) atas (pokok+KLIA−UPL), OT tidak masuk asas EPF. Side income berasingan daripada gaji.") + " " + text("salaryBreakHours", "Rehat Ahad/cuti (jam):") + " " + est.settings.restBreakHours);
     var snapshot = getMonthCalculationSettings(selectedMonthKey(records, extra));
     if (snapshot.capturedAt) note.textContent += " " + text("salarySnapshotNote", "Menggunakan tetapan bulan yang disimpan. Butang Kemas kini tetapan bulan ini menggantikannya dengan tetapan semasa.");
-    container.appendChild(note);
+    calculations.appendChild(note); details.appendChild(calculations); container.appendChild(details);
   }
 
   function text(key, fallback) {
@@ -395,6 +428,7 @@
     var extraEl = document.getElementById("salaryUnpaidDays");
     if (toggle && panel) {
       toggle.addEventListener("click", function () {
+        if (window.RezaOT_dashboard && typeof RezaOT_dashboard.navigate === "function") { RezaOT_dashboard.navigate("salary"); return; }
         var open = panel.style.display !== "none";
         panel.style.display = open ? "none" : "block";
         if (!open) refresh();

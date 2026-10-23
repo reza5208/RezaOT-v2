@@ -1,4 +1,4 @@
-// Deterministic v70 startup. Required modules load once, in dependency order.
+// Deterministic workspace startup. Required modules load once, in dependency order.
 (function () {
   "use strict";
   var release = window.REZAOT_RELEASE;

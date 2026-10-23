@@ -11,136 +11,106 @@
     <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-icon-180x180.png">
 
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#007bff">
-    <meta name="msapplication-TileColor" content="#007bff">
+    <meta name="theme-color" content="#3157e5">
+    <meta name="msapplication-TileColor" content="#3157e5">
     <meta name="msapplication-TileImage" content="assets/icons/ms-icon-144x144.png">
 
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="styles-print.css">
 
+    <link rel="stylesheet" href="styles-detail.css">
+    <link rel="stylesheet" href="styles-dashboard.css">
 </head>
-<body>
-    <div id="startupStatus" class="no-print" role="status">Memuatkan app / Loading app…</div>
-    <button id="updateAppBtn" class="no-print" type="button" hidden data-i18n="updateApp">Versi baharu tersedia — muat semula</button>
-    <div class="container">
-        <header>
-            <div class="header-top">
-                <h1><span class="no-print">🚛 </span><span data-i18n="appTitle">Report Trips dan OT</span></h1>
-                <div class="header-actions no-print">
-                    <button type="button" id="langToggleBtn" class="icon-btn lang-btn" title="Switch language">EN</button>
-                    <button type="button" id="darkModeBtn" class="icon-btn" title="Tukar tema">🌙</button>
-                    <div class="menu-wrap no-print">
-                        <button type="button" id="menuToggleBtn" class="icon-btn" aria-label="Menu" title="Menu">⋯</button>
-                        <div id="menuPanel" class="menu-panel" hidden>
-                            <button type="button" id="holidayPickerBtn" class="icon-btn" data-i18n="holidayMenu">🏖 Cuti umum</button>
-                            <button type="button" id="otSettingsBtn" class="icon-btn" data-i18n="otMenu">⚙️ Tetapan OT</button>
-                            <button type="button" id="pinSettingsBtn" class="icon-btn" data-i18n="pinApp">PIN app</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <p class="no-print">WH3 Transport - Khairul Reza</p>
-            <p class="no-print sync-status sync-syncing" id="syncStatus">● Syncing…</p>
-            <p class="print-only-block print-subtitle">WH3 Transport</p>
-        </header>
-
-        <div class="no-print controls month-row">
-            <label for="monthYear" data-i18n="pickMonth">Bulan:</label>
-            <input type="month" id="monthYear" required>
-            <select id="monthHistory" class="month-history" title="Bulan cepat" aria-label="Bulan cepat"></select>
-            <button type="button" id="quickSaveTodayBtn" class="quick-btn" data-i18n="quickSave">⚡ Simpan Hari Ini (8–5)</button>
+<body class="app-shell" data-view="today">
+<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden"><defs><symbol id="i-grid" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.6"/><rect x="14" y="3" width="7" height="7" rx="1.6"/><rect x="3" y="14" width="7" height="7" rx="1.6"/><rect x="14" y="14" width="7" height="7" rx="1.6"/></symbol><symbol id="i-records" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 7h6M9 12h6M9 17h4"/></symbol><symbol id="i-wallet" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 8H5a2 2 0 0 1 0-4h13v4M3 6v12a2 2 0 0 0 2 2h15V8"/><path d="M16 12h5v4h-5z"/></symbol><symbol id="i-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m10 3-.8 2.3-2.4 1-2.2-.8-2 3.5 1.6 1.6v2.8L2.6 15l2 3.5 2.2-.8 2.4 1L10 21h4l.8-2.3 2.4-1 2.2.8 2-3.5-1.6-1.6v-2.8l1.6-1.6-2-3.5-2.2.8-2.4-1L14 3z"/><circle cx="12" cy="12" r="3"/></symbol><symbol id="i-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14m-5-5 5 5-5 5"/></symbol><symbol id="i-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></symbol><symbol id="i-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></symbol><symbol id="i-calendar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M7 3v4m10-4v4M3 11h18"/></symbol><symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol><symbol id="i-route" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="5" r="2"/><circle cx="18" cy="19" r="2"/><path d="M6 7v7a4 4 0 0 0 8 0V9a4 4 0 0 1 8 0"/></symbol><symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></symbol><symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4 4L19 6"/></symbol><symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/></symbol><symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></symbol><symbol id="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 13a9 9 0 1 1-10-10 7 7 0 0 0 10 10Z"/></symbol><symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></symbol><symbol id="i-more" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></symbol><symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V6a4 4 0 0 1 8 0v4"/></symbol><symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6z"/><path d="m8 12 3 3 5-6"/></symbol><symbol id="i-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></symbol><symbol id="i-upload" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4m-5 5 5-5 5 5M4 16v5h16v-5"/></symbol><symbol id="i-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></symbol><symbol id="i-leaf" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 3s-13-1-15 7a7 7 0 0 0 9 9C22 16 20 3 20 3Z"/><path d="M4 21 16 9"/></symbol></defs></svg>
+<a class="skip-link" href="#mainContent" data-i18n="skipContent">Terus ke kandungan</a>
+<div id="startupStatus" class="no-print startup-status" role="status">Memuatkan ruang kerja… / Loading workspace…</div>
+<button id="updateAppBtn" class="no-print update-banner" type="button" hidden data-i18n="updateApp">Versi baharu tersedia — muat semula</button>
+<aside class="app-sidebar no-print" aria-label="Navigasi utama">
+  <a class="brand" href="#today" aria-label="RezaOT"><span class="brand-mark">r<span>.</span></span><span class="brand-word">Reza<span>OT</span><small data-i18n="personalWorkspace">RUANG KERJA PERIBADI</small></span></a>
+  <p class="sidebar-label" data-i18n="workspaceLabel">RUANG KERJA</p>
+  <nav class="sidebar-nav" aria-label="Navigasi utama"><button type="button" class="app-nav-link" data-view="today" aria-current="page"><svg class="icon" aria-hidden="true"><use href="#i-grid"/></svg><span data-i18n="navToday">Hari ini</span></button><button type="button" class="app-nav-link" data-view="records"><svg class="icon" aria-hidden="true"><use href="#i-records"/></svg><span data-i18n="navRecords">Rekod</span></button><button type="button" class="app-nav-link" data-view="salary"><svg class="icon" aria-hidden="true"><use href="#i-wallet"/></svg><span data-i18n="navSalary">Gaji</span></button><button type="button" class="app-nav-link" data-view="settings"><svg class="icon" aria-hidden="true"><use href="#i-settings"/></svg><span data-i18n="navSettings">Tetapan</span></button></nav>
+  <div class="sidebar-note"><svg class="icon" aria-hidden="true"><use href="#i-shield"/></svg><span data-i18n="localFirstNote">Catatan anda, sentiasa bersama.</span></div>
+  <div class="sidebar-profile"><span class="avatar">KR</span><div><strong>Khairul Reza</strong><span>WH3 Transport · M-264</span></div></div>
+</aside>
+<main class="app-main container" id="mainContent" tabindex="-1">
+  <header class="app-topbar no-print">
+    <div class="topbar-title"><span class="mobile-brand">Reza<b>OT</b><i>.</i></span><span class="breadcrumb-label" data-i18n="workspaceLabel">RUANG KERJA</span><span class="breadcrumb-divider">/</span><span id="activeViewLabel">Hari ini</span></div>
+    <div class="header-actions"><span class="sync-pill" id="syncStatus" role="status">● Syncing…</span>
+      <button type="button" id="langToggleBtn" class="icon-btn lang-btn" title="Switch language">EN</button>
+      <button type="button" id="darkModeBtn" class="icon-btn" aria-label="Tukar tema" data-i18n-aria-label="toggleTheme"><svg class="icon" aria-hidden="true"><use href="#i-moon"/></svg></button>
+      <div class="menu-wrap"><button type="button" id="menuToggleBtn" class="icon-btn" aria-label="Menu" aria-expanded="false" aria-controls="menuPanel"><svg class="icon" aria-hidden="true"><use href="#i-more"/></svg></button>
+        <div id="menuPanel" class="menu-panel" hidden>
+          <button type="button" id="holidayPickerBtn"><svg class="icon" aria-hidden="true"><use href="#i-leaf"/></svg><span data-i18n="holidayMenuClean">Cuti company</span></button>
+          <button type="button" id="otSettingsBtn"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg><span data-i18n="otMenuClean">Tetapan OT</span></button>
+          <button type="button" id="pinSettingsBtn"><svg class="icon" aria-hidden="true"><use href="#i-lock"/></svg><span data-i18n="pinApp">PIN app</span></button>
         </div>
-
-        <div id="holidayPickerPanel" class="no-print holiday-picker-panel" style="display: none;">
-            <h3 data-i18n="holidayTitle">Cuti umum — pilih yang company ambil</h3>
-            <p class="holiday-picker-hint" data-i18n="holidayHint">Data katalog kekal. Hanya cuti yang ditanda ✓ dikira OT penuh & highlight biru.</p>
-            <div class="holiday-picker-toolbar">
-                <label><span data-i18n="yearLabel">Tahun:</span>
-                    <select id="holidayPickerYear"></select>
-                </label>
-                <button type="button" id="holidaySelectAll" class="secondary-btn" data-i18n="allOn">✓ Semua</button>
-                <button type="button" id="holidaySelectNone" class="secondary-btn" data-i18n="allOff">✗ Tiada</button>
-            </div>
-            <ul id="holidayPickerList" class="holiday-picker-list"></ul>
+      </div>
+    </div>
+  </header>
+  <div class="workspace-content">
+    <div class="workspace-toolbar no-print">
+      <span id="workspaceDate" class="workspace-date"></span>
+      <div class="month-control">
+        <div class="month-toolbar" aria-label="Bulan laporan">
+          <button id="monthPrev" type="button" class="month-step" aria-label="Bulan sebelumnya" data-i18n-aria-label="previousMonth"><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></button>
+          <button id="monthPickerBtn" type="button" class="month-picker-btn" aria-expanded="false" aria-controls="monthPopover"><svg class="icon" aria-hidden="true"><use href="#i-calendar"/></svg><span id="displayMonth"></span><svg class="icon" aria-hidden="true"><use href="#i-down"/></svg></button>
+          <button id="monthNext" type="button" class="month-step" aria-label="Bulan berikutnya" data-i18n-aria-label="nextMonth"><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></button>
         </div>
-
-        <div class="header-info">
-            <p><strong data-i18n="nameLabel">Nama:</strong> Khairul Reza | <strong data-i18n="empNoLabel">No. pekerja:</strong> M-264 | <strong data-i18n="deptLabel">Jabatan:</strong> WH3 Transport</p>
-            <p><strong data-i18n="monthLabel">Bulan:</strong> <span id="currentMonth"></span></p>
-            <p><strong data-i18n="supervisorLabel">Nama Ketua:</strong> <span id="supervisorName" class="editable-name">Talib</span>
-               <button type="button" id="supervisorLockBtn" class="lock-btn no-print" title="Kunci nama ketua">🔓</button>
-               <span class="no-print edit-hint" data-i18n="editHint">(klik untuk edit)</span></p>
+        <div id="monthPopover" class="month-popover surface-card" hidden>
+          <label for="monthYear" data-i18n="pickMonth">Bulan:</label><input type="month" id="monthYear" required>
+          <label for="monthHistory" data-i18n="recentMonths">Bulan tersimpan</label><select id="monthHistory" class="month-history"></select>
         </div>
+      </div>
+    </div>
 
-        <hr class="no-print">
-
-        <form id="clockForm" class="no-print form-grid">
-            <div>
-                <label for="date" data-i18n="dateLabel">Tarikh:</label>
-                <input type="date" id="date" required>
-                <span id="holidayBadge" class="holiday-badge" hidden></span>
-            </div>
-            <div>
-                <label for="clockIn" data-i18n="clockIn">Clock-In:</label>
-                <div class="time-row">
-                    <input type="time" id="clockIn" required>
-                    <button type="button" class="now-btn" id="nowInBtn" title="Guna masa sekarang" data-i18n="nowBtn">⏱️ Sekarang</button>
-                </div>
-            </div>
-            <div>
-                <label for="clockOut" data-i18n="clockOut">Clock-Out:</label>
-                <div class="time-row">
-                    <input type="time" id="clockOut" required>
-                    <button type="button" class="now-btn" id="nowOutBtn" title="Guna masa sekarang" data-i18n="nowBtn">⏱️ Sekarang</button>
-                </div>
-            </div>
-            <label class="upl-check" for="unpaidLeaveCheck">
-              <input type="checkbox" id="unpaidLeaveCheck">
-              <span data-i18n="uplLabel">UPL (cuti tanpa gaji)</span>
-            </label>
-            <label class="upl-check ann-check" for="annualLeaveCheck">
-              <input type="checkbox" id="annualLeaveCheck">
-              <span data-i18n="annLabel">ANN (cuti tahunan)</span>
-            </label>
-            <button type="submit" data-i18n="saveAttendance">✅ Simpan Kehadiran</button>
-        </form>
-
-        <hr class="no-print">
-
-        <form id="tripForm" class="no-print form-grid">
-            <div class="trip-dest-wrap">
-                <label for="destination" data-i18n="destination">Destinasi:</label>
-                <select id="destination" required></select>
-            </div>
-            <div id="airwayBillField" style="display: none;">
-                <label for="airwayBill" data-i18n="awb">Airway Bill (KLIA Cargo):</label>
-                <input type="text" id="airwayBill" placeholder="Contoh: ABC12345">
-                <div id="sideJobField" class="side-job-opts">
-                    <span class="side-job-label" data-i18n="sideJob">Side job:</span>
-                    <label class="side-job-opt"><input type="radio" name="sideJob" value="" checked> <span data-i18n="sideNone">Tiada</span></label>
-                    <label class="side-job-opt"><input type="radio" name="sideJob" value="susun"> Susun (RM100)</label>
-                    <label class="side-job-opt"><input type="radio" name="sideJob" value="pallets"> Pallets (RM50)</label>
-                </div>
-            </div>
-            <button type="submit" data-i18n="addTrip">➕ Tambah Trip</button>
-        </form>
-
-        <div class="no-print toggle-section">
-            <button id="toggleManageBtn" class="secondary-btn" data-i18n="manageDest">⚙️ Manage Destinasi</button>
+    <section id="view-today" class="app-view no-print" aria-labelledby="todayTitle">
+      <div class="page-heading"><div><p class="section-kicker" id="greeting">RUANG UNTUK HARI ANDA</p><h1 class="page-title" id="todayTitle" data-i18n="dashboardHeading">Setiap jam bermakna<span>.</span></h1><p class="page-subtitle" data-i18n="dashboardSubtitle">Kerja tersusun. Perjalanan tercatat.</p></div><span class="heading-pill"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg><span data-i18n="yourWorkspace">Ruang anda</span></span></div>
+      <div class="dashboard-overview">
+        <div class="hero-card">
+          <div class="hero-content"><span class="section-kicker" data-i18n="monthlyOvertime">OVERTIME BULAN INI</span><div class="hero-number"><span id="dashOT">0.00</span><small data-i18n="hourShort">jam</small></div><p data-i18n="heroNote">Setiap usaha anda, diambil kira.</p><button type="button" class="hero-link" data-go="records"><span data-i18n="seeRecords">Lihat rekod</span><svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></button></div>
+          <div class="hero-orbit" aria-hidden="true"><svg viewBox="0 0 240 200" fill="none"><circle cx="135" cy="96" r="80" stroke="currentColor" opacity=".15"/><circle cx="135" cy="96" r="55" stroke="currentColor" opacity=".18"/><path d="M35 140h50c35 0 10-90 50-90h64" stroke="currentColor" stroke-width="2.5" stroke-dasharray="5 6"/><circle cx="35" cy="140" r="8" fill="#c9f3d5"/><circle cx="199" cy="50" r="8" fill="#adc3ff"/><rect x="112" y="79" width="46" height="35" rx="10" fill="#fff" fill-opacity=".12"/><path d="m125 97 7 7 15-16" stroke="#c9f3d5" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <span class="hero-corner" id="heroMonth"></span>
         </div>
-        <div id="manageDestinations" class="no-print manage-trips" style="display: none;">
-            <h3 data-i18n="manageTitle">Manage Destinasi</h3>
-            <div class="add-trip">
-                <input type="text" id="newTrip" placeholder="Nama destinasi baru" data-i18n-placeholder="newDestPlaceholder">
-                <button id="addTripButton" data-i18n="addBtn">Tambah</button>
-            </div>
-            <h4 data-i18n="currentList">Senarai Destinasi Semasa:</h4>
-            <ul id="tripList" class="trip-list"></ul>
+        <div class="overview-metrics">
+          <div class="metric-card"><span class="metric-icon mint"><svg class="icon" aria-hidden="true"><use href="#i-calendar"/></svg></span><span class="metric-value" id="dashDays">0</span><span class="metric-label" data-i18n="sumDays">Hari bekerja</span></div>
+          <div class="metric-card"><span class="metric-icon blue"><svg class="icon" aria-hidden="true"><use href="#i-route"/></svg></span><span class="metric-value" id="dashTrips">0</span><span class="metric-label" data-i18n="sumTrips">Jumlah trip</span></div>
+          <div class="metric-card"><span class="metric-icon amber"><svg class="icon" aria-hidden="true"><use href="#i-pin"/></svg></span><span class="metric-value" id="dashKlia">0</span><span class="metric-label" data-i18n="sumKlia">Hari KLIA</span></div>
         </div>
+      </div>
+      <div class="today-grid">
+        <section class="surface-card attendance-card" aria-labelledby="attendanceTitle">
+          <div class="card-heading"><div><p class="section-kicker" data-i18n="dailyRecord">CATATAN HARIAN</p><h2 id="attendanceTitle" data-i18n="attendanceTitle">Masa kerja anda</h2></div><span class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg></span></div>
+          <form id="clockForm" class="form-grid" novalidate>
+            <div class="date-field"><label for="date" data-i18n="dateLabel">Tarikh:</label><input type="date" id="date" required><span id="holidayBadge" class="holiday-badge" hidden></span><p class="field-error" id="dateError" hidden></p></div>
+            <fieldset class="leave-segment"><legend data-i18n="recordType">Jenis rekod</legend><label><input type="radio" name="leaveStatus" id="workingDayCheck" value="work" checked><span data-i18n="workingDay">Bekerja</span></label><label><input type="radio" name="leaveStatus" id="annualLeaveCheck" value="annual"><span data-i18n="annualShort">Cuti tahunan</span></label><label><input type="radio" name="leaveStatus" id="unpaidLeaveCheck" value="unpaid"><span data-i18n="unpaidShort">Tanpa gaji</span></label></fieldset>
+            <div class="time-fields"><div><label for="clockIn" data-i18n="clockIn">Clock-In:</label><div class="time-row"><input type="time" id="clockIn" required><button type="button" id="nowInBtn" class="now-btn" data-i18n="nowClean">Sekarang</button></div></div><div><label for="clockOut" data-i18n="clockOut">Clock-Out:</label><div class="time-row"><input type="time" id="clockOut" required><button type="button" id="nowOutBtn" class="now-btn" data-i18n="nowClean">Sekarang</button></div></div></div>
+            <p class="field-error" id="timeError" hidden></p>
+            <button type="submit" class="primary-button"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg><span data-i18n="saveAttendanceClean">Simpan kehadiran</span></button><p id="attendanceFeedback" class="form-feedback" role="status"></p>
+          </form>
+          <div class="quick-preset"><div><strong data-i18n="usualDay">Hari seperti biasa?</strong><span data-i18n="quickPresetHint">Simpan 08:00–17:00 untuk hari ini.</span></div><button type="button" id="quickSaveTodayBtn" class="preset-button">8–5<svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></button></div>
+        </section>
+        <section class="surface-card trip-card" aria-labelledby="tripTitle">
+          <div class="card-heading"><div><p class="section-kicker" data-i18n="onTheMove">DALAM PERJALANAN</p><h2 id="tripTitle" data-i18n="tripTitle">Ke mana hari ini?</h2></div><span class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-route"/></svg></span></div>
+          <p class="card-description" data-i18n="tripHint">Tambah destinasi dan AWB untuk tarikh yang dipilih.</p>
+          <form id="tripForm" class="form-grid" novalidate>
+            <div><label for="destination" data-i18n="destination">Destinasi:</label><select id="destination" required></select><p class="field-error" id="destinationError" hidden></p></div>
+            <div id="airwayBillField" style="display:none"><label for="airwayBill" data-i18n="awbClean">Airway bill</label><input type="text" id="airwayBill" placeholder="Contoh: ABC12345"><div id="sideJobField" class="side-job-opts"><span class="side-job-label" data-i18n="sideJob">Side job:</span><label class="side-job-opt"><input type="radio" name="sideJob" value="" checked><span data-i18n="sideNone">Tiada</span></label><label class="side-job-opt"><input type="radio" name="sideJob" value="susun"><span>Susun <small>RM100</small></span></label><label class="side-job-opt"><input type="radio" name="sideJob" value="pallets"><span>Pallets <small>RM50</small></span></label></div></div>
+            <button type="submit" class="secondary-button"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg><span data-i18n="addTripClean">Tambah trip</span></button><p id="tripFeedback" class="form-feedback" role="status"></p>
+          </form>
+          <div class="trip-card-footer"><svg class="icon" aria-hidden="true"><use href="#i-shield"/></svg><span data-i18n="tripFooter">Catatan kecil. Rekod yang lengkap.</span></div>
+        </section>
+      </div>
+      <div class="dashboard-bottom"><section class="surface-card recent-card"><div class="card-heading"><h2 data-i18n="recentActivity">Catatan terkini</h2><button type="button" class="text-button" data-go="records"><span data-i18n="seeAll">Lihat semua</span><svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></button></div><div id="recentRecords"></div></section><section class="salary-preview-card"><span class="section-kicker" data-i18n="salaryPreviewLabel">PERANCANGAN BULAN INI</span><h2 data-i18n="salaryPreviewHeading">Usaha anda.<br>Dalam angka.</h2><p data-i18n="salaryPreviewHint">Semak pecahan gaji, OT dan pendapatan sampingan di satu tempat.</p><button id="salaryToggleBtn" type="button" class="text-button"><span data-i18n="seeSalary">Lihat anggaran gaji</span><svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></button></section></div>
+    </section>
 
-        <hr class="no-print">
-
-        <h2 class="no-print" data-i18n="monthlyReport">Laporan Bulanan</h2>
+    <section id="view-records" class="app-view" aria-labelledby="recordsTitle" hidden>
+      <div class="page-heading no-print"><div><p class="section-kicker" data-i18n="yourRecords">REKOD ANDA</p><h1 id="recordsTitle" class="page-title" data-i18n="recordsHeading">Perjalanan dalam angka.</h1><p class="page-subtitle" data-i18n="recordsSubtitle">Satu bulan. Semua catatan anda.</p></div><div class="export-control"><button type="button" id="exportMenuBtn" class="primary-button" aria-expanded="false" aria-controls="reportExportMenu"><svg class="icon" aria-hidden="true"><use href="#i-download"/></svg><span data-i18n="exportClean">Eksport</span><svg class="icon" aria-hidden="true"><use href="#i-down"/></svg></button><div id="reportExportMenu" class="export-menu surface-card" hidden><button id="exportPdfBtn" type="button" data-i18n="pdfClean">PDF A4</button><button id="exportExcelBtn" type="button" data-i18n="excelClean">Excel</button><button id="printButton" type="button" data-i18n="printClean">Cetak laporan</button></div></div></div>
+      <div class="record-summary no-print"><div><span data-i18n="monthlyOvertime">OT BULAN INI</span><strong><span id="totalOT">0.00</span> <small data-i18n="hourShort">jam</small></strong></div><div class="summary-cards" id="summaryCards"><div class="summary-card"><span class="summary-label" data-i18n="sumDays">Hari bekerja</span><span class="summary-value" id="sumDays">0</span></div><div class="summary-card"><span class="summary-label" data-i18n="sumTrips">Jumlah trip</span><span class="summary-value" id="sumTrips">0</span></div><div class="summary-card"><span class="summary-label" data-i18n="sumKlia">Hari KLIA</span><span class="summary-value" id="sumKlia">0</span></div><div class="summary-card"><span class="summary-label" data-i18n="sumAwb">AWB</span><span class="summary-value" id="sumAwb">0</span></div></div></div>
+      <div class="report-toolbar no-print"><label class="search-field" for="recordSearch"><svg class="icon" aria-hidden="true"><use href="#i-search"/></svg><span class="sr-only" data-i18n="searchRecords">Cari rekod</span><input id="recordSearch" type="search" placeholder="Cari destinasi, AWB atau tarikh" data-i18n-placeholder="searchPlaceholder"></label><div class="record-filters" role="group" aria-label="Tapis rekod"><button type="button" data-filter="all" aria-pressed="true" data-i18n="filterAll">Semua</button><button type="button" data-filter="klia" aria-pressed="false">KLIA</button><button type="button" data-filter="leave" aria-pressed="false" data-i18n="filterLeave">Cuti</button></div></div>
+      <p id="filterStatus" class="filter-status no-print" role="status"></p>
+      <header class="report-document-header print-only-block"><h1 data-i18n="appTitle">Report Trips dan OT</h1><p class="print-subtitle">WH3 Transport</p></header>
+      <div class="header-info print-only-block"><p><strong data-i18n="nameLabel">Nama:</strong> Khairul Reza | <strong data-i18n="empNoLabel">No. pekerja:</strong> M-264 | <strong data-i18n="deptLabel">Jabatan:</strong> WH3 Transport</p><p><strong data-i18n="monthLabel">Bulan:</strong> <span id="currentMonth"></span></p><p><strong data-i18n="supervisorLabel">Nama Ketua:</strong> <span id="printSupervisorName">Talib</span></p></div>
         <div class="table-wrap">
         <table id="reportTable">
             <thead>
@@ -162,29 +132,7 @@
 
         <p id="noRecordsMessage" class="no-records" data-i18n="noRecords">Tiada rekod untuk bulan ini.</p>
 
-        <div class="total-ot no-print">
-            <h3><span data-i18n="totalOT">Jumlah OT Bulan Ini:</span> <span id="totalOT">0.00</span> <span data-i18n="hours">Jam</span></h3>
-        </div>
-
-        <div class="summary-cards no-print" id="summaryCards">
-            <div class="summary-card">
-                <span class="summary-label" data-i18n="sumDays">Hari Berkerja</span>
-                <span class="summary-value" id="sumDays">0</span>
-            </div>
-            <div class="summary-card">
-                <span class="summary-label" data-i18n="sumKlia">Hari KLIA Cargo</span>
-                <span class="summary-value" id="sumKlia">0</span>
-            </div>
-            <div class="summary-card">
-                <span class="summary-label" data-i18n="sumAwb">Total AWB</span>
-                <span class="summary-value" id="sumAwb">0</span>
-            </div>
-            <div class="summary-card">
-                <span class="summary-label" data-i18n="sumTrips">Total Trip</span>
-                <span class="summary-value" id="sumTrips">0</span>
-            </div>
-        </div>
-
+<div id="noFilteredRecords" class="no-records no-print" hidden><span data-i18n="noSearchResults">Tiada rekod yang sepadan.</span><button type="button" class="text-button" id="clearFiltersBtn" data-i18n="clearFilters">Kosongkan carian</button></div>
         <div class="print-footer print-only-block" id="printFooter">
             <p class="print-summary-note">
               OT: <span id="printTotalOT">0.00</span> j
@@ -195,10 +143,11 @@
             <p class="print-note" data-i18n="printNote">Nota: Kelabu = Sabtu · Lebih gelap = Ahad · Biru muda = Cuti umum (yang company ambil)</p>
         </div>
 
-        <div class="no-print salary-toggle-wrap">
-            <button type="button" id="salaryToggleBtn" class="salary-toggle-btn" data-i18n="salaryToggle">💰 Anggaran Gaji</button>
-        </div>
-        <div id="salaryPanel" class="no-print" style="display: none;">
+
+    </section>
+
+    <section id="view-salary" class="app-view no-print" aria-labelledby="salaryTitle" hidden><div class="page-heading"><div><p class="section-kicker" data-i18n="salaryKicker">HASIL USAHA ANDA</p><h1 id="salaryTitle" class="page-title" data-i18n="salaryHeading">Lebih jelas. Lebih terancang.</h1><p class="page-subtitle" data-i18n="salarySubtitle">Anggaran untuk membantu anda merancang bulan ini.</p></div></div>
+        <div id="salaryPanel" class="no-print" >
             <div class="salary-toolbar">
                 <span id="salaryUplAutoHint" class="upl-auto-hint">Rekod UPL: 0 hari</span>
                 <label><span data-i18n="extraUpl">UPL tambahan (optional):</span>
@@ -209,30 +158,46 @@
             <div id="salaryPanelBody"></div>
         </div>
 
-        <div class="no-print actions">
-            <div class="actions-group report-actions">
-                <p class="actions-label" data-i18n="groupReport">Laporan</p>
-                <button id="printButton" data-i18n="printBtn">Cetak Laporan (A4)</button>
-                <button id="exportPdfBtn" class="pdf-btn" data-i18n="pdfBtn">📄 Export PDF</button>
-                <button id="exportExcelBtn" class="excel-btn" data-i18n="excelBtn">📊 Export ke Excel</button>
-            </div>
-            <div class="actions-group data-actions">
-                <p class="actions-label" data-i18n="groupData">Data</p>
-                <button id="exportDataBtn" data-i18n="backupBtn">Export Data (Backup)</button>
-                <button id="exportRecoveryBtn" type="button" data-i18n="recoveryDownload">Muat turun pemulihan</button>
-                <label class="import-btn">
-                    <span data-i18n="importBtn">Import Data</span>
-                    <input type="file" id="importDataInput" accept=".json" style="display:none;">
+
+    </section>
+
+    <section id="view-settings" class="app-view no-print" aria-labelledby="settingsTitle" hidden><div class="page-heading"><div><p class="section-kicker" data-i18n="preferencesKicker">IKUT CARA ANDA</p><h1 id="settingsTitle" class="page-title" data-i18n="settingsHeading">Ruang kerja, cara anda.</h1><p class="page-subtitle" data-i18n="settingsSubtitle">Urus profil, pilihan dan salinan data anda.</p></div></div>
+      <div class="settings-grid"><section class="surface-card profile-card"><div class="card-heading"><h2 data-i18n="profileTitle">Profil pekerja</h2><span class="avatar">KR</span></div><dl class="profile-details"><div><dt data-i18n="nameLabel">Nama:</dt><dd>Khairul Reza</dd></div><div><dt data-i18n="empNoLabel">No. pekerja:</dt><dd>M-264</dd></div><div><dt data-i18n="deptLabel">Jabatan:</dt><dd>WH3 Transport</dd></div><div><dt data-i18n="supervisorLabel">Nama Ketua:</dt><dd><span id="supervisorName" class="editable-name">Talib</span><button type="button" id="supervisorLockBtn" class="lock-btn" aria-label="Kunci nama ketua">🔓</button></dd></div></dl></section>
+      <section class="surface-card"><div class="card-heading"><h2 data-i18n="workPreferences">Pilihan kerja</h2><svg class="icon" aria-hidden="true"><use href="#i-settings"/></svg></div><button type="button" class="settings-row" id="openOtSettings"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg><span><strong data-i18n="otMenuClean">Tetapan OT</strong><small data-i18n="otSettingsHint">Masa mula OT hari biasa dan Sabtu</small></span><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></button><button type="button" class="settings-row" id="openHolidaySettings"><svg class="icon" aria-hidden="true"><use href="#i-leaf"/></svg><span><strong data-i18n="holidayMenuClean">Cuti company</strong><small data-i18n="holidaySettingsHint">Pilih cuti yang diambil syarikat</small></span><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></button><button type="button" id="toggleManageBtn" class="settings-row"><svg class="icon" aria-hidden="true"><use href="#i-route"/></svg><span><strong data-i18n="manageTitle">Manage Destinasi</strong><small data-i18n="destinationSettingsHint">Senarai destinasi yang kerap digunakan</small></span><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></button><button type="button" id="openPinSettings" class="settings-row"><svg class="icon" aria-hidden="true"><use href="#i-lock"/></svg><span><strong data-i18n="pinApp">PIN app</strong><small data-i18n="pinSettingsHint">Kunci aplikasi pada peranti ini</small></span><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></button></section>
+      <section class="surface-card data-card"><div class="card-heading"><h2 data-i18n="yourData">Data anda</h2><svg class="icon" aria-hidden="true"><use href="#i-shield"/></svg></div><p class="card-description" data-i18n="backupHint">Simpan salinan semua bulan dan tetapan anda.</p><div class="data-actions"><button id="exportDataBtn" type="button" class="secondary-button"><svg class="icon" aria-hidden="true"><use href="#i-download"/></svg><span data-i18n="backupClean">Muat turun backup</span></button><label class="import-btn secondary-button"><svg class="icon" aria-hidden="true"><use href="#i-upload"/></svg><span data-i18n="importClean">Import backup</span><input type="file" id="importDataInput" accept=".json" style="display:none"></label><button id="exportRecoveryBtn" type="button" class="text-button" data-i18n="recoveryDownload">Muat turun pemulihan</button></div></section>
+      <section class="surface-card preferences-card"><div class="card-heading"><h2 data-i18n="displayPreferences">Paparan & bahasa</h2><svg class="icon" aria-hidden="true"><use href="#i-sun"/></svg></div><p class="card-description" data-i18n="displayHint">Pilih paparan yang selesa untuk anda.</p><button type="button" class="settings-row" id="settingsThemeBtn"><svg class="icon" aria-hidden="true"><use href="#i-moon"/></svg><span data-i18n="toggleTheme">Tukar tema</span><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></button><button type="button" class="settings-row" id="settingsLangBtn"><svg class="icon" aria-hidden="true"><use href="#i-records"/></svg><span data-i18n="changeLanguage">Bahasa Melayu / English</span><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></button></section></div>
+      <div id="cloudAccountSlot"></div>
+        <div id="holidayPickerPanel" class="no-print holiday-picker-panel" style="display: none;">
+            <h3 data-i18n="holidayTitle">Cuti umum — pilih yang company ambil</h3>
+            <p class="holiday-picker-hint" data-i18n="holidayHint">Data katalog kekal. Hanya cuti yang ditanda ✓ dikira OT penuh & highlight biru.</p>
+            <div class="holiday-picker-toolbar">
+                <label><span data-i18n="yearLabel">Tahun:</span>
+                    <select id="holidayPickerYear"></select>
                 </label>
+                <button type="button" id="holidaySelectAll" class="secondary-btn" data-i18n="allOn">✓ Semua</button>
+                <button type="button" id="holidaySelectNone" class="secondary-btn" data-i18n="allOff">✗ Tiada</button>
             </div>
+            <ul id="holidayPickerList" class="holiday-picker-list"></ul>
         </div>
-        <p class="no-print version-badge">RezaOT v70</p>
-    </div>
 
-    <button type="button" id="fabAddTrip" class="fab no-print" data-i18n-title="fabTrip" aria-label="Tambah trip hari ini" data-i18n-aria-label="fabTrip">＋</button>
-    <div id="toast" class="toast no-print" role="status" aria-live="polite" hidden></div>
+        <div id="manageDestinations" class="no-print manage-trips" style="display: none;">
+            <h3 data-i18n="manageTitle">Manage Destinasi</h3>
+            <div class="add-trip">
+                <input type="text" id="newTrip" placeholder="Nama destinasi baru" data-i18n-placeholder="newDestPlaceholder">
+                <button id="addTripButton" data-i18n="addBtn">Tambah</button>
+            </div>
+            <h4 data-i18n="currentList">Senarai Destinasi Semasa:</h4>
+            <ul id="tripList" class="trip-list"></ul>
+        </div>
 
-    <script src="release.js"></script>
-    <script src="main.js"></script>
+
+      <p class="version-badge">RezaOT <span>v71</span><span class="version-dot">·</span><span data-i18n="madeForYourDay">Dibina untuk hari anda.</span></p>
+    </section>
+  </div>
+</main>
+<nav class="mobile-nav no-print" aria-label="Navigasi utama"><button type="button" class="app-nav-link" data-view="today" aria-current="page"><svg class="icon" aria-hidden="true"><use href="#i-grid"/></svg><span data-i18n="navToday">Hari ini</span></button><button type="button" class="app-nav-link" data-view="records"><svg class="icon" aria-hidden="true"><use href="#i-records"/></svg><span data-i18n="navRecords">Rekod</span></button><button type="button" class="app-nav-link" data-view="salary"><svg class="icon" aria-hidden="true"><use href="#i-wallet"/></svg><span data-i18n="navSalary">Gaji</span></button><button type="button" class="app-nav-link" data-view="settings"><svg class="icon" aria-hidden="true"><use href="#i-settings"/></svg><span data-i18n="navSettings">Tetapan</span></button></nav>
+<button type="button" id="fabAddTrip" class="fab no-print" data-i18n-title="fabTrip" aria-label="Tambah trip hari ini" data-i18n-aria-label="fabTrip"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg></button>
+<div id="toast" class="toast no-print" role="status" aria-live="polite" hidden></div>
+<script src="release.js"></script><script src="main.js"></script>
 </body>
 </html>

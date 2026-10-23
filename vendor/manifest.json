@@ -28,6 +28,18 @@
       "files": [
         "dist/xlsx.full.min.js"
       ]
+    },
+    "@fontsource-variable/manrope": {
+      "version": "5.3.0",
+      "url": "https://registry.npmjs.org/@fontsource-variable/manrope/-/manrope-5.3.0.tgz",
+      "integrity": "sha512-6D5dgokHsWDDMtmXHznKa0hK229NN+1a4BLPmUCLqcO1Pw5EEhWY5RFt0AcXnVRAljFFPfRtLkJePQj6LSsV6g==",
+      "license": "OFL-1.1",
+      "files": [
+        {
+          "source": "files/manrope-latin-wght-normal.woff2",
+          "target": "assets/fonts/manrope-latin.woff2"
+        }
+      ]
     }
   },
   "assets": {
@@ -35,7 +47,8 @@
     "vendor/firebase-database-compat.js": "57285c8b97aec997bf67714a169eee13d4e2bd37acaa03075793c01a9e20e415",
     "vendor/firebase-auth-compat.js": "444be4c9e8bb4d16d2778177bb35fcad0f7b5b3927a81e6095a4978bad324572",
     "vendor/html2pdf.bundle.min.js": "603aa7917180619f9ea2c5fc555169dd9e59f9461d3e67e1142f274cf02b30be",
-    "vendor/xlsx.full.min.js": "c9506197caf809a075b6dee1da0d36fb19da7158ffe8a88e7b0c96c5d8623c99"
+    "vendor/xlsx.full.min.js": "c9506197caf809a075b6dee1da0d36fb19da7158ffe8a88e7b0c96c5d8623c99",
+    "assets/fonts/manrope-latin.woff2": "a30ddcd349703aff7464c34bef3fffdff405ee50c113440d7c8693c02d210972"
   },
   "base_style": {
     "url": "https://cdn.jsdelivr.net/gh/reza5208/RezaOT-v2@81d9af1125e1aadd9bd837abda445647ba318d3b/styles.css",

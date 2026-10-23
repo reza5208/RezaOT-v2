@@ -1,4 +1,4 @@
-# RezaOT v70
+# RezaOT v71
 
 PWA peribadi untuk rekod **Clock-In/Out**, **Trip**, **OT**, dan **anggaran gaji**  
 WH3 Transport — **Khairul Reza** (M-264)
@@ -54,7 +54,8 @@ WH3 Transport — **Khairul Reza** (M-264)
 - Side job default: **Tiada**
 
 ### App
-- Bahasa **BM / EN**, dark mode, PWA (installable)
+- Dashboard responsive: **Hari ini / Rekod / Gaji / Tetapan**, sidebar desktop dan navigasi bawah telefon
+- Bahasa **BM / EN**, dark mode, PWA (installable), font Manrope lokal
 - Firebase Realtime Database + offline queue
 - **PIN lock** — kunci UI lokal; bukan authorization database
 - Firebase Auth email/password **pilihan opt-in**, dengan pengesahan pemilikan data lokal sebelum sync
@@ -79,6 +80,8 @@ python3 scripts/vendor.py
 node --test tests/*.test.js
 python3 tests/ui_browser.py
 python3 tests/integration_browser.py
+python3 tests/detail_browser.py
+python3 tests/redesign_browser.py
 ```
 
 Suite browser memerlukan Python Playwright dan Chromium (`/usr/bin/chromium` pada environment ini). Pada mesin lain, jalankan `python3 -m pip install -r requirements-dev.txt` dan `python3 -m playwright install chromium`; tetapkan `CHROMIUM_PATH` jika perlu memilih browser tertentu. Ujian menggunakan fixture/Firebase palsu dan tidak menulis ke database production. Lihat [senarai QA](docs/qa-checklist.md) untuk pemeriksaan manual sebelum release.
@@ -98,7 +101,7 @@ Untuk memilih authenticated mode, gunakan `cloud-config.js` dan contoh [firebase
 
 [database.rules.example.json](database.rules.example.json) ialah **contoh rules sasaran**, bukan deployment automatik. Menutup `users/default` sebelum migrasi akan memutuskan client lama. Ikuti [panduan staging, migration dan rollback](docs/firebase-security.md), sediakan akaun pemilik dan uji rules terlebih dahulu. Password, service-account JSON dan private key tidak boleh dimasukkan ke repo atau backup.
 
-## Struktur fail (v70)
+## Struktur fail (v71)
 
 | Fail | Peranan |
 |------|----------|
@@ -110,6 +113,8 @@ Untuk memilih authenticated mode, gunakan `cloud-config.js` dan contoh [firebase
 | `salary-estimator.js` / `utils.js` | Kiraan gaji/OT bersama dan snapshot tetapan |
 | `constants.js` / `holiday-picker.js` | Katalog serta cuti company tersuai / observed |
 | `mobile-cards.js` / `modal.js` / `i18n.js` | UI mobile, dialog accessible dan BM/EN |
+| `dashboard.js` / `styles-dashboard.css` | Navigasi empat paparan, ringkasan, carian dan susun atur responsive |
+| `styles-detail.css` | Kad rekod mobile dan pecahan gaji |
 | `app-p1.js` | PIN lokal, nama ketua dan tindakan tambahan |
 | `firebase-auth.js` | Login cloud pilihan, consent dan pengasingan pemilik lokal |
 | `print-orient-v67.js` | Cetak/PDF Portrait dan Landscape |
@@ -171,3 +176,5 @@ Untuk memilih authenticated mode, gunakan `cloud-config.js` dan contoh [firebase
 - Deployment authenticated production dan migrasi database kekal langkah berasingan daripada menyediakan source/configuration
 
 Status pembaikan dan bukti ujian: [review v70](docs/review-fixes.md).
+
+Redesign workspace v71: [susun atur dan pengesahan](docs/redesign-v71.md). Carian/filter hanya mempengaruhi paparan; PDF/Excel tetap merangkumi keseluruhan bulan.

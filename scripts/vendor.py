@@ -37,10 +37,12 @@ def restore():
             raise SystemExit('Package integrity mismatch: ' + package['url'])
         with tarfile.open(fileobj=io.BytesIO(data)) as archive:
             for name in package['files']:
-                output = 'vendor/' + Path(name).name
-                artifact = archive.extractfile('package/' + name).read()
+                source = name['source'] if isinstance(name, dict) else name
+                output = name['target'] if isinstance(name, dict) else 'vendor/' + Path(name).name
+                artifact = archive.extractfile('package/' + source).read()
                 if digest(artifact) != MANIFEST['assets'][output]:
                     raise SystemExit('Artifact integrity mismatch: ' + output)
+                (ROOT / output).parent.mkdir(parents=True, exist_ok=True)
                 (ROOT / output).write_bytes(artifact)
     with urlopen(MANIFEST['base_style']['url'], timeout=30) as response:
         data = response.read()

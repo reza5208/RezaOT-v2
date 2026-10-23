@@ -6,6 +6,11 @@ const vm = require('node:vm');
 
 const ROOT = path.resolve(__dirname, '..');
 const SCOPE = 'https://example.test/RezaOT-v2/';
+const releaseContext = {};
+vm.runInNewContext(fs.readFileSync(path.join(ROOT, 'release.js'), 'utf8'), releaseContext);
+const VERSION = releaseContext.REZAOT_RELEASE.version;
+const CURRENT_CACHE = 'rezaot-v' + VERSION;
+const PRIOR_CACHE = 'rezaot-v' + (Number(VERSION) - 1);
 
 // Exercise the actual worker and release manifest in their own worker-like VM.
 // Cache keys are URLs so tests also cover deployments below a GitHub Pages path.
@@ -89,13 +94,13 @@ test('release declares only existing local assets and requires both local Fireba
 });
 
 test('missing core asset rejects install while retaining the prior offline release', async () => {
-  const h = workerHarness({ failAsset: 'main-app-1.js', cacheNames: ['rezaot-v69'] });
-  h.seed('rezaot-v69', 'index.html', { body: 'working old shell' });
+  const h = workerHarness({ failAsset: 'main-app-1.js', cacheNames: [PRIOR_CACHE] });
+  h.seed(PRIOR_CACHE, 'index.html', { body: 'working old shell' });
   await assert.rejects(h.lifecycle('install'), /main-app-1/);
   assert.equal(h.state.skipped, 0);
   assert.equal(h.state.claimed, 0);
   assert.deepEqual(h.deleted, []);
-  assert.equal(h.stores.get('rezaot-v69').get(SCOPE + 'index.html').body, 'working old shell');
+  assert.equal(h.stores.get(PRIOR_CACHE).get(SCOPE + 'index.html').body, 'working old shell');
 });
 
 test('successful install precaches versioned core and waits for explicit activation', async () => {
@@ -112,10 +117,10 @@ test('successful install precaches versioned core and waits for explicit activat
 });
 
 test('activation deletes only older RezaOT caches and preserves other applications', async () => {
-  const h = workerHarness({ cacheNames: ['rezaot-v68', 'rezaot-v69', 'rezaot-v70', 'another-app-v1', 'firebase-cache'] });
+  const h = workerHarness({ cacheNames: ['rezaot-v1', PRIOR_CACHE, CURRENT_CACHE, 'another-app-v1', 'firebase-cache'] });
   await h.lifecycle('activate');
-  assert.deepEqual(h.deleted, ['rezaot-v68', 'rezaot-v69']);
-  assert.ok(h.stores.has('rezaot-v70'));
+  assert.deepEqual(h.deleted, ['rezaot-v1', PRIOR_CACHE]);
+  assert.ok(h.stores.has(CURRENT_CACHE));
   assert.ok(h.stores.has('another-app-v1'));
   assert.ok(h.stores.has('firebase-cache'));
   assert.equal(h.state.claimed, 1);
@@ -124,7 +129,7 @@ test('activation deletes only older RezaOT caches and preserves other applicatio
 test('offline navigation in a nested deployment returns the cached application shell', async () => {
   const h = workerHarness({ offline: true });
   const shell = { body: 'offline app shell' };
-  h.seed('rezaot-v70', 'index.html', shell);
+  h.seed(CURRENT_CACHE, 'index.html', shell);
   assert.equal(await h.request('history/October', 'navigate'), shell);
   assert.deepEqual(h.network, []);
 });
@@ -132,15 +137,15 @@ test('offline navigation in a nested deployment returns the cached application s
 test('versioned lazy export request uses its verified precached local artifact offline', async () => {
   const h = workerHarness({ offline: true });
   const library = { body: 'offline export library' };
-  h.seed('rezaot-v70', 'vendor/xlsx.full.min.js', library);
-  assert.equal(await h.request('vendor/xlsx.full.min.js?v=70'), library);
+  h.seed(CURRENT_CACHE, 'vendor/xlsx.full.min.js', library);
+  assert.equal(await h.request('vendor/xlsx.full.min.js?v=' + VERSION), library);
   assert.deepEqual(h.network, []);
 });
 
 test('a different release query does not silently receive the current lazy library', async () => {
   const h = workerHarness();
-  h.seed('rezaot-v70', 'vendor/xlsx.full.min.js', { body: 'current library' });
-  assert.equal((await h.request('vendor/xlsx.full.min.js?v=71')).body, 'network response');
+  h.seed(CURRENT_CACHE, 'vendor/xlsx.full.min.js', { body: 'current library' });
+  assert.equal((await h.request('vendor/xlsx.full.min.js?v=' + (Number(VERSION) + 1))).body, 'network response');
   assert.equal(h.network.length, 1);
 });
 

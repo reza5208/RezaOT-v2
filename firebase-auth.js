@@ -74,7 +74,7 @@
     if (element("cloudAuthPanel")) return;
     var panel = document.createElement("section");
     panel.id = "cloudAuthPanel";
-    panel.className = "no-print cloud-auth-panel";
+    panel.className = "no-print cloud-auth-panel surface-card";
     panel.setAttribute("aria-labelledby", "cloudAuthTitle");
     panel.innerHTML =
       '<h2 id="cloudAuthTitle"></h2>' +
@@ -87,10 +87,14 @@
       '<button id="cloudApproveSync" type="button" hidden></button> ' +
       '<button id="cloudSignOut" type="button" hidden></button>' +
       '<p id="cloudAuthMessage" role="alert"></p>';
-    var container = document.querySelector(".container") || document.body;
-    var header = container.querySelector("header");
-    if (header) header.insertAdjacentElement("afterend", panel);
-    else container.insertBefore(panel, container.firstChild);
+    var slot = document.getElementById("cloudAccountSlot");
+    if (slot) slot.appendChild(panel);
+    else {
+      var container = document.querySelector(".container") || document.body;
+      var header = container.querySelector("header");
+      if (header) header.insertAdjacentElement("afterend", panel);
+      else container.insertBefore(panel, container.firstChild);
+    }
     element("cloudAuthTitle").textContent = text("authTitle", "Akaun cloud");
     element("cloudEmailLabel").textContent = text("authEmail", "Email");
     element("cloudPasswordLabel").textContent = text("authPassword", "Password");

@@ -114,6 +114,19 @@ class AppIntegrationTests(unittest.TestCase):
           saveToLocalStorage();updateReport();
         }''', {'date': date, 'record': record})
 
+    def navigate(self, name, page=None):
+        page = page or self.page
+        if page.locator('#view-' + name).is_visible():
+            return
+        page.locator('.app-nav-link[data-view="' + name + '"]:visible').first.click()
+        page.locator('#view-' + name).wait_for(state='visible')
+
+    def open_exports(self, page=None):
+        page = page or self.page
+        self.navigate('records', page)
+        if not page.locator('#reportExportMenu').is_visible():
+            page.locator('#exportMenuBtn').click()
+
     def test_boot_is_local_and_error_free_and_all_modules_initialized(self):
         state = self.page.evaluate('''()=>({
           ready:window.__rezaotInited,
@@ -132,6 +145,7 @@ class AppIntegrationTests(unittest.TestCase):
 
     def test_mobile_day_actions_have_readable_light_theme_text(self):
         self.seed_record()
+        self.navigate('records')
         colors = self.page.locator('#mobileCards .mc-actions button').evaluate_all("""buttons=>buttons.map(button=>{
           const style=getComputedStyle(button);
           return {foreground:style.color,background:style.backgroundColor};
@@ -164,7 +178,8 @@ class AppIntegrationTests(unittest.TestCase):
         self.page.locator('#clockOut').fill('19:10')
         self.page.locator('#salaryToggleBtn').click()
         self.page.locator('#langToggleBtn').click()
-        self.assertIn('Trips & OT Report', self.page.locator('h1').text_content())
+        self.assertTrue(self.page.locator('#view-salary').is_visible())
+        self.assertIn('A clearer picture', self.page.locator('#salaryTitle').text_content())
         self.assertIn('Basic salary', self.page.locator('#salaryPanelBody').text_content())
         self.assertIn('Employee EPF', self.page.locator('#salaryPanelBody').text_content())
         self.assertEqual(self.page.locator('#destination').input_value(), 'KLIA Cargo')
@@ -174,6 +189,7 @@ class AppIntegrationTests(unittest.TestCase):
     def test_first_excel_click_downloads_real_workbook_with_side_marks(self):
         self.seed_record(side=True)
         self.assertEqual(self.page.evaluate('typeof XLSX'), 'undefined')
+        self.open_exports()
         with self.page.expect_download() as result:
             self.page.locator('#exportExcelBtn').click()
         download = result.value
@@ -215,6 +231,7 @@ class AppIntegrationTests(unittest.TestCase):
         self.page.locator('#rezaotModalCancel').click()
         self.page.wait_for_function("!document.querySelector('#tripForm').__saving")
         self.assertEqual(self.page.evaluate('JSON.stringify(dailyRecords)'), before)
+        self.navigate('records')
         self.page.locator('#mobileCards .mc-trip-delete').click()
         self.page.locator('#rezaotModalOk').click()
         self.page.wait_for_function("dailyRecords['2026-10-19'].trips.length === 0")
@@ -225,6 +242,7 @@ class AppIntegrationTests(unittest.TestCase):
         self.seed_record()
         before = self.page.evaluate('JSON.stringify(dailyRecords)')
         malformed = {'month': 'Oktober 2026', 'dailyRecords': {'2026-10-19': {'clock_in': '08:00', 'clock_out': '19:00', 'trips': 'oops'}}}
+        self.navigate('settings')
         self.page.locator('#importDataInput').set_input_files({'name': 'invalid.json', 'mimeType': 'application/json', 'buffer': json.dumps(malformed).encode()})
         self.page.wait_for_function("!document.querySelector('#importDataInput').__importing")
         self.assertEqual(self.page.evaluate('JSON.stringify(dailyRecords)'), before)
@@ -234,6 +252,7 @@ class AppIntegrationTests(unittest.TestCase):
     def test_legacy_backup_restores_source_month_and_preserves_other_month(self):
         self.seed_record()
         source = {'month': 'September 2026', 'dailyRecords': {'2026-09-15': {'clock_in': '08:00', 'clock_out': '18:00', 'trips': ['RESTORED-TRIP']}}, 'trips': ['RESTORED-TRIP']}
+        self.navigate('settings')
         self.page.locator('#importDataInput').set_input_files({'name': 'september.json', 'mimeType': 'application/json', 'buffer': json.dumps(source).encode()})
         self.page.locator('[data-choice=replace]').click()
         self.page.wait_for_function("!document.querySelector('#importDataInput').__importing")
@@ -258,6 +277,7 @@ class AppIntegrationTests(unittest.TestCase):
           };
         }''')
         for orientation in ['portrait', 'landscape']:
+            self.open_exports()
             with self.page.expect_download(timeout=45000) as result:
                 self.page.locator('#exportPdfBtn').click()
                 self.page.locator('[data-choice=' + orientation + ']').click()
@@ -346,6 +366,8 @@ class AppIntegrationTests(unittest.TestCase):
             page.evaluate("selectMonth('Oktober 2026')")
             self.assertEqual(page.evaluate("dailyRecords['2026-10-19'].trips"), ['OFFLINE-TRIP'])
             self.assertIn('another-pwa-cache', page.evaluate('caches.keys()'))
+            self.assertEqual(page.evaluate("document.fonts.check('16px Manrope')"), True, 'offline release retains the local UI font')
+            self.open_exports(page)
             with page.expect_download() as result:
                 page.locator('#exportExcelBtn').click()
             self.assertIsNone(result.value.failure())

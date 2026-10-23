@@ -527,6 +527,7 @@
   }
   window.RezaOT_i18n = {
     getLang: getLang,
+    extend: function (packs) { for (const lang of ["ms", "en"]) if (packs[lang]) Object.assign(dict[lang], packs[lang]); },
     t: function (key) { const pack = dict[getLang()]; return pack[key] != null ? pack[key] : (dict.ms[key] != null ? dict.ms[key] : key); },
     text: function (key, fallback) { const value = this.t(key); return value === key ? (fallback || key) : value; },
     days: function () { return this.t("days"); },

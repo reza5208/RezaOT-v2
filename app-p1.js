@@ -24,6 +24,7 @@
     if (window.RezaOT_sync && typeof RezaOT_sync.updateSettings === "function") RezaOT_sync.updateSettings({ supervisorName: name });
     else localStorage.setItem("supervisorName", name);
     el.textContent = name;
+    document.dispatchEvent(new Event("rezaot-profile"));
     showToast(tr("toastSupSaved", "Nama ketua dikemaskini"));
   };
   async function editPin() {
@@ -62,6 +63,7 @@
       });
     }
     wire("fabAddTrip", async function () {
+      if (window.RezaOT_dashboard) RezaOT_dashboard.navigate("today");
       var today = getLocalDateString(new Date());
       var target = monthNames[new Date().getMonth()] + " " + new Date().getFullYear();
       if (target !== currentMonthKey) {

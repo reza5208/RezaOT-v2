@@ -26,6 +26,8 @@ function syncLeaveInputs(changed) {
   if (changed === unpaid && unpaid.checked && annual) annual.checked = false;
   if (changed === annual && annual.checked && unpaid) unpaid.checked = false;
   const leave = !!(unpaid && unpaid.checked) || !!(annual && annual.checked);
+  const working = document.getElementById("workingDayCheck");
+  if (working) working.checked = !leave;
   for (const id of ["clockIn", "clockOut"]) { const input = document.getElementById(id); if (input) input.required = !leave; }
 }
 function validActiveDate(date) {
@@ -129,6 +131,7 @@ async function handleClockFormSubmit(event) {
     record.unpaid = unpaid; record.annual = annual;
     dailyRecords[date] = record;
     saveToLocalStorage(); updateReport(); syncLeaveInputs();
+    if (typeof CustomEvent !== "undefined") document.dispatchEvent(new CustomEvent("rezaot-saved", { detail: { kind: "attendance", date } }));
     showToast(annual ? appText("annualSaved", "ANN disimpan (OT = 0)") : unpaid ? appText("unpaidSaved", "UPL disimpan (OT = 0)") : appText("attendanceSaved", "Kehadiran berjaya disimpan!"));
     return true;
   });
@@ -163,6 +166,7 @@ async function handleTripFormSubmit(event) {
     if (awbInput) awbInput.value = "";
     document.querySelectorAll('input[name="sideJob"]').forEach((input) => { input.checked = input.value === ""; });
     handleDestinationChange();
+    if (typeof CustomEvent !== "undefined") document.dispatchEvent(new CustomEvent("rezaot-saved", { detail: { kind: "trip", date } }));
     showToast(appText("tripAdded", "Trip berjaya ditambah!"));
     return true;
   });
@@ -208,6 +212,7 @@ async function editTrip(date, tripIndex) {
 }
 function editRecord(date) {
   const record = dailyRecords[date]; if (!record) return;
+  if (window.RezaOT_dashboard) RezaOT_dashboard.navigate("today");
   document.getElementById("date").value = date;
   document.getElementById("clockIn").value = record.clock_in || "";
   document.getElementById("clockOut").value = record.clock_out || "";
@@ -215,7 +220,10 @@ function editRecord(date) {
   document.getElementById("annualLeaveCheck").checked = !!record.annual;
   syncLeaveInputs(); updateHolidayBadge();
   showToast(appText("recordLoaded", "Rekod dimuat ke borang — simpan untuk kemaskini"));
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  if (window.RezaOT_dashboard) {
+    document.getElementById("clockForm").scrollIntoView({ block: "center", behavior: "smooth" });
+    document.getElementById("date").focus({ preventScroll: true });
+  } else window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 function updateSummary(totalOT) {
@@ -267,6 +275,7 @@ function updateReport() {
     const day = new Date(date + "T00:00:00").getDay();
     const holiday = isPublicHoliday(date);
     const tr = document.createElement("tr");
+    tr.dataset.date = date;
     if (day === 0) tr.classList.add("sunday");
     else if (day === 6) tr.classList.add("saturday");
     if (holiday) tr.classList.add("holiday");

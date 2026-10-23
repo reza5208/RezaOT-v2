@@ -4,8 +4,8 @@
   "description": "Aplikasi Rekod Clock In/Out, Trip dan Overtime Khairul Reza",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#007bff",
+  "background_color": "#f4f6fa",
+  "theme_color": "#3157e5",
   "orientation": "any",
   "icons": [
     {
