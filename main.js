@@ -66,6 +66,7 @@
     window.addEventListener("error", onError);
     try {
       if (!release) throw new Error("Release manifest missing");
+      if (!window.RezaOT_theme) throw new Error("Theme module missing");
       for (var path of release.scripts) await loadScript(path);
       rezaotInitApp();
       document.dispatchEvent(new Event("rezaot-ready"));

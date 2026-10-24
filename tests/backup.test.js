@@ -75,3 +75,23 @@ test('queue preparation failure leaves original state untouched',()=>{
   assert.throws(()=>c.RezaOT_backup.apply({month:'Oktober 2026',dailyRecords:{'2026-10-20':record()}},'replace'),/queue quota/);
   assert.deepEqual(Object.keys(c.dailyRecords),['2026-10-19']);assert.equal(c.values.size,0);
 });
+test('system and legacy theme preferences round-trip while invalid imports stay atomic',()=>{
+  for(const value of ['system','0','1']){
+    const c=app();
+    c.localStorage.setItem('darkMode',value);
+    const backup=c.RezaOT_backup.create();
+    assert.equal(backup.settings.darkMode,value);
+    assert.equal(c.RezaOT_backup.parse(backup).settings.darkMode,value);
+    c.localStorage.setItem('darkMode',value==='0'?'1':'0');
+    let applied=0;
+    c.RezaOT_theme={apply(){applied++;assert.equal(c.localStorage.getItem('darkMode'),value);}};
+    c.RezaOT_backup.apply({schemaVersion:2,months:{},settings:{darkMode:value}},'merge');
+    assert.equal(c.localStorage.getItem('darkMode'),value);
+    assert.equal(applied,1,'Apply the imported preference after its transaction commits');
+  }
+  for(const value of ['dark','light','auto',null,1]){
+    const c=app();
+    assert.throws(()=>c.RezaOT_backup.apply({schemaVersion:2,months:{},settings:{darkMode:value}},'merge'));
+    assert.equal(c.values.size,0);assert.equal(c.archives.length,0);
+  }
+});

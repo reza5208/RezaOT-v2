@@ -1,4 +1,4 @@
-# RezaOT v72
+# RezaOT v73
 
 PWA peribadi untuk rekod **Clock-In/Out**, **Trip**, **OT**, dan **anggaran gaji**  
 WH3 Transport — **Khairul Reza** (M-264)
@@ -55,7 +55,8 @@ WH3 Transport — **Khairul Reza** (M-264)
 
 ### App
 - Dashboard responsive: **Hari ini / Rekod / Gaji / Tetapan**, sidebar desktop dan navigasi bawah telefon
-- Bahasa **BM / EN**, dark mode, PWA (installable), font Manrope lokal
+- Bahasa **BM / EN**, tema **Ikut sistem / Cerah / Gelap**, PWA (installable), font Manrope lokal
+- Tema ikut perubahan peranti secara langsung; pilihan manual disimpan pada peranti dan backup, tanpa sync tema ke cloud
 - Firebase Realtime Database + offline queue
 - **PIN lock** — kunci UI lokal; bukan authorization database
 - Firebase Auth email/password **pilihan opt-in**, dengan pengesahan pemilikan data lokal sebelum sync
@@ -83,6 +84,7 @@ python3 tests/integration_browser.py
 python3 tests/detail_browser.py
 python3 tests/redesign_browser.py
 python3 tests/pdf_report_browser.py
+python3 tests/theme_browser.py
 ```
 
 Suite browser memerlukan Python Playwright dan Chromium (`/usr/bin/chromium` pada environment ini). Pada mesin lain, jalankan `python3 -m pip install -r requirements-dev.txt` dan `python3 -m playwright install chromium`; tetapkan `CHROMIUM_PATH` jika perlu memilih browser tertentu. Ujian menggunakan fixture/Firebase palsu dan tidak menulis ke database production. Lihat [senarai QA](docs/qa-checklist.md) untuk pemeriksaan manual sebelum release.
@@ -102,7 +104,7 @@ Untuk memilih authenticated mode, gunakan `cloud-config.js` dan contoh [firebase
 
 [database.rules.example.json](database.rules.example.json) ialah **contoh rules sasaran**, bukan deployment automatik. Menutup `users/default` sebelum migrasi akan memutuskan client lama. Ikuti [panduan staging, migration dan rollback](docs/firebase-security.md), sediakan akaun pemilik dan uji rules terlebih dahulu. Password, service-account JSON dan private key tidak boleh dimasukkan ke repo atau backup.
 
-## Struktur fail (v72)
+## Struktur fail (v73)
 
 | Fail | Peranan |
 |------|----------|
@@ -115,6 +117,7 @@ Untuk memilih authenticated mode, gunakan `cloud-config.js` dan contoh [firebase
 | `constants.js` / `holiday-picker.js` | Katalog serta cuti company tersuai / observed |
 | `mobile-cards.js` / `modal.js` / `i18n.js` | UI mobile, dialog accessible dan BM/EN |
 | `dashboard.js` / `styles-dashboard.css` | Navigasi empat paparan, ringkasan, carian dan susun atur responsive |
+| `theme.js` | Tema awal, pilihan ikut sistem/manual, perubahan tetapan peranti dan tab lain |
 | `styles-detail.css` | Kad rekod mobile dan pecahan gaji |
 | `app-p1.js` | PIN lokal, nama ketua dan tindakan tambahan |
 | `firebase-auth.js` | Login cloud pilihan, consent dan pengasingan pemilik lokal |
@@ -182,3 +185,7 @@ Status pembaikan dan bukti ujian: [review v70](docs/review-fixes.md).
 Redesign workspace v71: [susun atur dan pengesahan](docs/redesign-v71.md). Carian/filter hanya mempengaruhi paparan; PDF/Excel tetap merangkumi keseluruhan bulan.
 
 Pembaikan eksport v72: [jadual penuh, jumlah OT dan footer](docs/pdf-export-v72.md).
+
+Tema v73: pilih **Tetapan → Paparan & bahasa → Tema**. Peranti tanpa pilihan tema tersimpan mengikuti sistem. Pilihan cerah/gelap lama dikekalkan; pilih **Ikut sistem** untuk mengaktifkan tema automatik. Butang tema pada header menukar kepada pilihan manual. Import backup memulihkan pilihan tema serta-merta.
+
+Rujukan estimator: [formula dan tahap bukti daripada payslip](docs/payroll-reference.md). Nota ini belum menukar formula gaji runtime; dokumen payslip dan data gaji bulanan peribadi kekal di luar repo.

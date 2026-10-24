@@ -156,8 +156,9 @@
       operations.push({ path: root + "/" + month, data: { dailyRecords: RezaOT_model.validateRecords(input.months[month], month), trips: list } });
     });
     if (input.trips != null) operations.push({ path: root + "/_meta/trips", data: { list: list } });
-    if (input.settings && Object.keys(input.settings).length) {
-      operations.push({ path: root + "/settings", data: Object.assign({}, settingsPayload(), validatedSettings(input.settings)) });
+    var importedSettings = validatedSettings(input.settings || {});
+    if (Object.keys(importedSettings).length) {
+      operations.push({ path: root + "/settings", data: Object.assign({}, settingsPayload(), importedSettings) });
     }
     if (!operations.length) return {};
     var identity = localStorage.getItem("deviceId");

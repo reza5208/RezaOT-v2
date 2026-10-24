@@ -1,4 +1,4 @@
-RezaOT v72 regression and release checklist
+RezaOT v73 regression and release checklist
 
 Run the automated suites from the repository root:
 
@@ -9,6 +9,7 @@ python3 tests/integration_browser.py
 python3 tests/detail_browser.py
 python3 tests/redesign_browser.py
 python3 tests/pdf_report_browser.py
+python3 tests/theme_browser.py
 ```
 
 The browser suite needs Python Playwright and a Chromium executable. Tests use isolated local data and a fake Firebase backend; they must not read or write the owner's production records. Package/runtime installation is only needed for the test tooling, not to serve the app.
@@ -28,6 +29,7 @@ Check these behaviors against the local development server before publishing an 
 - Salary input rejects nonfinite/negative values and invalid divisors/rates while accepting supported zero values. OT start times accept real HH:MM only. Changing global salary settings does not silently recalculate a retained month's captured snapshot; replacing that snapshot is explicit.
 - Custom company holidays can be added/corrected and selected. Catalog dates marked estimated remain visibly estimated. No test assumes unofficial dates or turns estimated payroll into a legal filing.
 - Mobile cards provide per-trip Edit/Delete plus whole-day actions. Dialogs trap keyboard focus, return focus after closing, support Escape/cancel, and expose labels/status to assistive technology. BM/EN, dark mode and PIN locking remain usable.
+- On a fresh device, appearance follows the system at startup and changes immediately with the device setting. Manual Light/Dark overrides survive reload; legacy 0/1 choices remain manual. Returning to Follow system restores automatic changes. Check selector labels/focus in BM/EN and at 320 px. Other tabs share the saved preference but resolve system mode for their own device context. Theme-only backup import applies immediately without changing records or sending cloud writes. PDF/print stays white in dark mode.
 - After one online visit, offline reload starts without an external Firebase CDN response. A failed mandatory asset prevents a new service worker from replacing the prior complete cache. Activation deletes only obsolete RezaOT caches, preserving another app's cache on the same origin.
 - No missing required module is reported as ready. Startup and sync statuses distinguish local/offline, pending, permission denied, authentication and complete state.
 - Optional Auth mode leaves legacy default behavior unchanged until configured. In Auth mode, signed-out and unapproved accounts make no cloud writes; sign-out closes listeners while keeping local data. Follow `firebase-security.md` for emulator/staging rules and migration tests before production rollout.

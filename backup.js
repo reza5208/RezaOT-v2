@@ -71,7 +71,7 @@
         if (typeof root.RezaOT_validateMonthSettings === "function") result[key] = root.RezaOT_validateMonthSettings(result[key]);
       } else {
         if (typeof entry !== "string" || entry.length > 200) error("Tetapan tidak sah: " + key);
-        if (key === "darkMode" && !["0", "1"].includes(entry)) error("Tema tidak sah");
+        if (key === "darkMode" && !["0", "1", "system"].includes(entry)) error("Tema tidak sah");
         if (key === "rezaot_lang" && !["ms", "en"].includes(entry)) error("Bahasa tidak sah");
         if (key === "rezaot_print_orientation" && !["portrait", "landscape"].includes(entry)) error("Orientasi tidak sah");
         result[key] = entry;
@@ -150,6 +150,7 @@
       Object.assign(entries, queue);
     }
     root.RezaOT_storage.transaction(entries);
+    if (Object.prototype.hasOwnProperty.call(entries, "darkMode") && root.RezaOT_theme) root.RezaOT_theme.apply();
     if (typeof currentMonthKey !== "undefined" && months[currentMonthKey]) dailyRecords = months[currentMonthKey];
     if (entries.trips) trips = entries.trips;
     if (prepare) root.RezaOT_sync.flush();

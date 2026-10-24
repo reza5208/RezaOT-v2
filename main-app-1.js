@@ -56,20 +56,10 @@ function showToast(message, duration = 2500) {
 }
 
 function initDarkMode() {
-  const saved = localStorage.getItem("darkMode") === "1";
-  document.body.classList.toggle("dark", saved);
-  const btn = document.getElementById("darkModeBtn");
-  if (window.RezaOT_dashboard) RezaOT_dashboard.paintTheme();
-  else if (btn) btn.textContent = saved ? "☀️" : "🌙";
+  if (window.RezaOT_theme) RezaOT_theme.init();
 }
 function toggleDarkMode() {
-  const isDark = document.body.classList.toggle("dark");
-  localStorage.setItem("darkMode", isDark ? "1" : "0");
-  const btn = document.getElementById("darkModeBtn");
-  if (window.RezaOT_dashboard) RezaOT_dashboard.paintTheme();
-  else if (btn) btn.textContent = isDark ? "☀️" : "🌙";
-  const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.content = isDark ? "#101828" : "#3157e5";
+  if (window.RezaOT_theme) RezaOT_theme.toggle();
 }
 function getCurrentTimeString() {
   const now = new Date();

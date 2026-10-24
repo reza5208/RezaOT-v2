@@ -626,6 +626,13 @@
   body.app-shell:not(.pdf-export) .settings-row > .icon { color: var(--ui-muted); width: 18px; height: 18px; }
   body.app-shell:not(.pdf-export) .settings-row > span { flex: 1; }
   body.app-shell:not(.pdf-export) .settings-row > .icon:last-child { margin-left: auto; width: 14px; height: 14px; }
+  body.app-shell:not(.pdf-export) .theme-preference-control { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 0 18px; border-bottom: 1px solid var(--ui-border); }
+  body.app-shell:not(.pdf-export) .theme-preference-label { display: flex; align-items: center; gap: 14px; flex: 1 1 auto; min-width: 0; margin: 0; color: var(--ui-ink); cursor: pointer; }
+  body.app-shell:not(.pdf-export) .theme-preference-label > .icon { flex: 0 0 18px; width: 18px; height: 18px; color: var(--ui-muted); }
+  body.app-shell:not(.pdf-export) .theme-preference-label > span { min-width: 0; }
+  body.app-shell:not(.pdf-export) .theme-preference-label strong { display: block; font-size: 12px; font-weight: 700; line-height: 1.4; }
+  body.app-shell:not(.pdf-export) .theme-preference-label small { display: block; margin-top: 3px; color: var(--ui-muted); font-size: 11px; font-weight: 450; line-height: 1.5; }
+  body.app-shell:not(.pdf-export) #themePreference { flex: 0 0 164px; width: 164px; max-width: 100%; min-height: 46px; margin: 0; padding-right: 30px; }
   body.app-shell:not(.pdf-export) .version-badge { display: flex; align-items: center; justify-content: center; gap: 6px; }
   body.app-shell:not(.pdf-export) .version-dot { padding: 0 3px; }
 }
@@ -645,6 +652,13 @@
   body.app-shell:not(.pdf-export) .today-grid { grid-template-columns: 1fr; }
   body.app-shell:not(.pdf-export) .hero-orbit { right: 20px; }
   body.app-shell:not(.pdf-export) #startupStatus:not([hidden]) { margin-left: 210px; padding-left: 24px; }
+}
+@media screen and (max-width: 1100px) {
+  body.app-shell:not(.pdf-export) .theme-preference-control { flex-direction: column; align-items: stretch; gap: 12px; }
+  body.app-shell:not(.pdf-export) #themePreference { flex: 0 0 auto; width: 100%; }
+}
+@media screen and (max-width: 600px) {
+  body.app-shell:not(.pdf-export) #themePreference { font-size: 16px; }
 }
 @media screen and (max-width: 920px) {
   body.app-shell:not(.pdf-export) .app-sidebar { display: none; }
