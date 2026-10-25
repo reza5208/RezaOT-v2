@@ -8,7 +8,8 @@
       "files": [
         "firebase-app-compat.js",
         "firebase-database-compat.js",
-        "firebase-auth-compat.js"
+        "firebase-auth-compat.js",
+        "firebase-app-check-compat.js"
       ]
     },
     "html2pdf.js": {
@@ -48,7 +49,8 @@
     "vendor/firebase-auth-compat.js": "444be4c9e8bb4d16d2778177bb35fcad0f7b5b3927a81e6095a4978bad324572",
     "vendor/html2pdf.bundle.min.js": "603aa7917180619f9ea2c5fc555169dd9e59f9461d3e67e1142f274cf02b30be",
     "vendor/xlsx.full.min.js": "c9506197caf809a075b6dee1da0d36fb19da7158ffe8a88e7b0c96c5d8623c99",
-    "assets/fonts/manrope-latin.woff2": "a30ddcd349703aff7464c34bef3fffdff405ee50c113440d7c8693c02d210972"
+    "assets/fonts/manrope-latin.woff2": "a30ddcd349703aff7464c34bef3fffdff405ee50c113440d7c8693c02d210972",
+    "vendor/firebase-app-check-compat.js": "ab1b63a9da4d418fee727518b6487c6021d1404bc2b58eac1499323334e17f83"
   },
   "base_style": {
     "url": "https://cdn.jsdelivr.net/gh/reza5208/RezaOT-v2@81d9af1125e1aadd9bd837abda445647ba318d3b/styles.css",

@@ -1,25 +1,56 @@
-Firebase cloud account rollout (optional)
+# Firebase security and data boundaries (v74)
 
-RezaOT keeps the existing `users/default` workflow unless `cloud-config.js` explicitly sets `requireAuth: true`. This change does not publish Firebase rules, create accounts, migrate remote data, or change the production database. The local PIN remains a device UI lock; database authorization comes from Firebase Authentication plus Realtime Database rules.
+The repository contains a proposed authenticated RTDB ruleset and local testing tools. It does **not** deploy rules, enable Auth, create an owner, change App Check enforcement, or migrate the live database. The shipped `cloud-config.js` retains `requireAuth: false` and the existing `users/default` client route until a deliberate cutover. Current production rules and account access have not been inspected.
 
-`database.rules.example.json` is a proposed target for an authenticated deployment. It denies anonymous reads/writes and permits a signed-in user to access only `users/<their uid>`. It intentionally denies `users/default`. Applying it before the owner has authenticated and migrated will stop legacy cloud access. Treat this file as an example, not an automatically applied configuration.
+Use [Firebase operations](firebase-operations.md) for setup and rollout, and [offline migration](firebase-migration.md) for inventory, review and comparison. Applying the authenticated rules before migration and client updates will stop legacy cloud access.
 
-Use a staging Firebase project and a separate browser profile for the first rollout:
+## Authentication and authorization
 
-1. Export an all-month JSON backup from every device that holds records. Keep these files outside the repository. Verify that the backup opens and contains the expected months/settings before continuing.
-2. In Firebase Console, create or select the staging project, register a Web app, enable the Realtime Database and enable **Authentication → Email/Password**. Create the owner account through the console. The app deliberately has no public account-registration button.
-3. Register the deployment domain and development hostname in Firebase Authentication's authorized domains. Keep HTTPS enabled on hosted deployments. Email/password authentication also needs outbound HTTPS to `identitytoolkit.googleapis.com` and `securetoken.googleapis.com`; the Auth SDK is loaded through the pinned local dependency loader.
-4. Copy the required **public Firebase Web configuration** from `firebase-config.example.js` into `cloud-config.js`; replace the placeholders with the staging project's Web configuration and set `requireAuth: true`. Do not place an account password, service-account JSON, private key or Admin SDK credential in client code.
-5. Configure and test the example database rules in the staging project's Rules Playground or Firebase Local Emulator Suite. Check unauthenticated read/write denied, owner path permitted, another user's path denied, and `users/default` denied. Also test child paths for month data, `settings` and `_meta/trips`; a test against database root alone does not establish child-path permissions.
-6. Open the app in the separate browser profile. Local records remain usable before login. Sign in through **Akaun cloud**, inspect the email/account identity, and approve **Aktifkan sync untuk data saya** only after verifying the local data belongs to this account. Approval binds this browser's local data to that UID; signing in alone does not upload legacy data.
-7. Import the verified all-month backup using the app's preview and merge/replace flow. Reopen each required month and verify its records, settings snapshots, side income and report totals. Verify a second device with the same account; a different account must never see the owner's data. Imported/synced data remains subject to the documented monthly conflict behavior; test concurrent edits before treating staging as accepted.
-8. Test sign-out, offline editing, reconnect, token expiry, permission denied and reload with a persisted account. Confirm the app retains local records and makes pending/error status visible.
-9. Plan a production cutover after these checks: take fresh backups, pause legacy edits on all devices, configure the authenticated owner path, migrate and compare data, then apply reviewed production rules. Update all devices together. Keep the previous deployment and backups available for rollback; restoring permissive rules is not a substitute for recovering data.
+Authenticated mode requires `requireAuth: true`. The example config also requires the server-managed custom claim `rezaot_owner === true`. A trusted operator grants this claim using the Admin SDK; signing in or writing a database field cannot grant it. The app exposes email/password sign-in, sign-out, password reset and a **Semak akses semula / Check access again** token refresh action. It has no public registration button.
 
-The single-browser owner binding deliberately blocks an account switch from syncing another account's local data. Use a separate browser profile/device for each account. Logging out does not erase local records or remove the ownership binding. To reuse a browser for another account, export its data first and remove the app's site data through browser settings only when the retained records/backups have been checked. This is an explicit local-data operation, not a sign-out side effect.
+The proposed rules require all three conditions on every owner namespace:
 
-An account's UID is a public identifier, not a credential. The owner binding is a local routing safeguard; Firebase rules are still the access control boundary. The Firebase SDK manages its normal authentication persistence. RezaOT does not store the entered password, include it in backups, print it to logs or send it anywhere except the Firebase sign-in API.
+1. A Firebase-authenticated request.
+2. `auth.uid` equal to the UID in `users/<uid>`; `default` is explicitly excluded.
+3. The boolean custom claim `auth.token.rezaot_owner === true`.
 
-Verification status: automated tests cover the legacy default, sign-in without sync consent, cancellation, account mismatch, logout, account change during consent, unavailable localStorage and Auth SDK failure using a fake backend. Actual Firebase account creation, rules evaluation, production credentials and live migration require the selected project's console/emulator and have not been performed by this source change.
+Root reads, unauthenticated requests, unapproved accounts, other UIDs and `users/default` are denied. Setting `requireOwnerClaim: false` in a client does not relax the server rules. Firebase Web API keys, project IDs and UIDs are public identifiers; passwords, service-account keys and Admin credentials must remain outside client files and Git.
 
-Selepas menukar `cloud-config.js` atau asset aplikasi, naikkan `version` dalam `release.js` dan pasang release PWA baharu. Konfigurasi cloud ialah sebahagian daripada cache release; menukar fail tanpa menaikkan versi boleh meninggalkan peranti menggunakan konfigurasi lama.
+After signing in, the owner must also approve **Aktifkan sync untuk data saya**. The browser stores the UID in `rezaot_auth_data_owner`; this local binding prevents an account switch from uploading another owner's retained records. Signing in alone does not approve an upload. Logout retains records, queued work, recovery copies and the binding. Use a separate browser profile for each owner. To reuse a profile, export and check its records before deliberately clearing site data.
+
+The local binding and PIN are routing/UI safeguards. Database rules are the access-control boundary. Local storage is not encrypted by RezaOT; an unlocked browser profile or script running on the app's origin can read it. The Firebase SDK manages authentication persistence; RezaOT does not put entered passwords, Auth tokens, PINs or Admin credentials into app backups. Password reset presents the same result for existing and absent accounts.
+
+## RTDB schema and validation
+
+`database.rules.example.json` is generated by `firebase/build-rules.cjs`; edit the generator and run `npm --prefix firebase run rules:build`. `rules:check` detects drift between the two files. It checks artifact consistency, not Firebase engine acceptance.
+
+| Owner path | Contents and validation |
+| --- | --- |
+| `<Bulan Tahun>` | Malay month key, matching real calendar dates, clock fields, leave flags, trips and structured trip metadata. Unknown fields are rejected. |
+| `settings` | Supervisor name, OT/salary settings, holiday maps and nonrecursive monthly calculation snapshots. Device theme/language/print preferences are excluded. |
+| `_meta/trips` | Shared destination list and optional sync metadata. |
+| `_meta/months/<Bulan Tahun>` | Valid month key with the value `true`, used for history lookup. |
+
+Strings, numeric ranges, array indices and permitted enum values are bounded. Both full writes and partial updates are subject to validation of the resulting data. Empty lists/maps disappear in RTDB, so empty collection nodes are optional. Daily records require the two clock fields; empty times remain valid, and annual/unpaid cannot both be true. Structured trip details must agree with the legacy display label at the same index. A month marker `{ deleted: true, revision: "..." }` cannot include live daily records. Deleting the entire owner subtree from a client is denied; individual records can be removed.
+
+`revision`, `deviceId`, `lastUpdated` and `lastUpdatedServer` are sync metadata, not authorization fields. Client clocks do not decide conflict winners. Server timestamps are constrained when present; the rules do not establish a permanent audit log or globally monotonic revision sequence. The owner can still intentionally change/delete their own data. Admin SDK and Console imports bypass client rules, so reviewed imports and backups remain necessary.
+
+## Sync, conflicts and recovery
+
+Local edits and their pending operation are persisted together. Edits made before login remain dirty and bind only to the approved owner's namespace. Legacy/default queue entries are retained for migration review; they are never automatically rewritten to a new UID.
+
+Writes use RTDB transactions with a retained baseline. Independent date changes can merge; conflicting changes to the same date require an explicit choice. Settings and destinations use the same baseline principle. A device's later clock does not make its version authoritative. Pending work remains until the database acknowledges it and, for months, the month index is acknowledged. A newly observed deletion after a known baseline becomes a visible conflict rather than silently resurrecting or discarding records.
+
+Open **Tetapan → Data anda → Semak sync & pemulihan** to inspect pending counts, connection state, the last acknowledgement, local storage usage, conflicts and archived copies. Conflict choices preserve recovery evidence and are checked against the current owner and current cloud value. Export a backup before removing archives. Downloaded recovery JSON is evidence; the UI does not blindly restore arbitrary raw JSON or replay exported cloud paths.
+
+An all-month app backup remains schema version 2 and may include `syncState` evidence (pending, dirty and conflicts). Normal import validates records/settings and creates fresh operations under the current owner; it does not replay the exported queue or UID paths. Backups/recovery exports contain private work records and should stay outside the repository.
+
+## Verification and limits
+
+The emulator suite exercises anonymous access, custom claims, cross-owner/default isolation, legitimate legacy shapes, calendar/time validation, metadata bounds, strict fields, partial-update bypasses, multipath writes and Auth-issued claims. It uses only a `demo-*` project and loopback endpoints. Application unit/browser suites use a fake backend, so they test client behavior without claiming to evaluate real Firebase rules.
+
+Validation on 2026-10-25 completed all **15 real Auth/RTDB emulator cases**, with no failed, cancelled or skipped cases. This validates the proposed rules against the suite, not a live production deployment.
+
+The official Database emulator artifact is downloaded into a writable development cache and retains the CLI's artifact verification. In managed proxy environments, the test preloader keeps remote requests on their inherited proxy while routing only explicitly configured loopback emulator HTTP/WebSocket traffic directly. The rules artifact consistency check is separate from real-engine tests. Run `npm --prefix firebase test` and the staging acceptance checks before enabling authenticated production mode. Review the proposed rules against real exports and actual write shapes before a wider rollout.
+
+Custom-claim removal and refresh-token revocation do not guarantee immediate rejection of an already issued ID token. The owner must refresh access or sign in again; a lost-device emergency may require an immediate project-side rules restriction. App Check is optional additional abuse protection and does not replace Authentication or ownership rules. See the operations guide for rollout details.

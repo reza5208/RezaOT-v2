@@ -22,6 +22,7 @@
   window.loadExcelLib = function () { return loadScript("vendor/xlsx.full.min.js", "XLSX"); };
   window.loadPdfLib = function () { return loadScript("vendor/html2pdf.bundle.min.js", "html2pdf"); };
   window.loadAuthLib = function () { return loadScript("vendor/firebase-auth-compat.js").then(function () { return firebase.auth; }); };
+  window.loadAppCheckLib = function () { return loadScript("vendor/firebase-app-check-compat.js").then(function () { return firebase.appCheck; }); };
   window.loadExportLibs = function () { return Promise.all([window.loadExcelLib(), window.loadPdfLib()]); };
   function showBootError(err) {
     console.error("RezaOT startup:", err);
@@ -68,6 +69,12 @@
       if (!release) throw new Error("Release manifest missing");
       if (!window.RezaOT_theme) throw new Error("Theme module missing");
       for (var path of release.scripts) await loadScript(path);
+      try { await RezaOT_cloud.prepare(REZAOT_CONFIG.firebaseConfig || firebaseConfig); }
+      catch (error) {
+        // Cloud setup may be unavailable while local records remain usable.
+        // RezaOT_cloud.database/auth keep their readiness checks in place.
+        console.warn("Cloud setup unavailable:", error.message);
+      }
       rezaotInitApp();
       document.dispatchEvent(new Event("rezaot-ready"));
       if (!window.__rezaotInited || errors.length) throw errors[0] || new Error("Application initialization incomplete");

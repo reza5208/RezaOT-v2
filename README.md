@@ -1,4 +1,4 @@
-# RezaOT v73
+# RezaOT v74
 
 PWA peribadi untuk rekod **Clock-In/Out**, **Trip**, **OT**, dan **anggaran gaji**  
 WH3 Transport — **Khairul Reza** (M-264)
@@ -43,7 +43,7 @@ WH3 Transport — **Khairul Reza** (M-264)
 - Footer ringkas: `OT · Trip · KLIA · AWB`
 - Tarikh format **dd/mm/yy**
 - Export **Excel** (auto-fit + T/T + tanda Susun/Pallets)
-- **JSON backup v2** semua bulan lokal + settings, preview import, merge/replace dan recovery snapshot
+- **JSON backup v2** semua bulan lokal + settings, preview import, merge/replace, recovery snapshot dan bukti pending/konflik untuk rekonsiliasi
 - Snapshot tetapan mengikut bulan supaya anggaran sejarah tidak berubah tanpa tindakan jelas; edit defaults melindungi bulan lokal lama sebelum perubahan
 
 ### Anggaran gaji *(app sahaja — tidak keluar print)*
@@ -57,9 +57,10 @@ WH3 Transport — **Khairul Reza** (M-264)
 - Dashboard responsive: **Hari ini / Rekod / Gaji / Tetapan**, sidebar desktop dan navigasi bawah telefon
 - Bahasa **BM / EN**, tema **Ikut sistem / Cerah / Gelap**, PWA (installable), font Manrope lokal
 - Tema ikut perubahan peranti secara langsung; pilihan manual disimpan pada peranti dan backup, tanpa sync tema ke cloud
-- Firebase Realtime Database + offline queue
+- Firebase Realtime Database + offline queue, transaksi dan semakan konflik
 - **PIN lock** — kunci UI lokal; bukan authorization database
-- Firebase Auth email/password **pilihan opt-in**, dengan pengesahan pemilikan data lokal sebelum sync
+- Firebase Auth email/password **pilihan opt-in**, claim pemilik, reset password dan pengesahan pemilikan data lokal sebelum sync
+- Panel **Tetapan → Data anda → Semak sync & pemulihan** untuk status sambungan, konflik, preview/download salinan dan pengurusan storan
 - Sejarah bulan cepat, FAB tambah trip (mobile)
 - Multi-device sync
 
@@ -85,32 +86,45 @@ python3 tests/detail_browser.py
 python3 tests/redesign_browser.py
 python3 tests/pdf_report_browser.py
 python3 tests/theme_browser.py
+python3 tests/recovery_browser.py
 ```
 
 Suite browser memerlukan Python Playwright dan Chromium (`/usr/bin/chromium` pada environment ini). Pada mesin lain, jalankan `python3 -m pip install -r requirements-dev.txt` dan `python3 -m playwright install chromium`; tetapkan `CHROMIUM_PATH` jika perlu memilih browser tertentu. Ujian menggunakan fixture/Firebase palsu dan tidak menulis ke database production. Lihat [senarai QA](docs/qa-checklist.md) untuk pemeriksaan manual sebelum release.
 
-Salinan dependency dalam `vendor/` mempunyai versi dan checksum/integrity yang direkod dalam manifest vendor: Firebase app/database/auth 10.14.1, html2pdf 0.12.1, dan SheetJS CE npm 0.18.5. Versi SheetJS ini ialah versi yang tersedia melalui registry npm; sumber distribusi CE yang lebih baharu tidak dapat dicapai melalui policy rangkaian environment semasa. App menggunakannya untuk **menulis eksport Excel sahaja**, bukan membaca spreadsheet yang dimuat naik. Pengesahan integrity membuktikan provenance artifact yang dipilih, bukan audit keselamatan atau jaminan bahawa versi itu terkini.
+Salinan dependency dalam `vendor/` mempunyai versi dan checksum/integrity yang direkod dalam manifest vendor: Firebase app/database/auth/App Check 10.14.1, html2pdf 0.12.1, dan SheetJS CE npm 0.18.5. Versi SheetJS ini ialah versi yang tersedia melalui registry npm; sumber distribusi CE yang lebih baharu tidak dapat dicapai melalui policy rangkaian environment semasa. App menggunakannya untuk **menulis eksport Excel sahaja**, bukan membaca spreadsheet yang dimuat naik. Pengesahan integrity membuktikan provenance artifact yang dipilih, bukan audit keselamatan atau jaminan bahawa versi itu terkini.
 
 ## Multi-device / Firebase
 
 - Mode sedia ada menggunakan `users/default/{Bulan Tahun}`, contoh `Ogos 2026`; mod ini dikekalkan secara default supaya akses pemilik tidak terputus.
-- Model rekod cloud kekal last-write-wins per bulan. Pending writes, conflict recovery dan queue perlu diperiksa apabila dua peranti mengedit bulan yang sama serentak.
-- Jika cloud kosong, data lokal tidak dipadam. Perubahan pending disimpan secara durable; kegagalan sync dipaparkan sebagai pending/offline/permission error.
+- Simpanan bulan, settings dan destinasi menggunakan RTDB transaction serta perbandingan baseline. Edit tarikh berlainan boleh digabung; konflik pada tarikh sama memerlukan pilihan melalui panel pemulihan. Jam peranti tidak menentukan pemenang.
+- Edit sebelum login disimpan sebagai dirty state yang terikat kepada pemilik lokal; data belum terikat memerlukan consent sebelum masuk namespace UID. Queue legacy tidak dipindahkan ke UID lain secara automatik.
+- Cloud kosong pada penggunaan pertama mengekalkan data lokal. Kehilangan node yang pernah dibaca atau tombstone `deleted:true` memerlukan semakan konflik supaya data yang dipadam tidak dibangkitkan senyap.
+- Status menggunakan `.info/connected`, pending dan acknowledgement. Sejarah bulan membaca indeks kecil `_meta/months`; legacy tanpa indeks mendapat satu bootstrap read setiap root/sesi.
 - Tetapan, destinasi dan snapshot bulan turut mempunyai aliran sync. Senarai destinasi kosong ialah nilai yang sah.
 - Export backup semua bulan sebelum import, pertukaran akaun atau migrasi. Recovery snapshot sebelum replace melindungi operasi import lokal; ia bukan pengganti backup berasingan.
 - Deployment Firebase rules sebenar tidak diaudit atau diubah oleh perubahan source ini. Jangan anggap PIN lokal melindungi cloud.
 
-Untuk memilih authenticated mode, gunakan `cloud-config.js` dan contoh [firebase-config.example.js](firebase-config.example.js). Mode ini menggunakan `users/<uid>` dan memerlukan login serta pengesahan bahawa data lokal milik akaun tersebut. Account lain tidak boleh mengambil alih binding data lokal dalam browser yang sama.
+Untuk memilih authenticated mode, gunakan `cloud-config.js` dan contoh [firebase-config.example.js](firebase-config.example.js). Mode ini menggunakan `users/<uid>`, custom claim `rezaot_owner: true`, login dan pengesahan bahawa data lokal milik akaun tersebut. Account lain tidak boleh mengambil alih binding data lokal dalam browser yang sama. Auth kekal dimatikan pada konfigurasi production sedia ada sehingga migrasi disediakan. App Check turut tersedia secara opt-in; mula dengan pemantauan sebelum enforcement server.
 
-[database.rules.example.json](database.rules.example.json) ialah **contoh rules sasaran**, bukan deployment automatik. Menutup `users/default` sebelum migrasi akan memutuskan client lama. Ikuti [panduan staging, migration dan rollback](docs/firebase-security.md), sediakan akaun pemilik dan uji rules terlebih dahulu. Password, service-account JSON dan private key tidak boleh dimasukkan ke repo atau backup.
+[database.rules.example.json](database.rules.example.json) ialah **contoh rules sasaran**, bukan deployment automatik. Ia mengehadkan UID/claim pemilik dan memvalidasi schema. Menutup `users/default` sebelum migrasi akan memutuskan client lama. Ikuti [panduan rules](docs/firebase-security.md), [operasi Auth dan cutover](docs/firebase-operations.md), serta [inventori/migrasi offline](docs/firebase-migration.md). Password, service-account JSON dan private key tidak boleh dimasukkan ke repo atau backup.
 
-## Struktur fail (v73)
+Tool Firebase berasingan daripada dependency app. Node 22+ dan Java 21 diperlukan untuk QA emulator:
+
+```sh
+npm --prefix firebase ci
+npm --prefix firebase run rules:check
+npm --prefix firebase test
+```
+
+Runner menetapkan projek `demo-rezaot` serta Auth/RTDB pada loopback. `.firebaserc` juga menggunakan projek demo; suite menolak sasaran production. [CI](.github/workflows/firebase-qa.yml) menjalankan unit test dan rules emulator tanpa kredensial production. Muat turun emulator rasmi memerlukan `storage.googleapis.com`. Runner menggunakan cache boleh tulis dan membetulkan routing proksi hanya untuk port emulator loopback; proksi bagi host luar dikekalkan. Semua 15 ujian engine rules/Auth emulator lulus setempat.
+
+## Struktur fail (v74)
 
 | Fail | Peranan |
 |------|----------|
 | `index.html` / `cloud-config.js` | UI shell dan konfigurasi cloud public / mode opt-in |
 | `main.js` | Bootstrap modul wajib secara teratur; loader dependency eksport berasingan |
-| `storage.js` / `sync-cross-v66.js` | Storage dengan recovery, durable queue dan sync deterministik |
+| `storage.js` / `sync-cross-v66.js` | Recovery, dirty state mengikut pemilik, durable queue dan transaksi merge |
 | `model.js` / `backup.js` | Validasi data, metadata trip dan backup/import berversi |
 | `main-app-1.js` / `main-app-2.js` | State bersama, forms, report dan Excel |
 | `salary-estimator.js` / `utils.js` | Kiraan gaji/OT bersama dan snapshot tetapan |
@@ -121,6 +135,9 @@ Untuk memilih authenticated mode, gunakan `cloud-config.js` dan contoh [firebase
 | `styles-detail.css` | Kad rekod mobile dan pecahan gaji |
 | `app-p1.js` | PIN lokal, nama ketua dan tindakan tambahan |
 | `firebase-auth.js` | Login cloud pilihan, consent dan pengasingan pemilik lokal |
+| `cloud-runtime.js` | Inisialisasi Firebase bersama, guard emulator dan App Check pilihan |
+| `sync-recovery.js` / `styles-sync.css` | Panel konflik, status sambungan dan salinan pemulihan |
+| `firebase/` / `scripts/firebase-*.mjs` | Rules generator, emulator QA, provisioning claim dan migrasi offline |
 | `print-orient-v67.js` | Cetak/PDF Portrait dan Landscape |
 | `sw.js` | PWA cache berversi; asset wajib mesti lengkap sebelum aktivasi |
 | `tests/` / `docs/` | Regression tests dan panduan QA/security |
@@ -151,7 +168,7 @@ Untuk memilih authenticated mode, gunakan `cloud-config.js` dan contoh [firebase
 - Legacy trip labels kekal disokong; metadata trip berstruktur mengekalkan identiti dan hubungan AWB/side job
 - Local: `localStorage`; remote legacy: Firebase RTDB `users/default/{monthKey}`; authenticated opt-in: `users/<uid>/{monthKey}`
 - `monthSettings` menyimpan snapshot tetapan pengiraan; capture/replace ialah operasi jelas, bukan side effect membaca laporan
-- Sync: last-write-wins; **never clear local when remote empty** — push local up
+- Sync: owner-scoped dirty/queue, transaction + baseline merge; first-use empty remote preserves local, known remote deletion requires explicit reconciliation
 
 ### UI / export constraints (user-enforced)
 - Print/PDF: **A4 Portrait default**; **Landscape option available** (print-orient modal)
@@ -187,5 +204,7 @@ Redesign workspace v71: [susun atur dan pengesahan](docs/redesign-v71.md). Caria
 Pembaikan eksport v72: [jadual penuh, jumlah OT dan footer](docs/pdf-export-v72.md).
 
 Tema v73: pilih **Tetapan → Paparan & bahasa → Tema**. Peranti tanpa pilihan tema tersimpan mengikuti sistem. Pilihan cerah/gelap lama dikekalkan; pilih **Ikut sistem** untuk mengaktifkan tema automatik. Butang tema pada header menukar kepada pilihan manual. Import backup memulihkan pilihan tema serta-merta.
+
+Firebase v74: [perubahan, bukti ujian dan baki persediaan production](docs/firebase-v74.md).
 
 Rujukan estimator: [formula dan tahap bukti daripada payslip](docs/payroll-reference.md). Nota ini belum menukar formula gaji runtime; dokumen payslip dan data gaji bulanan peribadi kekal di luar repo.

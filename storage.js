@@ -81,13 +81,29 @@
   }
 
   function recoveryEntries() {
-    var result = [];
+    var keys = [];
     for (var i = 0; i < localStorage.length; i++) {
       var key = localStorage.key(i);
-      if (key && key.indexOf("rezaot_recovery_") === 0) result.push({ key: key, value: read(key, null) });
+      if (key && key.indexOf("rezaot_recovery_") === 0) keys.push(key);
     }
-    return result;
+    return keys.map(function (key) {
+      var raw = localStorage.getItem(key);
+      try { return { key: key, value: JSON.parse(raw) }; }
+      catch (error) { return { key: key, value: { reason: "unreadable-recovery", data: { raw: raw } } }; }
+    });
+  }
+  function removeRecovery(key) {
+    if (typeof key !== "string" || !/^rezaot_recovery_[0-9]+_[0-9]+$/.test(key)) throw new Error("Invalid recovery key");
+    localStorage.removeItem(key);
+  }
+  function usageBytes() {
+    var bytes = 0;
+    for (var i = 0; i < localStorage.length; i++) {
+      var key = localStorage.key(i);
+      if (key) bytes += (key.length + (localStorage.getItem(key) || "").length) * 2;
+    }
+    return bytes;
   }
 
-  window.RezaOT_storage = { read: read, write: write, transaction: transaction, archive: archive, clone: clone, recoveryEntries: recoveryEntries };
+  window.RezaOT_storage = { read: read, write: write, transaction: transaction, archive: archive, clone: clone, recoveryEntries: recoveryEntries, removeRecovery: removeRecovery, usageBytes: usageBytes };
 })();

@@ -95,7 +95,15 @@
       if (raw == null) continue;
       settings[key] = ["supervisorName", "darkMode", "rezaot_lang", "rezaot_print_orientation"].includes(key) ? raw : read(key, {});
     }
-    return { schemaVersion: 2, app: "RezaOT", exportedAt: new Date().toISOString(), months, trips: root.RezaOT_model.validateDestinations(typeof trips !== "undefined" ? trips : read("trips", [])), settings: validateSettings(settings) };
+    const result = { schemaVersion: 2, app: "RezaOT", exportedAt: new Date().toISOString(), months, trips: root.RezaOT_model.validateDestinations(typeof trips !== "undefined" ? trips : read("trips", [])), settings: validateSettings(settings) };
+    // Evidence for an offline migration/recovery review only. Import never
+    // replays these cloud paths, owner bindings or revisions automatically.
+    const pending = read("rezaot_offline_queue", []);
+    const dirty = read("rezaot_local_dirty", []);
+    const conflicts = read("rezaot_sync_conflicts", []);
+    if (![pending, dirty, conflicts].every(Array.isArray)) error("Sync state tidak sah; muat turun pemulihan dahulu.");
+    result.syncState = { version: 1, pending, dirty, conflicts };
+    return result;
   }
   function parse(input) {
     const data = typeof input === "string" ? JSON.parse(input) : input;

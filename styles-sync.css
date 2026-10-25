@@ -1,0 +1,17 @@
+@media screen {
+  body.app-shell:not(.pdf-export) .sync-recovery-panel { margin-top: 24px; }
+  body.app-shell:not(.pdf-export) .sync-diagnostics { color: var(--ui-muted); font-size: 12px; line-height: 1.7; overflow-wrap: anywhere; }
+  body.app-shell:not(.pdf-export) .recovery-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 14px 0; }
+  body.app-shell:not(.pdf-export) .recovery-actions > button { min-height: 44px; white-space: normal; }
+  body.app-shell:not(.pdf-export) .recovery-item { padding: 16px 0; border-bottom: 1px solid var(--ui-border); min-width: 0; }
+  body.app-shell:not(.pdf-export) .recovery-item h4 { font-size: 13px; margin: 0 0 10px; overflow-wrap: anywhere; }
+  body.app-shell:not(.pdf-export) .recovery-preview { margin: 8px 0; min-width: 0; }
+  body.app-shell:not(.pdf-export) .recovery-preview summary { min-height: 44px; padding: 10px 0; color: var(--ui-blue); cursor: pointer; font-size: 12px; }
+  body.app-shell:not(.pdf-export) .recovery-preview pre { max-height: 300px; max-width: 100%; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; padding: 14px; border: 1px solid var(--ui-border); border-radius: 12px; background: var(--ui-surface-soft); color: var(--ui-ink); font-size: 11px; line-height: 1.6; }
+  body.app-shell:not(.pdf-export) .recovery-danger { color: var(--ui-danger); }
+  body.app-shell:not(.pdf-export) .sync-recovery-panel h3 { font-size: 14px; margin-top: 26px; }
+}
+@media screen and (max-width: 600px) {
+  body.app-shell:not(.pdf-export) .recovery-actions { flex-direction: column; }
+  body.app-shell:not(.pdf-export) .recovery-actions > button { width: 100%; }
+}

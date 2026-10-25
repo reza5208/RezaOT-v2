@@ -1,0 +1,20 @@
+{
+  "name": "rezaot-firebase-qa",
+  "private": true,
+  "description": "Local Firebase emulator and rules QA; not an application build dependency.",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "rules:build": "node build-rules.cjs",
+    "rules:check": "node build-rules.cjs --check",
+    "test": "node run-emulator-tests.cjs",
+    "test:running": "node --require ./local-emulator-http.cjs --test --test-timeout=60000 ../tests/firebase-rules.test.cjs",
+    "owner": "node ../scripts/firebase-owner.mjs"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "6.0.0",
+    "faye-websocket": "0.11.4",
+    "firebase": "13.1.0",
+    "firebase-admin": "14.5.0",
+    "firebase-tools": "15.34.1"
+  }
+}

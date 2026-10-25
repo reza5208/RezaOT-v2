@@ -64,3 +64,44 @@ test('transaction read failure performs no writes and reports storage unavailabl
   assert.throws(() => h.store.transaction({ records: { count: 2 } }), /storage/);
   assert.equal(h.data.get('records'), '{"count":1}');
 });
+
+test('listing a damaged recovery archive preserves its raw contents without creating more archives', () => {
+  const h = storageHarness();
+  const key = 'rezaot_recovery_12345_1';
+  h.data.set(key, '{damaged archive');
+  h.data.set('records', '{"count":1}');
+  const before = Array.from(h.data.entries());
+  for (let index = 0; index < 3; index++) {
+    const entries = h.store.recoveryEntries();
+    assert.equal(entries.length, 1);
+    assert.equal(entries[0].key, key);
+    assert.equal(entries[0].value.reason, 'unreadable-recovery');
+    assert.equal(entries[0].value.data.raw, '{damaged archive');
+  }
+  assert.deepEqual(Array.from(h.data.entries()), before);
+});
+
+test('removing an archive cannot remove live records or other local app state', () => {
+  const h = storageHarness();
+  const key = h.store.archive('before-import', { records: { count: 1 } });
+  h.data.set('dailyRecords_Oktober 2026', '{"retained":true}');
+  h.data.set('rezaot_auth_data_owner', 'owner-uid');
+  for (const invalid of ['dailyRecords_Oktober 2026', 'rezaot_auth_data_owner', 'rezaot_recovery_', 'rezaot_recovery_1_2_suffix', null, {}]) {
+    assert.throws(() => h.store.removeRecovery(invalid), /Invalid recovery key/);
+  }
+  assert.equal(h.data.get('dailyRecords_Oktober 2026'), '{"retained":true}');
+  assert.equal(h.data.get('rezaot_auth_data_owner'), 'owner-uid');
+  assert.equal(h.store.recoveryEntries().length, 1);
+  h.store.removeRecovery(key);
+  assert.equal(h.store.recoveryEntries().length, 0);
+  assert.equal(h.data.size, 2);
+});
+
+test('storage usage includes UTF-16 keys and values without modifying them', () => {
+  const h = storageHarness();
+  h.data.set('name', 'M\u00e9');
+  h.data.set('emoji', '\ud83d\ude80');
+  const before = Array.from(h.data.entries());
+  assert.equal(h.store.usageBytes(), (4 + 2 + 5 + 2) * 2);
+  assert.deepEqual(Array.from(h.data.entries()), before);
+});

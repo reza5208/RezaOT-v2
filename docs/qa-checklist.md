@@ -1,4 +1,4 @@
-RezaOT v73 regression and release checklist
+RezaOT v74 regression and release checklist
 
 Run the automated suites from the repository root:
 
@@ -10,6 +10,10 @@ python3 tests/detail_browser.py
 python3 tests/redesign_browser.py
 python3 tests/pdf_report_browser.py
 python3 tests/theme_browser.py
+python3 tests/recovery_browser.py
+npm --prefix firebase ci
+npm --prefix firebase run rules:check
+npm --prefix firebase test
 ```
 
 The browser suite needs Python Playwright and a Chromium executable. Tests use isolated local data and a fake Firebase backend; they must not read or write the owner's production records. Package/runtime installation is only needed for the test tooling, not to serve the app.
@@ -33,5 +37,11 @@ Check these behaviors against the local development server before publishing an 
 - After one online visit, offline reload starts without an external Firebase CDN response. A failed mandatory asset prevents a new service worker from replacing the prior complete cache. Activation deletes only obsolete RezaOT caches, preserving another app's cache on the same origin.
 - No missing required module is reported as ready. Startup and sync statuses distinguish local/offline, pending, permission denied, authentication and complete state.
 - Optional Auth mode leaves legacy default behavior unchanged until configured. In Auth mode, signed-out and unapproved accounts make no cloud writes; sign-out closes listeners while keeping local data. Follow `firebase-security.md` for emulator/staging rules and migration tests before production rollout.
+- A known owner can edit while signed out, reload, then log in without an older cloud snapshot replacing that edit. Unbound data requires ownership consent; dirty state and legacy queue entries never get silently reassigned to another UID.
+- With a common baseline, two devices editing different dates retain both edits after transaction retries. Same-date edits and edit-versus-delete produce a visible conflict regardless of clock skew. Choosing a version preserves unrelated remote dates and rejects a stale choice after another local save.
+- A previously observed remote node becoming null or `deleted:true` never causes a silent upload that resurrects it. Initial empty-cloud seeding remains supported. A month-index acknowledgement failure leaves the write pending for retry.
+- The recovery panel previews data as text, downloads archives intact, requires confirmation before removing an archive and cannot remove live records. Conflict choices require confirmation. Review BM/EN, dark mode and 320 px layout; print/PDF must exclude the panel.
+- Rules emulator checks anonymous/foreign UID access, custom owner claims, child writes, record/settings schema, empty RTDB values and tombstones. Run with Node22+ and Java21. A blocked emulator download is an unrun engine test, not a pass. See `firebase-operations.md` for credentials, domains, token refresh and staged App Check.
+- Before migration, inventory the complete cloud export and backups from every device. Review all ambiguous differences, preserve quarantined pending data, compare the imported target and rehearse rollback. The offline migration CLI performs no cloud writes.
 
 Automated unit/browser checks demonstrate the application paths they exercise; they do not establish payroll-law compliance, production database authorization, successful publication or device-specific printing behavior. Record any manual platform/browser checks separately from automated results.

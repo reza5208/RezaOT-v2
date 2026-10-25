@@ -95,3 +95,56 @@ test('system and legacy theme preferences round-trip while invalid imports stay 
     assert.equal(c.values.size,0);assert.equal(c.archives.length,0);
   }
 });
+
+test('backup includes offline sync evidence but excludes PIN and Firebase authentication secrets',()=>{
+  const c=app();
+  const state={
+    pending:[{path:'users/owner-uid/Oktober 2026',revision:'queued-revision',data:{dailyRecords:{'2026-10-19':record()}}}],
+    dirty:[{owner:'owner-uid',target:'Oktober 2026',revision:'dirty-revision',data:{dailyRecords:{'2026-10-20':record()}}}],
+    conflicts:[{id:'conflict-1',owner:'owner-uid',path:'users/owner-uid/Oktober 2026',local:{dailyRecords:{'2026-10-19':record(['Local'])}},remote:{dailyRecords:{'2026-10-19':record(['Remote'])}}}]
+  };
+  c.localStorage.setItem('rezaot_offline_queue',JSON.stringify(state.pending));
+  c.localStorage.setItem('rezaot_local_dirty',JSON.stringify(state.dirty));
+  c.localStorage.setItem('rezaot_sync_conflicts',JSON.stringify(state.conflicts));
+  c.localStorage.setItem('rezaot_pin','secret-pin');
+  c.localStorage.setItem('firebase:authUser:test-api-key:[DEFAULT]',JSON.stringify({stsTokenManager:{accessToken:'secret-access-token',refreshToken:'secret-refresh-token'}}));
+  const backup=c.RezaOT_backup.create();
+  assert.deepEqual(plain(backup.syncState),{version:1,...state});
+  const serialized=JSON.stringify(backup);
+  for(const secret of ['secret-pin','secret-access-token','secret-refresh-token','stsTokenManager'])assert.equal(serialized.includes(secret),false);
+});
+
+test('import ignores exported owner paths, raw queues and authentication fields instead of replaying them',()=>{
+  const c=app();
+  const currentQueue=[{path:'users/current-owner/September 2026',revision:'existing-revision'}];
+  c.localStorage.setItem('rezaot_offline_queue',JSON.stringify(currentQueue));
+  c.localStorage.setItem('rezaot_auth_data_owner','current-owner');
+  const incoming={schemaVersion:2,months:{'Oktober 2026':{'2026-10-19':record(['Imported'])}},settings:{rezaot_pin:'attacker-pin',rezaot_auth_data_owner:'foreign-owner'},
+    syncState:{version:1,pending:[{path:'users/foreign-owner/settings',data:{supervisorName:'Foreign'}}],dirty:[{owner:'foreign-owner',target:'settings'}],conflicts:[{id:'foreign-conflict'}]},
+    'firebase:authUser:test-api-key:[DEFAULT]':{stsTokenManager:{accessToken:'foreign-token'}}};
+  const parsed=c.RezaOT_backup.parse(incoming);
+  assert.equal(parsed.syncState,undefined);
+  assert.deepEqual(plain(parsed.settings),{});
+  c.RezaOT_backup.apply(incoming,'replace');
+  assert.deepEqual(JSON.parse(c.localStorage.getItem('rezaot_offline_queue')),currentQueue);
+  assert.equal(c.localStorage.getItem('rezaot_auth_data_owner'),'current-owner');
+  for(const key of ['rezaot_local_dirty','rezaot_sync_conflicts','rezaot_pin','firebase:authUser:test-api-key:[DEFAULT]'])assert.equal(c.localStorage.getItem(key),null);
+  assert.equal(c.queued.length,1);
+  assert.equal(c.queued[0].month,'Oktober 2026');
+  assert.equal(c.queued[0].records['2026-10-19'].trips[0],'Imported');
+});
+
+test('malformed sync evidence prevents incomplete backups and leaves import data untouched',()=>{
+  for(const key of ['rezaot_offline_queue','rezaot_local_dirty','rezaot_sync_conflicts']){
+    const c=app();
+    c.localStorage.setItem(key,'{}');
+    c.dailyRecords={'2026-10-19':record(['Current'])};
+    const before=Array.from(c.values.entries());
+    assert.throws(()=>c.RezaOT_backup.create(),/Sync state/);
+    assert.throws(()=>c.RezaOT_backup.apply({schemaVersion:2,months:{'Oktober 2026':{'2026-10-20':record()}},settings:{}},'replace'),/Sync state/);
+    assert.deepEqual(Array.from(c.values.entries()),before);
+    assert.equal(c.archives.length,0);
+    assert.equal(c.queued.length,0);
+    assert.deepEqual(Object.keys(c.dailyRecords),['2026-10-19']);
+  }
+});

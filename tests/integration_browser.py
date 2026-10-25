@@ -23,16 +23,129 @@ from playwright.sync_api import sync_playwright
 ROOT = Path(__file__).resolve().parents[1]
 FAKE_FIREBASE = r'''
 window.__cloudWrites=[];
-window.__cloudData={};
-window.firebase={
-  apps:[],
-  initializeApp(){this.apps.push({});},
-  database(){return {ref(path){return {
-    on(){},off(){},
-    once(){return Promise.resolve({val:()=>window.__cloudData[path]||null});},
-    set(data){const copy=JSON.parse(JSON.stringify(data));window.__cloudData[path]=copy;window.__cloudWrites.push({path,data:copy});return Promise.resolve();}
-  };}};}
-};
+(function(){
+  let tree={}, connected=true, scheduled=false;
+  const watchers=new Map(), changed=new Set();
+  const copy=value=>value==null?null:JSON.parse(JSON.stringify(value));
+  const clean=path=>String(path||'').split('/').filter(Boolean).join('/');
+  function normalize(value){
+    if(value==null)return null;
+    if(typeof value!=='object')return value;
+    if(value['.sv']==='timestamp')return Date.now();
+    if(Array.isArray(value)){
+      const list=value.map(normalize);
+      return list.some(x=>x!==null)?list:null;
+    }
+    const object={};
+    Object.keys(value).forEach(key=>{const item=normalize(value[key]);if(item!==null)object[key]=item;});
+    return Object.keys(object).length?object:null;
+  }
+  function read(path){
+    path=clean(path);
+    if(path==='.info/connected')return connected&&navigator.onLine;
+    let value=tree;
+    for(const key of path.split('/').filter(Boolean)){
+      if(!value||typeof value!=='object'||!Object.prototype.hasOwnProperty.call(value,key))return null;
+      value=value[key];
+    }
+    return copy(value);
+  }
+  function write(path,value){
+    path=clean(path);const parts=path.split('/').filter(Boolean),normalized=normalize(value);
+    if(!parts.length){tree=normalized||{};return;}
+    let node=tree;
+    for(const key of parts.slice(0,-1)){
+      if(!node[key]||typeof node[key]!=='object')node[key]={};
+      node=node[key];
+    }
+    const key=parts[parts.length-1];
+    if(normalized===null)delete node[key];else node[key]=normalized;
+    tree=normalize(tree)||{};
+  }
+  function snapshot(path,value=read(path)){
+    const saved=copy(value);
+    return {key:clean(path).split('/').pop()||null,val:()=>copy(saved),exists:()=>saved!==null};
+  }
+  function related(a,b){return !a||!b||a===b||a.startsWith(b+'/')||b.startsWith(a+'/');}
+  function notify(path){
+    changed.add(clean(path));if(scheduled)return;scheduled=true;
+    Promise.resolve().then(()=>{
+      scheduled=false;const paths=[...changed];changed.clear();
+      for(const [key,list]of watchers){
+        if(key!=='.info/connected'&&(!connected||!navigator.onLine))continue;
+        if(!paths.some(path=>related(key,path)))continue;
+        const value=snapshot(key);
+        [...list].forEach(callback=>{if(list.has(callback))callback(value);});
+      }
+    });
+  }
+  // Tests may seed either nested data or the old flat path representation.
+  window.__cloudData=new Proxy({}, {
+    get(_target,key){if(key==='toJSON')return()=>copy(tree);return typeof key==='string'?read(key):undefined;},
+    set(_target,key,value){write(key,value);notify(key);return true;},
+    deleteProperty(_target,key){write(key,null);notify(key);return true;},
+    ownKeys(){return Object.keys(tree);},
+    getOwnPropertyDescriptor(_target,key){return Object.prototype.hasOwnProperty.call(tree,key)?{enumerable:true,configurable:true,value:read(key)}:undefined;}
+  });
+  window.__seedCloud=(path,value)=>{write(path,value);notify(path);};
+  window.__setCloudConnected=value=>{connected=!!value;notify('.info/connected');if(connected)notify('');};
+  window.addEventListener('online',()=>{notify('.info/connected');notify('');});
+  window.addEventListener('offline',()=>notify('.info/connected'));
+  function ref(path){
+    path=clean(path);
+    return {
+      key:path.split('/').pop()||null,child:key=>ref(path+'/'+key),
+      toString:()=>location.origin+'/fake-database/'+path,
+      on(event,callback){
+        if(event!=='value')throw new Error('Unsupported fake event');
+        if(!watchers.has(path))watchers.set(path,new Set());
+        const list=watchers.get(path);list.add(callback);
+        Promise.resolve().then(()=>{if(list.has(callback)&&(path==='.info/connected'||(connected&&navigator.onLine)))callback(snapshot(path));});
+        return callback;
+      },
+      off(_event,callback){const list=watchers.get(path);if(list){if(callback)list.delete(callback);else list.clear();}},
+      once:()=>Promise.resolve(snapshot(path)),get:()=>Promise.resolve(snapshot(path)),
+      async set(value,completion){
+        const before=JSON.stringify(read(path));write(path,value);
+        window.__cloudWrites.push({path,data:read(path)});
+        if(before!==JSON.stringify(read(path)))notify(path);
+        if(completion)completion(null);
+      },
+      async update(values,completion){
+        Object.keys(values).forEach(key=>write(path+'/'+key,values[key]));
+        window.__cloudWrites.push({path,data:read(path)});notify(path);
+        if(completion)completion(null);
+      },
+      async transaction(update,completion){
+        const proposal=update(read(path));
+        if(proposal===undefined){const result={committed:false,snapshot:snapshot(path)};if(completion)completion(null,false,result.snapshot);return result;}
+        const before=JSON.stringify(read(path));write(path,proposal);
+        window.__cloudWrites.push({path,data:read(path)});
+        if(before!==JSON.stringify(read(path)))notify(path);
+        const result={committed:true,snapshot:snapshot(path)};
+        if(completion)completion(null,true,result.snapshot);
+        return result;
+      }
+    };
+  }
+  const database={ref,useEmulator(){}};
+  const factory=()=>database;
+  factory.ServerValue={TIMESTAMP:{'.sv':'timestamp'}};
+  const authListeners=new Set();
+  const auth={
+    currentUser:null,useEmulator(){},
+    onIdTokenChanged(callback){authListeners.add(callback);Promise.resolve().then(()=>{if(authListeners.has(callback))callback(auth.currentUser);});return()=>authListeners.delete(callback);},
+    onAuthStateChanged(callback){return this.onIdTokenChanged(callback);},
+    async signOut(){return window.__setAuthUser(null);},
+    async sendPasswordResetEmail(){},
+    async signInWithEmailAndPassword(){throw Object.assign(new Error('Use explicit test account selection'),{code:'auth/invalid-credential'});}
+  };
+  window.__setAuthUser=async function(value){
+    auth.currentUser=value?Object.assign({},value,{getIdTokenResult:async()=>({claims:{rezaot_owner:value.ownerClaim!==false}})}):null;
+    await Promise.all([...authListeners].map(callback=>callback(auth.currentUser)));
+  };
+  window.firebase={apps:[],initializeApp(options){const app={options};this.apps.push(app);return app;},database:factory,auth:()=>auth};
+})();
 '''
 
 
@@ -42,8 +155,8 @@ class FixtureHandler(SimpleHTTPRequestHandler):
 
     def do_GET(self):
         path = urlparse(self.path).path
-        if path.endswith('/vendor/firebase-app-compat.js') or path.endswith('/vendor/firebase-database-compat.js'):
-            body = FAKE_FIREBASE if path.endswith('firebase-app-compat.js') else '// Fake database SDK is included in the test app SDK.'
+        if any(path.endswith('/vendor/' + name) for name in ('firebase-app-compat.js', 'firebase-database-compat.js', 'firebase-auth-compat.js')):
+            body = FAKE_FIREBASE if path.endswith('firebase-app-compat.js') else '// Fake Database and Auth SDKs are included in the test app SDK.'
             raw = body.encode()
             self.send_response(200)
             self.send_header('Content-Type', 'application/javascript')
@@ -54,7 +167,7 @@ class FixtureHandler(SimpleHTTPRequestHandler):
             super().do_GET()
 
 
-class AppIntegrationTests(unittest.TestCase):
+class AppBrowserFixture(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.server = ThreadingHTTPServer(('127.0.0.1', 0), partial(FixtureHandler, directory=str(ROOT)))
@@ -79,8 +192,12 @@ class AppIntegrationTests(unittest.TestCase):
         self.errors = []
         self.outbound = []
         self.page = self.new_page(self.context)
+        getattr(self, 'before_open_app', lambda: None)()
         self.open_app(self.page)
         self.page.evaluate("selectMonth('Oktober 2026')")
+
+    def before_open_app(self):
+        pass
 
     def new_page(self, context):
         page = context.new_page()
@@ -127,6 +244,7 @@ class AppIntegrationTests(unittest.TestCase):
         if not page.locator('#reportExportMenu').is_visible():
             page.locator('#exportMenuBtn').click()
 
+class AppIntegrationTests(AppBrowserFixture):
     def test_boot_is_local_and_error_free_and_all_modules_initialized(self):
         state = self.page.evaluate('''()=>({
           ready:window.__rezaotInited,

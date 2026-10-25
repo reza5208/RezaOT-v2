@@ -32,9 +32,16 @@ function ensureDatabase() {
   if (db) return db;
   if (!window.firebase || typeof firebase.database !== "function") return null;
   try {
-    if (!firebase.apps.length) firebase.initializeApp(config.firebaseConfig || firebaseConfig);
-    if (config.requireAuth && (!firebase.auth || !firebase.auth().currentUser)) return null;
-    db = firebase.database();
+    const publicConfig = config.firebaseConfig || firebaseConfig;
+    if (window.RezaOT_cloud) {
+      RezaOT_cloud.initialize(publicConfig);
+      if (config.requireAuth && (!firebase.auth || !firebase.auth().currentUser)) return null;
+      db = RezaOT_cloud.database(publicConfig);
+    } else {
+      if (!firebase.apps.length) firebase.initializeApp(publicConfig);
+      if (config.requireAuth && (!firebase.auth || !firebase.auth().currentUser)) return null;
+      db = firebase.database();
+    }
     return db;
   } catch (error) {
     console.warn("Cloud initialization unavailable:", error.message);
@@ -147,7 +154,7 @@ function setSyncStatus(state) {
   window.__rezaotSyncState = state;
   const el = document.getElementById("syncStatus");
   if (!el) return;
-  el.className = "no-print sync-status";
+  el.className = "no-print sync-status sync-pill";
   const labels = {
     online: ["sync-on", (window.rezaotT ? rezaotT("syncOnline", "● Sync on") : "● Sync on")],
     offline: ["sync-off", (window.rezaotT ? rezaotT("syncOffline", "● Offline — perubahan disimpan lokal") : "● Offline — perubahan disimpan lokal")],
@@ -161,6 +168,7 @@ function setSyncStatus(state) {
   const label = labels[state] || labels.pending;
   el.classList.add(label[0]);
   el.textContent = label[1];
+  el.title = label[1];
   el.setAttribute("role", "status");
 }
 function stopFirebaseListener() {
