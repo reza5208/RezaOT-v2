@@ -43,7 +43,7 @@ class ImprovementTests(integration.AppBrowserFixture):
         for amount in [100,120]:
             value['amount']=amount
             self.page.locator('#payrollReview input[type=file]').set_input_files({'name':'income.json','mimeType':'application/json','buffer':json.dumps(value).encode()})
-            self.page.wait_for_function('JSON.parse(localStorage.getItem("rezaot_income"))["2026-11"].amount === '+str(amount))
+            self.page.wait_for_function('JSON.parse(localStorage.getItem("rezaot_income") || "{}")["2026-11"]?.amount === '+str(amount))
         self.assertIn('RM 3320.00',self.page.locator('.combined-total').inner_text())
         self.assertEqual(len(self.page.evaluate('JSON.parse(localStorage.getItem("rezaot_income"))')),1)
 
