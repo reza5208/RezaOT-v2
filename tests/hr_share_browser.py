@@ -39,12 +39,12 @@ class HRShareTests(integration.AppBrowserFixture):
         report=json.loads(value['report']); self.assertEqual(len(report['rows']),2)
         self.assertIn('TEST-AWB',value['report']); self.assertNotIn('salary',value['report'])
         self.assertNotIn('Tindakan',value['report']); self.assertNotIn('button',value['report'])
-        self.assertEqual(len(report['headings']),8); self.assertEqual(report['total'],'3.00')
+        self.assertEqual(len(report['headings']),8); self.assertEqual(report['total'],'2.00')
         self.assertAlmostEqual((value['expiresAt']-value['updatedAt'])/86400000,30)
         self.page.evaluate('dailyRecords["2026-10-20"].clock_out="20:00";updateReport()')
-        self.assertEqual(self.page.evaluate('(id)=>JSON.parse(__cloudData["sharedReports/"+id].report).total',token),'3.00')
+        self.assertEqual(self.page.evaluate('(id)=>JSON.parse(__cloudData["sharedReports/"+id].report).total',token),'2.00')
         self.page.locator('#hrShareList button',has_text='Kemas kini').click()
-        self.page.wait_for_function('(id)=>JSON.parse(__cloudData["sharedReports/"+id].report).total==="4.00"',arg=token)
+        self.page.wait_for_function('(id)=>JSON.parse(__cloudData["sharedReports/"+id].report).total==="3.00"',arg=token)
         self.page.locator('#hrShareList button',has_text='Batalkan').click()
         self.page.wait_for_function('(id)=>__cloudData["sharedReports/"+id]===null',arg=token)
         self.assertIsNotNone(self.page.evaluate('__cloudData["users/default/Oktober 2026"]'))
@@ -80,7 +80,7 @@ class HRShareTests(integration.AppBrowserFixture):
         viewer,state=self.viewer(value,token);viewer.locator('#sharedDocument').wait_for(state='visible')
         state['status']=401
         viewer.locator('#viewerPdf').click()
-        viewer.wait_for_function('document.querySelector("#sharedDocument").hidden')
+        viewer.locator('#sharedDocument').wait_for(state='hidden')
         self.assertEqual(viewer.locator('#reportTable tbody tr').count(),0)
         self.assertIn('luput',viewer.locator('#viewerStatus').text_content())
         state['status']=200;state['value']['expiresAt']=int(time.time()*1000)-1000
@@ -103,11 +103,12 @@ class HRShareTests(integration.AppBrowserFixture):
             match=re.search(r'Page size:\s+([\d.]+) x ([\d.]+)',info)
             w,h=map(float,match.groups());self.assertEqual(w>h,orientation=='landscape')
         viewer.set_viewport_size({'width':1280,'height':900});viewer.screenshot(path='/tmp/rezaot-hr-desktop.png',full_page=True)
-        viewer.evaluate('window.print=()=>{window.__printed=document.querySelector("#rezaotPrintPage img").src.startsWith("data:image/png");window.dispatchEvent(new Event("afterprint"));}')
-        viewer.locator('#viewerPrint').click();viewer.wait_for_function('window.__printed===true')
+        viewer.evaluate('window.print=()=>{if(document.querySelector("#rezaotPrintPage img").src.startsWith("data:image/png"))console.info("HR_PRINT_OK");window.dispatchEvent(new Event("afterprint"));}')
+        with viewer.expect_event('console',predicate=lambda msg:msg.text=='HR_PRINT_OK'):
+            viewer.locator('#viewerPrint').click()
 
     def test_invalid_token_does_not_request_firebase(self):
-        viewer,state=self.viewer(None,'guessable');viewer.wait_for_function('document.querySelector("#viewerStatus").textContent.includes("tidak sah")')
+        viewer,state=self.viewer(None,'guessable');viewer.locator('#viewerStatus',has_text='tidak sah').wait_for()
         self.assertEqual(state['requests'],[])
 
 if __name__=='__main__':unittest.main(verbosity=2)

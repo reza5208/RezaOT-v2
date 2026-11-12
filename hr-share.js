@@ -112,7 +112,7 @@
       returnFocus = document.activeElement; panelMonth = currentMonthKey;
       $("reportExportMenu").hidden = true; $("exportMenuBtn").setAttribute("aria-expanded", "false");
       $("hrShareTitle").textContent = text("Kongsi HR · ", "Share with HR · ") + panelMonth;
-      $("hrShareNote").textContent = text("Salinan laporan bulan ini sahaja. HR boleh baca dan cetak/PDF tanpa login. Sesiapa yang menerima link boleh membukanya. Perubahan rekod tidak dikongsi sehingga hang kemas kini laporan.", "A snapshot of this month only. HR can read and print/save PDF without signing in. Anyone with the link can open it. Record changes appear only when you update the shared report.");
+      $("hrShareNote").textContent = text("Salinan laporan bulan ini sahaja. HR boleh baca dan cetak/PDF tanpa login. Sesiapa yang menerima link boleh membukanya. Perubahan rekod tidak dikongsi sehingga anda mengemas kini laporan.", "A snapshot of this month only. HR can read and print/save PDF without signing in. Anyone with the link can open it. Record changes appear only when you update the shared report.");
       $("hrShareCreate").textContent = text("Jana link baharu", "Create new link");
       $("hrShareExpiryLabel").textContent = text("Tempoh link", "Link duration");
       $("hrShareExpiry").querySelectorAll("option").forEach(o => o.textContent = o.value + text(" hari", " days"));
