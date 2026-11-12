@@ -33,10 +33,12 @@ class HRShareTests(integration.AppBrowserFixture):
 
     def test_create_complete_snapshot_update_and_revoke(self):
         self.owner_ready(); self.seed_record(date='2026-10-20')
+        self.page.evaluate('dailyRecords["2026-10-21"]={clock_in:"",clock_out:"",trips:[],unpaid:true};updateReport()')
         self.navigate('records'); self.page.locator('#recordSearch').fill('No matching trip')
         token=self.create(); self.assertRegex(token,r'^[a-f0-9]{64}$')
         value=self.page.evaluate('(id)=>__cloudData["sharedReports/"+id]',token)
-        report=json.loads(value['report']); self.assertEqual(len(report['rows']),2)
+        report=json.loads(value['report']); self.assertEqual(len(report['rows']),3)
+        self.assertIn('(UPL)',report['rows'][2][1]); self.assertEqual(report['header'].count('\n'),2)
         self.assertIn('TEST-AWB',value['report']); self.assertNotIn('salary',value['report'])
         self.assertNotIn('Tindakan',value['report']); self.assertNotIn('button',value['report'])
         self.assertEqual(len(report['headings']),8); self.assertEqual(report['total'],'2.00')

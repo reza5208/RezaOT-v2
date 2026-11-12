@@ -24,12 +24,17 @@
   function snapshot(month, days) {
     if (currentMonthKey !== month) throw Error(text("Bulan berubah. Buka semula Kongsi HR.", "Month changed. Reopen Share with HR."));
     if (![7, 30, 90].includes(days)) throw Error("Invalid link duration");
-    const rows = Array.from(document.querySelectorAll("#reportTable tbody tr[data-date]"), row => Array.from(row.cells).slice(0, 8).map(clean));
+    const rows = Array.from(document.querySelectorAll("#reportTable tbody tr[data-date]"), row => {
+      const cells = Array.from(row.cells).slice(0, 8).map(clean);
+      if (row.classList.contains("upl-row")) cells[1] += " (UPL)";
+      if (row.classList.contains("annual-row")) cells[1] += " (ANN)";
+      return cells;
+    });
     if (!rows.length) throw Error(text("Tiada rekod untuk dikongsi bagi bulan ini.", "There are no records to share for this month."));
     const total = document.querySelector("#reportTable .ot-total-row");
     const report = {
       title: document.querySelector(".report-document-header h1").textContent.trim(),
-      header: clean(document.querySelector(".header-info")),
+      header: Array.from(document.querySelectorAll(".header-info p"), clean).join("\n"),
       headings: Array.from(document.querySelectorAll("#reportTable thead th")).slice(0, 8).map(clean),
       rows, totalLabel: total ? clean(total.cells[0]) : text("JUMLAH OT", "TOTAL OT"),
       total: total ? clean(total.cells[1]) : "0.00",
