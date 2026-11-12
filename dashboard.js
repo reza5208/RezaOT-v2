@@ -22,10 +22,20 @@
     if ($(id)) $(id).hidden = true;
     if ($(buttonId)) { $(buttonId).setAttribute("aria-expanded", "false"); if (focus) $(buttonId).focus(); }
   }
+  function positionExportMenu() {
+    const menu = $("reportExportMenu");
+    if (!menu || menu.hidden) return;
+    menu.style.transform = "";
+    const bounds = menu.getBoundingClientRect();
+    const edge = document.documentElement.clientWidth - 12;
+    const shift = bounds.left < 12 ? 12 - bounds.left : bounds.right > edge ? edge - bounds.right : 0;
+    if (shift) menu.style.transform = "translateX(" + shift + "px)";
+  }
   function togglePopover(id, buttonId) {
     const open = $(id).hidden;
     closePopover("monthPopover", "monthPickerBtn"); closePopover("reportExportMenu", "exportMenuBtn");
     $(id).hidden = !open; $(buttonId).setAttribute("aria-expanded", String(open));
+    if (id === "reportExportMenu" && open) positionExportMenu();
     if (open) { const first = $(id).querySelector("input,button,select"); if (first) first.focus(); }
   }
   function navigate(name, options) {
@@ -160,6 +170,8 @@
       for (const [panel, button] of [["menuPanel", "menuToggleBtn"], ["monthPopover", "monthPickerBtn"], ["reportExportMenu", "exportMenuBtn"]]) if (!$(panel).hidden) { closePopover(panel, button, true); event.preventDefault(); break; }
     });
     window.addEventListener("hashchange", () => navigate(location.hash.slice(1)));
+    window.addEventListener("resize", positionExportMenu);
+    document.addEventListener("rezaot-language", positionExportMenu);
     wireFeedback(); navigate(location.hash.slice(1) || "today", { keepScroll: true }); render();
   }
   window.RezaOT_dashboard = { init, navigate, showView: navigate, render, applyFilters, paintTheme, openExports: () => { navigate("records"); togglePopover("reportExportMenu", "exportMenuBtn"); } };
