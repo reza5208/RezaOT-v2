@@ -1,7 +1,7 @@
 // Versioned all-month backups. Validate first, archive current data, then commit locally as one transaction.
 (function (root) {
   "use strict";
-  const SETTINGS = ["otSettings", "salarySettings", "observedHolidays", "customHolidays", "monthSettings", "supervisorName", "darkMode", "rezaot_lang", "rezaot_print_orientation"];
+  const SETTINGS = ["otSettings", "salarySettings", "observedHolidays", "customHolidays", "monthSettings", "supervisorName", "darkMode", "rezaot_lang", "rezaot_print_orientation", "rezaot_favorites", "rezaot_payroll", "rezaot_income"];
   const object = (v) => !!v && typeof v === "object" && !Array.isArray(v);
   function error(message) { throw new Error(message); }
   function clone(value) { return JSON.parse(JSON.stringify(value)); }
@@ -46,7 +46,8 @@
     for (const key of SETTINGS) {
       if (!Object.prototype.hasOwnProperty.call(value, key)) continue;
       const entry = value[key];
-      if (key === "otSettings") result[key] = validateOt(entry);
+      if (["rezaot_favorites","rezaot_payroll","rezaot_income"].includes(key)){if(!root.RezaOT_improvementModel)error("Module pemulihan tambahan belum dimuatkan");result[key]=root.RezaOT_improvementModel.validateExtras(key,entry);}
+      else if (key === "otSettings") result[key] = validateOt(entry);
       else if (key === "salarySettings") result[key] = validateSalary(entry);
       else if (key === "observedHolidays") result[key] = validateMap(entry, "observed");
       else if (key === "customHolidays") result[key] = validateMap(entry, "custom");
@@ -148,7 +149,8 @@
       entries.trips = mode === "merge" ? Array.from(new Set(previous.concat(data.trips))) : data.trips;
     }
     for (const [key, value] of Object.entries(data.settings)) {
-      entries[key] = mode === "merge" && ["monthSettings", "observedHolidays", "customHolidays"].includes(key) ? Object.assign({}, read(key, {}), value) : value;
+      if(mode==="merge"&&key==="rezaot_favorites"){entries[key]={destinations:Array.from(new Set((read(key,{destinations:[]}).destinations||[]).concat(value.destinations))).slice(0,30)};continue;}
+      entries[key] = mode === "merge" && ["monthSettings", "observedHolidays", "customHolidays", "rezaot_payroll", "rezaot_income"].includes(key) ? Object.assign({}, read(key, {}), value) : value;
     }
     // Queue every imported cloud write in the same local transaction as its data.
     // If quota is exhausted, neither imported records nor their pending revisions commit.

@@ -1,0 +1,12 @@
+(function(root){
+ 'use strict';
+ function shiftMonth(value,offset){if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(value))throw Error('Invalid month');const [y,m]=value.split('-').map(Number);return new Date(Date.UTC(y,m-1+offset,1)).toISOString().slice(0,7);}
+ function span(date,record){if(!record||record.unpaid||record.annual||!/^\d\d:\d\d$/.test(record.clock_in)||!/^\d\d:\d\d$/.test(record.clock_out))return null;const start=Date.parse(date+'T'+record.clock_in+':00+08:00');let end=Date.parse(date+'T'+record.clock_out+':00+08:00');if(end<start)end+=86400000;return {start,end,hours:(end-start)/3600000};}
+ function attendanceWarnings(date,record,all){const own=span(date,record);if(!own)return [];const warnings=[];if(own.hours===0||own.hours>16)warnings.push('longShift');if(Object.keys(all).some(d=>{if(d===date)return false;const other=span(d,all[d]);return other&&own.start<other.end&&other.start<own.end;}))warnings.push('overlapShift');return warnings;}
+ function parseIncome(text,source){if(text.length>10000)throw Error('Invalid summary');const v=JSON.parse(text);if(v.app!=='RezaIncome'||v.schemaVersion!==1||v.source!==source||!/^\d{4}-(0[1-9]|1[0-2])$/.test(v.month)||!['received','work-estimate','before-fuel'].includes(v.basis)||!Number.isFinite(v.amount)||Math.abs(v.amount)>10000000||!Number.isFinite(Date.parse(v.exportedAt)))throw Error('Invalid summary');return {app:v.app,schemaVersion:1,source:v.source,month:v.month,basis:v.basis,amount:v.amount,exportedAt:v.exportedAt};}
+ function validateExtras(key,v){if(!v||typeof v!=='object'||Array.isArray(v))throw Error('Invalid personal data');
+  if(key==='rezaot_favorites'){if(!Array.isArray(v.destinations)||v.destinations.length>30||v.destinations.some(x=>typeof x!=='string'||!x.trim()||x.length>500))throw Error('Invalid favorites');return {destinations:[...new Set(v.destinations)]};}
+  const out={};for(const month of Object.keys(v)){if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(month))throw Error('Invalid month');if(key==='rezaot_income'){out[month]=parseIncome(JSON.stringify(v[month]),'RezaDrive');if(out[month].month!==month)throw Error('Invalid month');}else{const p=v[month];if(!p||!Number.isFinite(p.net)||p.net<0||p.net>10000000||!Number.isFinite(p.side)||p.side<0||p.side>10000000||typeof p.note!=='string'||p.note.length>500)throw Error('Invalid payslip');out[month]={net:p.net,side:p.side,note:p.note};}}return out;
+ }
+ root.RezaOT_improvementModel={shiftMonth,span,attendanceWarnings,parseIncome,validateExtras};
+})(typeof window==='undefined'?globalThis:window);

@@ -125,6 +125,7 @@ async function handleClockFormSubmit(event) {
     }
     const context = contextFor(date);
     if (dailyRecords[date] && !(await appConfirm(appText("overwriteRecord", "Rekod sudah wujud. Tulis ganti?") + "\n" + date))) return false;
+    if(window.RezaOT_improvements&&!(await RezaOT_improvements.checkAttendance(date,{clock_in:clockIn,clock_out:clockOut,unpaid,annual})))return false;
     if (!contextUnchanged(context, date)) return false;
     const record = RezaOT_model.normalizeRecord(dailyRecords[date] || { trips: [] }, date);
     record.clock_in = clockIn; record.clock_out = clockOut;
@@ -151,7 +152,7 @@ async function handleTripFormSubmit(event) {
     const klia = destination.toLowerCase().includes("klia cargo");
     if (klia && (awb.length > 200 || /[()\r\n]/.test(awb) || (sideJob && !awb))) { showToast(appText("invalidAwb", "Masukkan AWB yang sah untuk side job.")); return false; }
     const context = contextFor(date);
-    const duplicate = klia && awb ? findAwbDuplicate(awb) : null;
+    const duplicate = klia && awb ? (window.RezaOT_improvements?RezaOT_improvements.duplicateAwb(awb):findAwbDuplicate(awb)) : null;
     if (duplicate && !(await appConfirm('AWB "' + awb + '" ' + appText("duplicateAwb", "sudah wujud pada") + " " + duplicate.date + ".\n" + appText("addAnyway", "Tambah juga?")))) return false;
     if (!contextUnchanged(context, date)) return false;
     const record = RezaOT_model.normalizeRecord(dailyRecords[date] || { trips: [] }, date);
@@ -177,7 +178,10 @@ async function deleteRecord(date) {
   const context = contextFor(date);
   if (!(await appConfirm(appText("confirmDelRec", "Padam rekod ini?") + "\n" + date + "\nTrip: " + (record.trips || []).length))) return false;
   if (!contextUnchanged(context, date)) return false;
-  delete dailyRecords[date]; saveToLocalStorage(); updateReport();
+  const before=JSON.parse(JSON.stringify(record));
+  delete dailyRecords[date]; try{saveToLocalStorage();}catch(e){dailyRecords[date]=before;throw e;}
+  if(window.RezaOT_improvements)RezaOT_improvements.offerUndo(date,before,null,currentMonthKey);
+  updateReport();
   showToast(appText("toastRecDel", "Rekod dipadam")); return true;
 }
 async function deleteTrip(date, tripIndex) {
@@ -188,8 +192,11 @@ async function deleteTrip(date, tripIndex) {
   const context = contextFor(date);
   if (!(await appConfirm(appText("confirmDelTrip", "Padam trip ini?") + "\n" + date + "\n" + record.trips[tripIndex]))) return false;
   if (!contextUnchanged(context, date)) return false;
+  const before=JSON.parse(JSON.stringify(dailyRecords[date]));
   record.tripDetails.splice(tripIndex, 1); RezaOT_model.syncSideJobs(record);
-  dailyRecords[date] = record; saveToLocalStorage(); updateReport();
+  dailyRecords[date] = record;try{saveToLocalStorage();}catch(e){dailyRecords[date]=before;throw e;}
+  if(window.RezaOT_improvements)RezaOT_improvements.offerUndo(date,before,record,currentMonthKey);
+  updateReport();
   showToast(appText("toastTripDel", "Trip dipadam")); return true;
 }
 async function editTrip(date, tripIndex) {
@@ -204,6 +211,7 @@ async function editTrip(date, tripIndex) {
   if (!label || label.length > 1000) { showToast(appText("invalidDestination", "Masukkan nama destinasi yang sah.")); return false; }
   if (!contextUnchanged(context, date)) return false;
   const awb = RezaOT_model.extractAwb(label);
+  if(awb&&window.RezaOT_improvements){const duplicate=RezaOT_improvements.duplicateAwb(awb,date,tripIndex);if(duplicate&&!(await appConfirm(appText("duplicateAwb","AWB sudah wujud pada")+" "+duplicate.date+"\n"+appText("addAnyway","Teruskan?"))))return false;if(!contextUnchanged(context,date))return false;}
   const type = awb ? RezaOT_model.markerType(next) : "";
   detail.label = label; detail.awb = awb; detail.sideJob = type;
   if (type) for (const other of record.tripDetails) if (RezaOT_model.normalizeAwb(other.awb) === RezaOT_model.normalizeAwb(awb)) other.sideJob = type;

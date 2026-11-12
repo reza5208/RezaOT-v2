@@ -208,3 +208,7 @@ Tema v73: pilih **Tetapan → Paparan & bahasa → Tema**. Peranti tanpa pilihan
 Firebase v74: [perubahan, bukti ujian dan baki persediaan production](docs/firebase-v74.md).
 
 Rujukan estimator: [formula dan tahap bukti daripada payslip](docs/payroll-reference.md). Nota ini belum menukar formula gaji runtime; dokumen payslip dan data gaji bulanan peribadi kekal di luar repo.
+
+## v75
+
+Destinasi kegemaran, ulang trip, Undo padam, amaran rekod bertindih, semakan slip mengikut bulan bayaran, ringkasan pendapatan gabungan dan timestamp sync tersimpan: [perubahan, ujian dan audit akses legacy](docs/improvements-v75.md). Konfigurasi Auth production belum ditukar; lihat langkah cutover yang memerlukan pengesahan UID dan backup semua peranti.

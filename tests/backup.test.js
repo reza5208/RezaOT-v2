@@ -8,7 +8,7 @@ function app() {
   const c={console,Date,Map,Set,localStorage:storage,currentMonthKey:'Oktober 2026',dailyRecords:{},trips:['KLIA Cargo'],queued:[],archives:[],values};
   c.window=c;c.RezaOT_storage={archive:(reason,data)=>{c.archives.push({reason,data});return 'recovery-key'},transaction:(entries)=>{for(const [key,value]of Object.entries(entries))storage.setItem(key,typeof value==='string'?value:JSON.stringify(value))}};
   c.RezaOT_sync={saveMonth:(month,records)=>c.queued.push({month,records}),tripsChanged:()=>{},settingsChanged:()=>{}};
-  vm.createContext(c);for(const file of ['model.js','backup.js'])vm.runInContext(fs.readFileSync(path.join(__dirname,'..',file),'utf8'),c);
+  vm.createContext(c);for(const file of ['model.js','improvements-model.js','backup.js'])vm.runInContext(fs.readFileSync(path.join(__dirname,'..',file),'utf8'),c);
   return c;
 }
 const record=(trips=[])=>({clock_in:'08:00',clock_out:'19:00',trips});
@@ -147,4 +147,12 @@ test('malformed sync evidence prevents incomplete backups and leaves import data
     assert.equal(c.queued.length,0);
     assert.deepEqual(Object.keys(c.dailyRecords),['2026-10-19']);
   }
+});
+
+test('private payslip and favorites restore through validated backup without erasing other months on merge',()=>{
+ const c=app();c.localStorage.setItem('rezaot_payroll',JSON.stringify({'2026-10':{net:3000,side:0,note:''}}));
+ c.localStorage.setItem('rezaot_favorites',JSON.stringify({destinations:['A']}));
+ c.RezaOT_backup.apply({app:'RezaOT',schemaVersion:2,months:{},settings:{rezaot_payroll:{'2026-11':{net:3200,side:100,note:'test'}},rezaot_favorites:{destinations:['B']}}},'merge');
+ const out=c.RezaOT_backup.create();assert.equal(Object.keys(out.settings.rezaot_payroll).length,2);assert.deepEqual(plain(out.settings.rezaot_favorites.destinations),['A','B']);
+ assert.throws(()=>c.RezaOT_backup.apply({schemaVersion:2,months:{},settings:{rezaot_payroll:{'2026-11':{net:-1,side:0,note:''}}}},'merge'));
 });

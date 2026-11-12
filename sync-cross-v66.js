@@ -330,7 +330,7 @@
         archiveDifference(path, localPayload(target), value, target === "settings" ? "before-cloud-settings" : target === "_meta/trips" ? "before-cloud-destinations" : "before-cloud-month");
         writeLocal(target, value, path);
       }
-      acknowledgedRoot = root; lastAcknowledgedAt = new Date().toISOString(); status();
+      acknowledgedRoot = root; lastAcknowledgedAt = new Date().toISOString(); try{var stamps=stored("rezaot_last_ack",{});stamps[root]=lastAcknowledgedAt;RezaOT_storage.write("rezaot_last_ack",stamps);}catch(e){console.warn("Sync timestamp not persisted");} status();
     } catch (error) {
       try { RezaOT_storage.archive("invalid-cloud-data", { path: path, data: data, message: error.message }); } catch (_) {}
       failure(error);
@@ -403,7 +403,7 @@
         entries[CONFLICT_KEY] = allConflicts().filter(function (v) { return v.path !== item.path || v.revision !== item.revision; });
         RezaOT_storage.transaction(entries);
         if (!current || current.revision === item.revision) writeLocal(target, committed, item.path);
-        acknowledgedRoot = root; lastAcknowledgedAt = new Date().toISOString(); firebaseReady = true;
+        acknowledgedRoot = root; lastAcknowledgedAt = new Date().toISOString(); try{var stamps=stored("rezaot_last_ack",{});stamps[root]=lastAcknowledgedAt;RezaOT_storage.write("rezaot_last_ack",stamps);}catch(e){console.warn("Sync timestamp not persisted");} firebaseReady = true;
       } catch (error) { failure(error); return false; }
     }
     status(); return false;
@@ -488,7 +488,7 @@
       dirty: dirtyItems().filter(function (v) { return v.owner === owner || v.owner == null; }).length,
       conflicts: getConflicts().length, currentOwner: owner,
       legacyPending: queue.filter(function (v) { return v.path.indexOf("users/default/") === 0 && root !== "users/default"; }).length,
-      lastAcknowledgedAt: lastAcknowledgedAt };
+      lastAcknowledgedAt: root ? stored("rezaot_last_ack", {})[root] || lastAcknowledgedAt : null };
   }
   window.RezaOT_sync = { init: init, saveMonth: saveMonth, startMonth: startMonth, stopMonth: stopMonth,
     settingsChanged: settingsChanged, tripsChanged: tripsChanged, flush: flush, updateSettings: updateSettings,
