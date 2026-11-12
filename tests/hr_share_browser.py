@@ -105,7 +105,7 @@ class HRShareTests(integration.AppBrowserFixture):
             match=re.search(r'Page size:\s+([\d.]+) x ([\d.]+)',info)
             w,h=map(float,match.groups());self.assertEqual(w>h,orientation=='landscape')
         viewer.set_viewport_size({'width':1280,'height':900});viewer.screenshot(path='/tmp/rezaot-hr-desktop.png',full_page=True)
-        viewer.evaluate('window.print=()=>{if(document.querySelector("#rezaotPrintPage img").src.startsWith("data:image/png"))console.info("HR_PRINT_OK");window.dispatchEvent(new Event("afterprint"));}')
+        viewer.evaluate('()=>{window.print=()=>{if(document.querySelector("#rezaotPrintPage img").src.startsWith("data:image/png"))console.info("HR_PRINT_OK");window.dispatchEvent(new Event("afterprint"));};}')
         with viewer.expect_event('console',predicate=lambda msg:msg.text=='HR_PRINT_OK'):
             viewer.locator('#viewerPrint').click()
 
