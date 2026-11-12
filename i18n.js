@@ -67,6 +67,7 @@
       "Sabtu"
     ],
     "holidaySuffix": " (Cuti)",
+    "shareHR": "Kongsi HR",
     "langBtn": "EN",
     "langTitle": "Switch to English",
     "toastPrintPdf": "Phone/PWA: buka PDF untuk cetak…",
@@ -326,6 +327,7 @@
       "Saturday"
     ],
     "holidaySuffix": " (PH)",
+    "shareHR": "Share with HR",
     "langBtn": "BM",
     "langTitle": "Tukar ke Bahasa Melayu",
     "toastPrintPdf": "Phone/PWA: open PDF to print…",

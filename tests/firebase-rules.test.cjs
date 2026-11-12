@@ -179,3 +179,40 @@ test('owner-only legacy rules keep historical data accessible only to the pinned
   await assertSucceeds(update(ref(own,path+'/dailyRecords/2026-10-19'),{clock_out:'20:00'}));
  }finally{await fixedEnv.cleanup();}
 });
+
+test('HR capability links allow only exact live reports; private data and listing stay denied',async()=>{
+ const rules=fs.readFileSync(path.resolve(__dirname,'../database.rules.owner.json'),'utf8');
+ const uid=JSON.parse(rules).rules.users.default['.read'].match(/auth.uid === '([^']+)'/)[1];
+ const fixed=await initializeTestEnvironment({projectId,database:{host:database.host,port:database.port,rules}});
+ try{
+  const own=fixed.authenticatedContext(uid).database(),anon=fixed.unauthenticatedContext().database(),other=fixed.authenticatedContext('another-user').database();
+  const token='b'.repeat(64),share='sharedReports/'+token,idx='users/default/_meta/hrShares/Oktober 2026/'+token;
+  const value={version:1,month:'Oktober 2026',updatedAt:Date.now(),expiresAt:Date.now()+86400000,report:'{"title":"Report snapshot"}'};
+  // App publishes report + private link index together, or neither.
+  await assertSucceeds(update(ref(own),{[share]:value,[idx]:{updatedAt:value.updatedAt,expiresAt:value.expiresAt}}));
+  assert.equal((await assertSucceeds(get(ref(anon,share)))).val().month,'Oktober 2026');
+  for(const db of [anon,other]){
+   await assertFails(get(ref(db,'sharedReports')));
+   await assertFails(get(ref(db,'sharedReports'),{shallow:true}));
+   await assertFails(get(ref(db,'sharedReports/'+'c'.repeat(64))));
+   await assertFails(get(ref(db,idx)));
+   await assertFails(get(ref(db,'users/default/Oktober 2026')));
+   await assertFails(set(ref(db,share),value));
+   await assertFails(update(ref(db,share),{expiresAt:Date.now()+3600000}));
+   await assertFails(remove(ref(db,share)));
+  }
+  for(const patch of [{version:2},{unexpected:'private'},{report:{html:'bad'}},{expiresAt:Date.now()-1000},{expiresAt:Date.now()+91*86400000},{updatedAt:Date.now()+3600000},{report:'x'.repeat(250001)}]){
+   await assertFails(set(ref(own,share),{...value,...patch}));
+  }
+  await assertFails(set(ref(own,'sharedReports/guessable'),value));
+  const expired='sharedReports/'+'d'.repeat(64);
+  await fixed.withSecurityRulesDisabled(async context=>set(ref(context.database(),expired),{...value,expiresAt:Date.now()-1000}));
+  await assertFails(get(ref(anon,expired)));
+  // Owner can still inspect expired reports and revoke them.
+  await assertSucceeds(get(ref(own,expired)));
+  await assertSucceeds(update(ref(own),{[share]:{...value,updatedAt:Date.now()},[idx+'/updatedAt']:Date.now()}));
+  await assertSucceeds(update(ref(own),{[share]:null,[idx]:null}));
+  await assertFails(get(ref(anon,share)));
+  await assertFails(get(ref(anon)));
+ }finally{await fixed.cleanup();}
+});

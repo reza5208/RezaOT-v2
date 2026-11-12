@@ -22,6 +22,7 @@
     <link rel="stylesheet" href="styles-detail.css">
     <link rel="stylesheet" href="styles-dashboard.css">
     <link rel="stylesheet" href="styles-sync.css"><link rel="stylesheet" href="styles-improvements.css">
+<link rel="stylesheet" href="styles-hr-share.css">
 </head>
 <body class="app-shell" data-view="today">
 <script>if (window.RezaOT_theme) RezaOT_theme.apply();</script>
@@ -108,7 +109,7 @@
     </section>
 
     <section id="view-records" class="app-view" aria-labelledby="recordsTitle" hidden>
-      <div class="page-heading no-print"><div><p class="section-kicker" data-i18n="yourRecords">REKOD ANDA</p><h1 id="recordsTitle" class="page-title" data-i18n="recordsHeading">Perjalanan dalam angka.</h1><p class="page-subtitle" data-i18n="recordsSubtitle">Satu bulan. Semua catatan anda.</p></div><div class="export-control"><button type="button" id="exportMenuBtn" class="primary-button" aria-expanded="false" aria-controls="reportExportMenu"><svg class="icon" aria-hidden="true"><use href="#i-download"/></svg><span data-i18n="exportClean">Eksport</span><svg class="icon" aria-hidden="true"><use href="#i-down"/></svg></button><div id="reportExportMenu" class="export-menu surface-card" hidden><button id="exportPdfBtn" type="button" data-i18n="pdfClean">PDF A4</button><button id="exportExcelBtn" type="button" data-i18n="excelClean">Excel</button><button id="printButton" type="button" data-i18n="printClean">Cetak laporan</button></div></div></div>
+      <div class="page-heading no-print"><div><p class="section-kicker" data-i18n="yourRecords">REKOD ANDA</p><h1 id="recordsTitle" class="page-title" data-i18n="recordsHeading">Perjalanan dalam angka.</h1><p class="page-subtitle" data-i18n="recordsSubtitle">Satu bulan. Semua catatan anda.</p></div><div class="export-control"><button type="button" id="exportMenuBtn" class="primary-button" aria-expanded="false" aria-controls="reportExportMenu"><svg class="icon" aria-hidden="true"><use href="#i-download"/></svg><span data-i18n="exportClean">Eksport</span><svg class="icon" aria-hidden="true"><use href="#i-down"/></svg></button><div id="reportExportMenu" class="export-menu surface-card" hidden><button id="exportPdfBtn" type="button" data-i18n="pdfClean">PDF A4</button><button id="exportExcelBtn" type="button" data-i18n="excelClean">Excel</button><button id="hrShareBtn" type="button" data-i18n="shareHR">Kongsi HR</button><button id="printButton" type="button" data-i18n="printClean">Cetak laporan</button></div></div></div>
       <div class="record-summary no-print"><div><span data-i18n="monthlyOvertime">OT BULAN INI</span><strong><span id="totalOT">0.00</span> <small data-i18n="hourShort">jam</small></strong></div><div class="summary-cards" id="summaryCards"><div class="summary-card"><span class="summary-label" data-i18n="sumDays">Hari bekerja</span><span class="summary-value" id="sumDays">0</span></div><div class="summary-card"><span class="summary-label" data-i18n="sumTrips">Jumlah trip</span><span class="summary-value" id="sumTrips">0</span></div><div class="summary-card"><span class="summary-label" data-i18n="sumKlia">Hari KLIA</span><span class="summary-value" id="sumKlia">0</span></div><div class="summary-card"><span class="summary-label" data-i18n="sumAwb">AWB</span><span class="summary-value" id="sumAwb">0</span></div></div></div>
       <div class="report-toolbar no-print"><label class="search-field" for="recordSearch"><svg class="icon" aria-hidden="true"><use href="#i-search"/></svg><span class="sr-only" data-i18n="searchRecords">Cari rekod</span><input id="recordSearch" type="search" placeholder="Cari destinasi, AWB atau tarikh" data-i18n-placeholder="searchPlaceholder"></label><div class="record-filters" role="group" aria-label="Tapis rekod"><button type="button" data-filter="all" aria-pressed="true" data-i18n="filterAll">Semua</button><button type="button" data-filter="klia" aria-pressed="false">KLIA</button><button type="button" data-filter="leave" aria-pressed="false" data-i18n="filterLeave">Cuti</button></div></div>
       <p id="filterStatus" class="filter-status no-print" role="status"></p>
@@ -202,7 +203,7 @@
         </div>
 
 
-      <p class="version-badge">RezaOT <span>v76</span><span class="version-dot">·</span><span data-i18n="madeForYourDay">Dibina untuk hari anda.</span></p>
+      <p class="version-badge">RezaOT <span>v77</span><span class="version-dot">·</span><span data-i18n="madeForYourDay">Dibina untuk hari anda.</span></p>
     </section>
   </div>
 </main>
@@ -210,5 +211,6 @@
 <button type="button" id="fabAddTrip" class="fab no-print" data-i18n-title="fabTrip" aria-label="Tambah trip hari ini" data-i18n-aria-label="fabTrip"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg></button>
 <div id="toast" class="toast no-print" role="status" aria-live="polite" hidden></div>
 <script src="release.js"></script><script src="main.js"></script>
+<div id="hrShareDialog" class="hr-share-dialog no-print" hidden><section id="hrSharePanel" class="hr-share-panel" role="dialog" aria-modal="true" aria-labelledby="hrShareTitle" aria-describedby="hrShareNote"><div class="hr-share-heading"><h2 id="hrShareTitle">Kongsi HR</h2><button id="hrShareClose" data-close type="button" aria-label="Tutup / Close">×</button></div><p id="hrShareNote"></p><label id="hrShareExpiryLabel" for="hrShareExpiry">Tempoh link</label> <select id="hrShareExpiry"><option value="7">7 hari</option><option value="30" selected>30 hari</option><option value="90">90 hari</option></select> <button type="button" id="hrShareCreate">Jana link baharu</button><p id="hrShareStatus" role="status" aria-live="polite"></p><div id="hrShareList"></div></section></div>
 </body>
 </html>

@@ -5,7 +5,37 @@
     "users": {
       "default": {
         ".read": "auth != null && auth.uid === 'v5NcUVPcyJW5BhyCJtL38myZBKu2'",
-        ".write": "auth != null && auth.uid === 'v5NcUVPcyJW5BhyCJtL38myZBKu2' && newData.exists()"
+        ".write": "auth != null && auth.uid === 'v5NcUVPcyJW5BhyCJtL38myZBKu2' && newData.exists()",
+        "_meta": {
+          "hrShares": {
+            ".write": "auth != null && auth.uid === 'v5NcUVPcyJW5BhyCJtL38myZBKu2'"
+          }
+        }
+      }
+    },
+    "sharedReports": {
+      "$token": {
+        ".read": "(auth != null && auth.uid === 'v5NcUVPcyJW5BhyCJtL38myZBKu2') || ($token.matches(/^[a-f0-9]{64}$/) && data.exists() && data.child('expiresAt').isNumber() && data.child('expiresAt').val() > now)",
+        ".write": "auth != null && auth.uid === 'v5NcUVPcyJW5BhyCJtL38myZBKu2' && $token.matches(/^[a-f0-9]{64}$/)",
+        ".validate": "newData.hasChildren(['version','month','updatedAt','expiresAt','report'])",
+        "version": {
+          ".validate": "newData.val() === 1"
+        },
+        "month": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 80"
+        },
+        "updatedAt": {
+          ".validate": "newData.isNumber() && newData.val() >= now - 300000 && newData.val() <= now + 300000"
+        },
+        "expiresAt": {
+          ".validate": "newData.isNumber() && newData.val() > now && newData.val() <= now + 7776300000 && newData.val() > newData.parent().child('updatedAt').val()"
+        },
+        "report": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 250000"
+        },
+        "$other": {
+          ".validate": false
+        }
       }
     }
   }
