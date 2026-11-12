@@ -69,6 +69,36 @@ class RedesignBrowserTests(unittest.TestCase):
                     self.assertLessEqual(measurements['width'], measurements['viewport'] + 1,
                                          {'width': width, 'dark': dark, 'measurements': measurements})
 
+    def test_export_menu_keeps_every_action_inside_the_viewport(self):
+        self.navigate('records')
+        for language in ['ms', 'en']:
+            if self.page.evaluate('RezaOT_i18n.getLang()') != language:
+                self.page.locator('#langToggleBtn').click()
+            for dark in [False, True]:
+                if self.page.locator('body').evaluate('n=>n.classList.contains("dark")') != dark:
+                    self.page.locator('#darkModeBtn').click()
+                for width in [320, 390, 480, 768, 1024, 1440]:
+                    self.page.set_viewport_size({'width': width, 'height': 900})
+                    self.page.locator('#exportMenuBtn').click()
+                    menu = self.page.locator('#reportExportMenu')
+                    bounds = menu.bounding_box()
+                    self.assertGreaterEqual(bounds['x'], 11, (width, language, dark, bounds))
+                    self.assertLessEqual(bounds['x'] + bounds['width'], width - 11, (width, language, dark, bounds))
+                    self.assertEqual(menu.locator('button').count(), 4)
+                    for button in menu.locator('button').all():
+                        self.assertTrue(button.is_visible())
+                        self.assertGreaterEqual(button.bounding_box()['height'], 44)
+                    # Keep an already-open menu in bounds on rotation/resize too.
+                    self.page.set_viewport_size({'width': 350, 'height': 900})
+                    self.page.wait_for_function('''()=>{const r=document.querySelector('#reportExportMenu').getBoundingClientRect();return r.left>=11&&r.right<=339;}''')
+                    self.page.keyboard.press('Escape')
+        self.page.set_viewport_size({'width':390,'height':900})
+        self.page.locator('#exportMenuBtn').click()
+        self.page.screenshot(path='/tmp/rezaot-hr-menu-mobile.png', full_page=True)
+        self.page.locator('#hrShareBtn').click()
+        self.assertTrue(self.page.locator('#hrShareDialog').is_visible())
+        self.page.locator('#hrShareClose').click()
+
     def test_record_edit_opens_attendance_view_with_existing_values(self):
         self.seed_record()
         before = self.page.evaluate('JSON.stringify(dailyRecords)')
