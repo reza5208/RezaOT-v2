@@ -16,6 +16,7 @@ jobs:
       - run: node --test tests/*.test.js
       - run: pip install -r requirements-dev.txt
       - run: python -m playwright install --with-deps chromium
+      - run: python tests/owner_access_browser.py
       - run: python tests/improvements_browser.py
       - run: python tests/redesign_browser.py
       - run: python tests/recovery_browser.py

@@ -104,7 +104,7 @@ Salinan dependency dalam `vendor/` mempunyai versi dan checksum/integrity yang d
 - Export backup semua bulan sebelum import, pertukaran akaun atau migrasi. Recovery snapshot sebelum replace melindungi operasi import lokal; ia bukan pengganti backup berasingan.
 - Deployment Firebase rules sebenar tidak diaudit atau diubah oleh perubahan source ini. Jangan anggap PIN lokal melindungi cloud.
 
-Untuk memilih authenticated mode, gunakan `cloud-config.js` dan contoh [firebase-config.example.js](firebase-config.example.js). Mode ini menggunakan `users/<uid>`, custom claim `rezaot_owner: true`, login dan pengesahan bahawa data lokal milik akaun tersebut. Account lain tidak boleh mengambil alih binding data lokal dalam browser yang sama. Auth kekal dimatikan pada konfigurasi production sedia ada sehingga migrasi disediakan. App Check turut tersedia secara opt-in; mula dengan pemantauan sebelum enforcement server.
+Untuk memilih authenticated mode, gunakan `cloud-config.js` dan contoh [firebase-config.example.js](firebase-config.example.js). Mode ini menggunakan `users/<uid>`, custom claim `rezaot_owner: true`, login dan pengesahan bahawa data lokal milik akaun tersebut. Account lain tidak boleh mengambil alih binding data lokal dalam browser yang sama. Konfigurasi production v76 menggunakan login email/password dengan UID pemilik tetap pada laluan sedia ada; lihat docs/owner-access-v76.md. Mod UID/custom-claim berasingan kekal tersedia untuk migrasi kemudian. App Check turut tersedia secara opt-in; mula dengan pemantauan sebelum enforcement server.
 
 [database.rules.example.json](database.rules.example.json) ialah **contoh rules sasaran**, bukan deployment automatik. Ia mengehadkan UID/claim pemilik dan memvalidasi schema. Menutup `users/default` sebelum migrasi akan memutuskan client lama. Ikuti [panduan rules](docs/firebase-security.md), [operasi Auth dan cutover](docs/firebase-operations.md), serta [inventori/migrasi offline](docs/firebase-migration.md). Password, service-account JSON dan private key tidak boleh dimasukkan ke repo atau backup.
 
@@ -212,3 +212,7 @@ Rujukan estimator: [formula dan tahap bukti daripada payslip](docs/payroll-refer
 ## v75
 
 Destinasi kegemaran, ulang trip, Undo padam, amaran rekod bertindih, semakan slip mengikut bulan bayaran, ringkasan pendapatan gabungan dan timestamp sync tersimpan: [perubahan, ujian dan audit akses legacy](docs/improvements-v75.md). Konfigurasi Auth production belum ditukar; lihat langkah cutover yang memerlukan pengesahan UID dan backup semua peranti.
+
+## v76 — akaun pemilik
+
+Login email/password diwajibkan untuk UID pemilik yang ditetapkan; data kekal pada `users/default`. [Langkah penerbitan rules dan ujian](docs/owner-access-v76.md). `database.rules.owner.json` ialah rules untuk mod pemilik ini; penerbitan ke Firebase Console masih diperlukan. Panduan migrasi UID/claim lama kekal sebagai pilihan masa hadapan, bukan langkah wajib untuk v76.

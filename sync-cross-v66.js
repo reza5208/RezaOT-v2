@@ -23,6 +23,8 @@
     var root = getFirebaseRoot();
     if (root) return root;
     var uid = localStorage.getItem("rezaot_auth_data_owner");
+    var config = window.REZAOT_CONFIG || {};
+    if (config.requireAuth && config.legacyOwnerUid && uid === config.legacyOwnerUid) return "users/default";
     return uid ? "users/" + uid : null;
   }
   function notify() {
@@ -187,8 +189,10 @@
   function bindDirty(root) {
     if (!root) return;
     var dirty = dirtyItems(), queue = getOfflineQueue(), moved = false;
+    var config=window.REZAOT_CONFIG||{};
+    var approvedLegacy=root==="users/default"&&config.requireAuth===true&&config.legacyOwnerUid&&window.RezaOT_auth&&RezaOT_auth.uid()===config.legacyOwnerUid&&RezaOT_auth.canSync();
     var remaining = dirty.filter(function (v) {
-      if (v.owner !== root && !(v.owner == null && root !== "users/default")) return true;
+      if (v.owner !== root && !(v.owner == null && (root !== "users/default" || approvedLegacy))) return true;
       var data = clean(v.target, v.data); if (!data) throw new Error("Pending lokal tidak sah");
       var path = root + "/" + v.target, existing = queue.find(function (q) { return q.path === path; });
       queue = queue.filter(function (q) { return q.path !== path; });

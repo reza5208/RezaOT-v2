@@ -1,0 +1,12 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "users": {
+      "default": {
+        ".read": "auth != null && auth.uid === 'v5NcUVPcyJW5BhyCJtL38myZBKu2'",
+        ".write": "auth != null && auth.uid === 'v5NcUVPcyJW5BhyCJtL38myZBKu2' && newData.exists()"
+      }
+    }
+  }
+}

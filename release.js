@@ -1,6 +1,6 @@
 // One version and dependency list for the loader and service worker.
 globalThis.REZAOT_RELEASE = {
-  version: "75",
+  version: "76",
   scripts: [
     "cloud-config.js", "vendor/firebase-app-compat.js", "vendor/firebase-database-compat.js", "cloud-runtime.js",
     "storage.js", "constants.js", "utils.js", "i18n.js", "modal.js", "model.js",

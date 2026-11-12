@@ -17,7 +17,7 @@
     return translated && translated !== key ? translated : fallback;
   }
   function owner() { try { return localStorage.getItem(OWNER_KEY) || ""; } catch (_) { return ""; } }
-  function permitted() { return !!user && (!needsClaim() || claimAllowed); }
+  function permitted() { return !!user && (!config().legacyOwnerUid || user.uid === config().legacyOwnerUid) && (!needsClaim() || claimAllowed); }
   function canSync() { return !enabled() || !!(permitted() && user.uid && owner() === user.uid); }
   function element(id) { return document.getElementById(id); }
   function message(value) { var el = element("cloudAuthMessage"); if (el) el.textContent = value || ""; }

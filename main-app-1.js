@@ -110,6 +110,7 @@ function getFirebaseRoot() {
     if (!window.RezaOT_auth || !RezaOT_auth.canSync()) return null;
     const user = window.firebase && firebase.auth && firebase.auth().currentUser;
     if (user && typeof RezaOT_auth.uid === "function" && RezaOT_auth.uid() !== user.uid) return null;
+    if (config.legacyOwnerUid) return user && user.uid === config.legacyOwnerUid ? "users/default" : null;
     return user ? "users/" + user.uid : null;
   }
   return "users/default";

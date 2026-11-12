@@ -26,7 +26,7 @@ function harness(options = {}) {
     observed = "token"; onAuthState = callback; onAuthError = error; callback(this.currentUser);
   };
   const context = {
-    REZAOT_CONFIG: { requireAuth: options.requireAuth !== false, requireOwnerClaim: options.requireOwnerClaim === true },
+    REZAOT_CONFIG: { requireAuth: options.requireAuth !== false, requireOwnerClaim: options.requireOwnerClaim === true, legacyOwnerUid: options.legacyOwnerUid },
     localStorage: {
       getItem(key) { return values.get(key) || null; },
       setItem(key, value) { if (options.storageFails) throw new Error("storage unavailable"); values.set(key, String(value)); }
@@ -242,4 +242,12 @@ test("password reset requires an email and never starts Auth in legacy mode", as
   const legacy = harness({ requireAuth: false }); await legacy.api.init();
   assert.equal(await legacy.api.resetPassword('owner@example.test'), false);
   assert.equal(legacy.loaderCalls(), 0);
+});
+
+test('pinned legacy owner is allowed without custom claim, while another UID is denied',async()=>{
+ const h=harness({legacyOwnerUid:'owner-fixed'});await h.api.init();await h.setUser({uid:'wrong',email:'owner@example.test'});
+ assert.equal(await h.api.approveLocalData(),false);assert.equal(h.api.canSync(),false);assert.equal(h.values.has('rezaot_auth_data_owner'),false);
+ await h.setUser({uid:'owner-fixed'});assert.equal(await h.api.approveLocalData(),true);assert.equal(h.api.canSync(),true);
+ vm.runInContext(fs.readFileSync(path.join(__dirname,'..','main-app-1.js'),'utf8'),h.context);
+ assert.equal(h.context.getFirebaseRoot(),'users/default');await h.api.signOut();assert.equal(h.context.getFirebaseRoot(),null);
 });

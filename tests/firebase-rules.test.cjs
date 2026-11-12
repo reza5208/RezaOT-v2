@@ -165,3 +165,17 @@ test('the Auth emulator issues the owner claim for an account provisioned by tru
     await deleteApp(app);await deleteAdminApp(trusted);
   }
 });
+
+test('owner-only legacy rules keep historical data accessible only to the pinned UID',async()=>{
+ const rules=fs.readFileSync(path.resolve(__dirname,'../database.rules.owner.json'),'utf8');
+ const doc=JSON.parse(rules),uid=doc.rules.users.default['.read'].match(/auth.uid === '([^']+)'/)[1];
+ const fixedEnv=await initializeTestEnvironment({projectId,database:{host:database.host,port:database.port,rules}});
+ try{
+  const own=fixedEnv.authenticatedContext(uid).database(),other=fixedEnv.authenticatedContext('not-the-owner',{rezaot_owner:true}).database(),anon=fixedEnv.unauthenticatedContext().database();
+  const path='users/default/Oktober 2026',value=validMonth();await assertSucceeds(set(ref(own,path),value));
+  assert.equal((await assertSucceeds(get(ref(own,path)))).child('dailyRecords/2026-10-19/clock_out').val(),'19:00');
+  for(const db of [other,anon]){await assertFails(get(ref(db,'users/default')));await assertFails(get(ref(db,path)));await assertFails(set(ref(db,path),value));}
+  await assertFails(get(ref(own)));await assertFails(set(ref(own,'users/another-owner/Oktober 2026'),value));await assertFails(remove(ref(own,'users/default')));
+  await assertSucceeds(update(ref(own,path+'/dailyRecords/2026-10-19'),{clock_out:'20:00'}));
+ }finally{await fixedEnv.cleanup();}
+});

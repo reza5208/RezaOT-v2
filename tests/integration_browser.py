@@ -155,7 +155,10 @@ class FixtureHandler(SimpleHTTPRequestHandler):
 
     def do_GET(self):
         path = urlparse(self.path).path
-        if any(path.endswith('/vendor/' + name) for name in ('firebase-app-compat.js', 'firebase-database-compat.js', 'firebase-auth-compat.js')):
+        if path.endswith('/cloud-config.js'):
+            raw=b'window.REZAOT_CONFIG=Object.assign({requireAuth:false,requireOwnerClaim:true},window.REZAOT_CONFIG||{});'
+            self.send_response(200);self.send_header('Content-Type','application/javascript');self.send_header('Content-Length',str(len(raw)));self.end_headers();self.wfile.write(raw)
+        elif any(path.endswith('/vendor/' + name) for name in ('firebase-app-compat.js', 'firebase-database-compat.js', 'firebase-auth-compat.js')):
             body = FAKE_FIREBASE if path.endswith('firebase-app-compat.js') else '// Fake Database and Auth SDKs are included in the test app SDK.'
             raw = body.encode()
             self.send_response(200)
