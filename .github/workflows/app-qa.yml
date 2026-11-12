@@ -16,8 +16,20 @@ jobs:
       - run: node --test tests/*.test.js
       - run: pip install -r requirements-dev.txt
       - run: python -m playwright install --with-deps chromium
+      - name: Install PDF verification tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y poppler-utils
+      - run: python tests/hr_share_browser.py
       - run: python tests/owner_access_browser.py
       - run: python tests/improvements_browser.py
       - run: python tests/redesign_browser.py
       - run: python tests/recovery_browser.py
       - run: python tests/pdf_report_browser.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: hr-sharing-ui
+          path: /tmp/rezaot-hr-*.png
+          if-no-files-found: ignore
+          retention-days: 7

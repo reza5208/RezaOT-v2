@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="ms"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer"><meta name="robots" content="noindex,nofollow,noarchive">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src https://reza-ot-default-rtdb.asia-southeast1.firebasedatabase.app; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>RezaOT · Laporan HR</title>
+<link rel="stylesheet" href="hr-view.css">
+<script defer src="hr-share-model.js"></script><script defer src="vendor/html2pdf.bundle.min.js"></script>
+<script defer src="print-orient-v67.js"></script><script defer src="hr-view.js"></script>
+</head><body>
+<header class="viewer-bar no-print"><strong>RezaOT · HR</strong><span id="readOnlyLabel">Baca sahaja / Read only</span><button id="viewerLanguage" type="button">EN</button></header>
+<main>
+<p id="viewerStatus" role="status">Memuatkan laporan… / Loading report…</p>
+<section id="viewerActions" class="no-print" hidden>
+<p id="viewerMeta"></p><p id="viewerNote"></p>
+<label id="orientationLabel" for="viewerOrientation">Orientasi A4</label>
+<select id="viewerOrientation"><option value="portrait">Portrait</option><option value="landscape">Landscape</option></select>
+<button type="button" id="viewerPrint">Cetak / Simpan PDF</button><button type="button" id="viewerPdf">Muat turun PDF</button>
+</section>
+<div id="viewerScroll"><article id="sharedDocument" class="container" hidden>
+<header class="report-document-header"><h1 id="viewerTitle"></h1></header>
+<p class="header-info" id="viewerHeader"></p>
+<table id="reportTable"><thead></thead><tbody></tbody><tfoot></tfoot></table>
+<p id="viewerFooter"></p>
+</article></div>
+</main>
+</body></html>

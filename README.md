@@ -216,3 +216,7 @@ Destinasi kegemaran, ulang trip, Undo padam, amaran rekod bertindih, semakan sli
 ## v76 — akaun pemilik
 
 Login email/password diwajibkan untuk UID pemilik yang ditetapkan; data kekal pada `users/default`. [Langkah penerbitan rules dan ujian](docs/owner-access-v76.md). `database.rules.owner.json` ialah rules untuk mod pemilik ini; penerbitan ke Firebase Console masih diperlukan. Panduan migrasi UID/claim lama kekal sebagai pilihan masa hadapan, bukan langkah wajib untuk v76.
+
+## v77 — Kongsi laporan HR
+
+Link baca sahaja untuk salinan laporan sebulan, tanpa login bagi HR; cetak/PDF A4 portrait/landscape, tarikh luput, kemas kini salinan dan batalkan link. [Cara guna, rules Firebase dan batas akses](docs/hr-sharing-v77.md). Publish `database.rules.owner.json` v77 di Firebase Console sebelum menjana link; source deploy tidak menerbitkan rules.

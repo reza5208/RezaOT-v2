@@ -33,6 +33,8 @@ self.addEventListener("fetch", event => {
     const cache = await caches.open(CACHE_NAME);
     const cached = await cache.match(request);
     if (cached) return cached;
+    // HR viewer must never fall back to the private application shell or a cached report.
+    if (url.pathname.endsWith("/hr.html")) return fetch(request);
     if (request.mode === "navigate") {
       const shell = await cache.match(new URL("index.html", self.registration.scope).href);
       if (shell) return shell;

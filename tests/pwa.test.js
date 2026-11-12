@@ -12,6 +12,13 @@ const VERSION = releaseContext.REZAOT_RELEASE.version;
 const CURRENT_CACHE = 'rezaot-v' + VERSION;
 const PRIOR_CACHE = 'rezaot-v' + (Number(VERSION) - 1);
 
+test('HR navigation never falls back to the private cached app shell', async () => {
+  const h = workerHarness();
+  h.seed(CURRENT_CACHE, 'index.html', { body: 'private-shell' });
+  assert.equal((await h.request('hr.html', 'navigate')).body, 'network response');
+  assert.equal(h.network.length, 1);
+});
+
 // Exercise the actual worker and release manifest in their own worker-like VM.
 // Cache keys are URLs so tests also cover deployments below a GitHub Pages path.
 function workerHarness(options = {}) {
